@@ -17,7 +17,7 @@ if (!defined('ABSPATH')) {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <?php wp_head(); ?>
 </head>
-<body <?php body_class(); ?>>
+<body id="page-top" <?php body_class(); ?>>
 <?php wp_body_open(); ?>
 
 <main class="relative overflow-x-clip">

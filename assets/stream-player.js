@@ -5,53 +5,57 @@ document.addEventListener('DOMContentLoaded', function() {
   const platformLinks = document.querySelectorAll('.platform-card');
   let activePlatform = null;
 
+  const openPlatform = function(platformName, sourceCard) {
+    const mobilePlayer = document.getElementById(`player-mobile-${platformName}`);
+    const desktopPlayer = document.getElementById(`player-desktop-${platformName}`);
+
+    if (!mobilePlayer || !desktopPlayer) return false;
+
+    if (activePlatform === platformName) {
+      mobilePlayer.classList.remove('is-active');
+      desktopPlayer.classList.remove('is-active');
+      if (sourceCard) {
+        sourceCard.setAttribute('aria-expanded', 'false');
+      }
+      activePlatform = null;
+      return true;
+    }
+
+    document.querySelectorAll('.platform-player-mobile').forEach(player => {
+      player.classList.remove('is-active');
+    });
+    document.querySelectorAll('.platform-player-desktop').forEach(player => {
+      player.classList.remove('is-active');
+    });
+    platformLinks.forEach(card => {
+      card.setAttribute('aria-expanded', 'false');
+    });
+
+    mobilePlayer.classList.add('is-active');
+    desktopPlayer.classList.add('is-active');
+    if (sourceCard) {
+      sourceCard.setAttribute('aria-expanded', 'true');
+    }
+    activePlatform = platformName;
+
+    requestAnimationFrame(() => {
+      const isMobile = window.matchMedia('(max-width: 639px)').matches;
+      if (isMobile) {
+        mobilePlayer.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      } else {
+        desktopPlayer.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+    });
+
+    return true;
+  };
+
   platformLinks.forEach(link => {
     link.addEventListener('click', function(e) {
       e.preventDefault();
-      
+
       const platformName = this.dataset.platform;
-      const mobilePlayer = document.getElementById(`player-mobile-${platformName}`);
-      const desktopPlayer = document.getElementById(`player-desktop-${platformName}`);
-      
-      if (!mobilePlayer || !desktopPlayer) return;
-
-      // Toggle current platform
-      if (activePlatform === platformName) {
-        // Hide players
-        mobilePlayer.classList.remove('is-active');
-        desktopPlayer.classList.remove('is-active');
-        this.setAttribute('aria-expanded', 'false');
-        activePlatform = null;
-      } else {
-        // Hide all other players
-        document.querySelectorAll('.platform-player-mobile').forEach(player => {
-          player.classList.remove('is-active');
-        });
-        document.querySelectorAll('.platform-player-desktop').forEach(player => {
-          player.classList.remove('is-active');
-        });
-        platformLinks.forEach(card => {
-          card.setAttribute('aria-expanded', 'false');
-        });
-
-        // Show current platform players
-        mobilePlayer.classList.add('is-active');
-        desktopPlayer.classList.add('is-active');
-        this.setAttribute('aria-expanded', 'true');
-        activePlatform = platformName;
-
-        // Scroll behavior
-        requestAnimationFrame(() => {
-          const isMobile = window.matchMedia('(max-width: 639px)').matches;
-          if (isMobile) {
-            // Mobile: scroll to mobile player
-            mobilePlayer.scrollIntoView({ behavior: 'smooth', block: 'start' });
-          } else {
-            // Desktop: scroll to desktop player
-            desktopPlayer.scrollIntoView({ behavior: 'smooth', block: 'start' });
-          }
-        });
-      }
+      openPlatform(platformName, this);
     });
   });
 
@@ -73,6 +77,16 @@ document.addEventListener('DOMContentLoaded', function() {
 
     e.preventDefault();
     target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+    const requestedPlatform = anchor.getAttribute('data-open-platform');
+    if (requestedPlatform) {
+      const matchingCard = document.querySelector(`.platform-card[data-platform="${requestedPlatform}"]`);
+      if (matchingCard) {
+        setTimeout(() => {
+          openPlatform(requestedPlatform, matchingCard);
+        }, 250);
+      }
+    }
 
     const cleanUrl = window.location.pathname + window.location.search;
     window.history.replaceState(null, '', cleanUrl);

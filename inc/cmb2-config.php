@@ -10,6 +10,8 @@ add_action('admin_init', 'mayami_initialize_default_content');
 add_action('admin_init', 'mayami_sync_platform_links_once', 20);
 add_action('admin_init', 'mayami_sync_hero_top_artist_once', 21);
 add_action('admin_init', 'mayami_sync_marquee_play_link_once', 22);
+add_action('admin_init', 'mayami_sync_stream_platforms_once', 23);
+add_action('admin_init', 'mayami_sync_follow_youtube_link_once', 24);
 add_action('admin_head', 'mayami_sticky_save_button');
 
 /**
@@ -101,16 +103,19 @@ function mayami_initialize_default_content() {
             'slide_type' => 'image',
             'slide_image' => $theme_url . '/assets/mayami-artist.jpg',
             'alt_text' => 'Ellene Leya Masri — portrait 1',
+            'slide_duration' => '5',
         ),
         array(
             'slide_type' => 'image',
             'slide_image' => $theme_url . '/assets/mayami-cover.jpg',
             'alt_text' => 'Ellene Leya Masri — portrait 2',
+            'slide_duration' => '5',
         ),
         array(
             'slide_type' => 'video',
             'video_url' => 'https://www.youtube.com/watch?v=WiB_UoexqVo&pp=0gcJCQoLAYcqIYzv',
             'alt_text' => 'Mayami official video',
+            'slide_duration' => '5',
         ),
     );
     
@@ -289,6 +294,91 @@ function mayami_sync_platform_links_once() {
     }
 
     if ($changed) {
+        update_option($option_key, $options);
+    }
+
+    update_option($sync_flag, true);
+}
+
+/**
+ * One-time sync of stream platforms stored in options.
+ */
+function mayami_sync_stream_platforms_once() {
+    $sync_flag = 'mayami_stream_platforms_synced_20260529';
+    if (get_option($sync_flag)) {
+        return;
+    }
+
+    $option_key = 'mayami_landing_options';
+    $options = get_option($option_key, array());
+    if (!is_array($options)) {
+        update_option($sync_flag, true);
+        return;
+    }
+
+    if (!empty($options['stream_platforms']) && is_array($options['stream_platforms'])) {
+        update_option($sync_flag, true);
+        return;
+    }
+
+    $options['stream_platforms'] = array(
+        array(
+            'is_active' => 'on',
+            'label'     => 'Spotify',
+            'href'      => !empty($options['link_spotify']) ? $options['link_spotify'] : 'https://open.spotify.com/intl-fr/track/3rzrziofCOwRrI1r99IUbQ?si=a2cd3f4cbe364a94',
+        ),
+        array(
+            'is_active' => 'on',
+            'label'     => 'Apple Music',
+            'href'      => !empty($options['link_apple_music']) ? $options['link_apple_music'] : 'https://music.apple.com/fr/song/mayami-my-miami/6771742499',
+        ),
+        array(
+            'is_active' => 'on',
+            'label'     => 'YouTube Music',
+            'href'      => !empty($options['link_youtube_music']) ? $options['link_youtube_music'] : 'https://youtu.be/EH_QcQ92hSk?si=gpybhKJbZrDN1Ew5',
+        ),
+        array(
+            'is_active' => 'on',
+            'label'     => 'Deezer',
+            'href'      => !empty($options['link_deezer']) ? $options['link_deezer'] : 'https://link.deezer.com/s/33p3MydevJFz4yqu2aEam',
+        ),
+        array(
+            'is_active' => 'on',
+            'label'     => 'Amazon Music',
+            'href'      => !empty($options['link_amazon_music']) ? $options['link_amazon_music'] : 'https://music.amazon.com/tracks/B0H2FR3WHQ?marketplaceId=ATVPDKIKX0DER&musicTerritory=US&ref=dm_sh_gPJPR79AtgfLS0EFarS9Xwi57',
+        ),
+        array(
+            'is_active' => 'on',
+            'label'     => 'SoundCloud',
+            'href'      => !empty($options['link_soundcloud']) ? $options['link_soundcloud'] : 'https://soundcloud.com/ellenemasri',
+        ),
+    );
+
+    update_option($option_key, $options);
+    update_option($sync_flag, true);
+}
+
+/**
+ * One-time sync for follow YouTube link.
+ */
+function mayami_sync_follow_youtube_link_once() {
+    $sync_flag = 'mayami_follow_youtube_link_synced_20260529';
+    if (get_option($sync_flag)) {
+        return;
+    }
+
+    $option_key = 'mayami_landing_options';
+    $options = get_option($option_key, array());
+    if (!is_array($options)) {
+        update_option($sync_flag, true);
+        return;
+    }
+
+    $target_url = 'http://www.youtube.com/@ELLENEMASRI';
+    $current = isset($options['link_youtube_video']) ? trim((string) $options['link_youtube_video']) : '';
+
+    if ($current === '' || stripos($current, 'watch?v=WiB_UoexqVo') !== false) {
+        $options['link_youtube_video'] = $target_url;
         update_option($option_key, $options);
     }
 
@@ -476,6 +566,7 @@ function mayami_register_options() {
         'options' => array(
             'image' => 'Image',
             'video' => 'Vidéo YouTube',
+            'tiktok' => 'Vidéo TikTok',
         ),
     ));
 
@@ -492,9 +583,38 @@ function mayami_register_options() {
     ));
 
     $cmb->add_group_field($slider_group, array(
+        'name'    => 'URL TikTok',
+        'id'      => 'tiktok_url',
+        'type'    => 'text_url',
+        'desc'    => 'Colle l’URL du post TikTok, par exemple https://www.tiktok.com/@ellenemasri/video/7645173351501008141',
+        'visible' => array('slide_type', '=', 'tiktok'),
+    ));
+
+    $cmb->add_group_field($slider_group, array(
+        'name'    => 'Vidéo MP4 TikTok (médiathèque)',
+        'id'      => 'tiktok_video_url',
+        'type'    => 'file',
+        'desc'    => 'Choisis un fichier MP4 déjà uploadé dans la médiathèque pour un rendu plein écran sans chrome ni vidéos similaires. L’embed officiel reste en fallback si ce champ est vide.',
+        'visible' => array('slide_type', '=', 'tiktok'),
+    ));
+
+    $cmb->add_group_field($slider_group, array(
         'name' => 'Texte Alt',
         'id'   => 'alt_text',
         'type' => 'text',
+    ));
+
+    $cmb->add_group_field($slider_group, array(
+        'name'       => 'Durée du slide (secondes)',
+        'id'         => 'slide_duration',
+        'type'       => 'text_small',
+        'default'    => '5',
+        'attributes' => array(
+            'type' => 'number',
+            'min'  => '1',
+            'step' => '1',
+        ),
+        'desc'       => 'Durée avant passage au slide suivant.',
     ));
 
     // ========== SECTION: STREAM ==========
@@ -537,6 +657,36 @@ function mayami_register_options() {
         'id'      => 'stream_card_label',
         'type'    => 'text',
         'default' => 'Listen on',
+    ));
+
+    $stream_platforms = $cmb->add_field(array(
+        'id'      => 'stream_platforms',
+        'type'    => 'group',
+        'options' => array(
+            'group_title'   => 'Plateforme {#}',
+            'add_button'    => '+ Ajouter une plateforme',
+            'remove_button' => 'Supprimer',
+            'sortable'      => true,
+        ),
+    ));
+
+    $cmb->add_group_field($stream_platforms, array(
+        'name'    => 'Active',
+        'id'      => 'is_active',
+        'type'    => 'checkbox',
+        'default' => 'on',
+    ));
+
+    $cmb->add_group_field($stream_platforms, array(
+        'name' => 'Nom de la plateforme',
+        'id'   => 'label',
+        'type' => 'text',
+    ));
+
+    $cmb->add_group_field($stream_platforms, array(
+        'name' => 'Lien',
+        'id'   => 'href',
+        'type' => 'text_url',
     ));
 
     // ========== SECTION: SOCIAL ==========
@@ -620,6 +770,20 @@ function mayami_register_options() {
         'id'      => 'video_watch_label',
         'type'    => 'text',
         'default' => 'Watch on YouTube',
+    ));
+
+    $cmb->add_field(array(
+        'name'    => 'Watch Button Link',
+        'id'      => 'video_watch_href',
+        'type'    => 'text_url',
+        'default' => 'https://www.youtube.com/watch?v=WiB_UoexqVo&pp=0gcJCQoLAYcqIYzv',
+    ));
+
+    $cmb->add_field(array(
+        'name'    => 'Disable Watch Link',
+        'id'      => 'video_watch_disable_link',
+        'type'    => 'checkbox',
+        'default' => '',
     ));
 
     $cmb->add_field(array(
@@ -835,7 +999,7 @@ function mayami_register_options() {
         'name'    => 'YouTube Video',
         'id'      => 'link_youtube_video',
         'type'    => 'text_url',
-        'default' => 'https://www.youtube.com/watch?v=WiB_UoexqVo&pp=0gcJCQoLAYcqIYzv',
+        'default' => 'http://www.youtube.com/@ELLENEMASRI',
     ));
 
     $cmb->add_field(array(

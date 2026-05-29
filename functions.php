@@ -14,6 +14,19 @@ if (!defined('ABSPATH')) {
 require_once get_template_directory() . '/inc/cmb2-config.php';
 
 /**
+ * Raise the upload limit reported by WordPress media screens.
+ *
+ * This affects the limit shown in the admin UI and the size WordPress
+ * uses when checking uploads, while still allowing the server's PHP limits
+ * to act as the final fallback.
+ */
+function mayami_upload_size_limit($size) {
+    $desired_limit = 128 * MB_IN_BYTES;
+    return max((int) $size, $desired_limit);
+}
+add_filter('upload_size_limit', 'mayami_upload_size_limit');
+
+/**
  * Theme setup
  */
 function mayami_theme_setup() {
@@ -39,8 +52,19 @@ function mayami_output_favicon_fallback() {
         return;
     }
 
+    $favicon_svg_path = get_template_directory() . '/assets/favicon.svg';
+    $favicon_png_path = get_template_directory() . '/assets/mayami-logo.png';
     $favicon_svg_url = get_template_directory_uri() . '/assets/favicon.svg';
     $favicon_png_url = get_template_directory_uri() . '/assets/mayami-logo.png';
+
+    if (file_exists($favicon_svg_path)) {
+        $favicon_svg_url .= '?v=' . filemtime($favicon_svg_path);
+    }
+
+    if (file_exists($favicon_png_path)) {
+        $favicon_png_url .= '?v=' . filemtime($favicon_png_path);
+    }
+
     echo '<link rel="icon" type="image/svg+xml" href="' . esc_url($favicon_svg_url) . '" />' . "\n";
     echo '<link rel="icon" type="image/png" href="' . esc_url($favicon_png_url) . '" sizes="32x32" />' . "\n";
     echo '<link rel="apple-touch-icon" href="' . esc_url($favicon_png_url) . '" />' . "\n";
@@ -69,12 +93,14 @@ function mayami_enqueue_assets() {
         '1.0.0'
     );
     
+    $stream_player_js_path = get_template_directory() . '/assets/stream-player.js';
+
     // Stream platform player JS
     wp_enqueue_script(
         'mayami-stream-player',
         get_template_directory_uri() . '/assets/stream-player.js',
         [],
-        '1.0.0',
+        file_exists($stream_player_js_path) ? (string) filemtime($stream_player_js_path) : '1.0.0',
         true
     );
 }

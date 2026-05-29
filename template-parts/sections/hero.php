@@ -14,7 +14,13 @@ $hero_description = cmb2_get_option('mayami_landing_options', 'hero_description'
 $hero_stream_label = cmb2_get_option('mayami_landing_options', 'hero_stream_label') ?: '◉ Stream';
 $hero_stream_href = cmb2_get_option('mayami_landing_options', 'hero_stream_href') ?: 'https://ffm.to/mayami';
 $hero_watch_label = cmb2_get_option('mayami_landing_options', 'hero_watch_label') ?: '▶ Watch';
-$hero_watch_href = cmb2_get_option('mayami_landing_options', 'hero_watch_href') ?: '#video';
+$hero_watch_href = cmb2_get_option('mayami_landing_options', 'hero_watch_href');
+
+$hero_logo_path = get_template_directory() . '/assets/mayami-logo.png';
+$hero_logo_url = get_template_directory_uri() . '/assets/mayami-logo.png';
+if (file_exists($hero_logo_path)) {
+    $hero_logo_url .= '?v=' . filemtime($hero_logo_path);
+}
 ?>
 <style>
     #hero .hero-top-cta {
@@ -70,7 +76,7 @@ $hero_watch_href = cmb2_get_option('mayami_landing_options', 'hero_watch_href') 
 
             <div class="mt-4">
                 <img 
-                    src="<?php echo esc_url(get_template_directory_uri() . '/assets/mayami-logo.png'); ?>" 
+                    src="<?php echo esc_url($hero_logo_url); ?>" 
                     alt="Mayami" 
                     width="1200" 
                     height="620" 
@@ -86,7 +92,7 @@ $hero_watch_href = cmb2_get_option('mayami_landing_options', 'hero_watch_href') 
 
             <div class="mt-7 flex items-center gap-3">
                 <a href="<?php echo esc_url($hero_stream_href); ?>" target="_blank" rel="noreferrer" class="btn-pop btn-magenta"><?php echo esc_html($hero_stream_label); ?></a>
-                <a href="<?php echo esc_url($hero_watch_href); ?>" class="btn-pop btn-aqua"><?php echo esc_html($hero_watch_label); ?></a>
+                <a href="<?php echo esc_url($hero_watch_href ?: '#video'); ?>" class="btn-pop btn-aqua"><?php echo esc_html($hero_watch_label); ?></a>
             </div>
         </div>
 
