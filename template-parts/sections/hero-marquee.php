@@ -341,8 +341,7 @@ $mobile_stream_link = $desktop_center_item;
     <div class="marquee-logo-row">
         <img src="<?php echo esc_url($marquee_logo_png); ?>" alt="Mayami" class="marquee-logo-image" loading="lazy" decoding="async" />
         <div class="marquee-logo-copy">
-            <span class="marquee-logo-mark">Ellene Masri</span>
-            <span class="marquee-logo-year">© 2026</span>
+            <span class="marquee-logo-mark">Ellene Leya Masri</span>
         </div>
     </div>
     <div id="hero-marquee-mobile">
