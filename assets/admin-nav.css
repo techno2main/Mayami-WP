@@ -1,0 +1,327 @@
+/**
+ * Admin Navigation Sticky - Styles
+ */
+
+.wrap > h1,
+.wrap > h1.wp-heading-inline,
+.wrap .wp-heading-inline {
+  display: none !important;
+}
+
+.mayami-admin-nav {
+  position: sticky;
+  top: 32px; /* WordPress admin bar height */
+  z-index: 999;
+  background: linear-gradient(135deg, #6a1b78 0%, #410b49 100%);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  margin: -20px -20px 30px -20px;
+  padding: 20px;
+}
+
+.mayami-admin-nav-inner {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  flex-wrap: wrap;
+}
+
+.mayami-admin-nav-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  flex: 1;
+}
+
+.mayami-nav-btn {
+  display: inline-block;
+  padding: 8px 16px;
+  background: rgba(255, 255, 255, 0.1);
+  color: #fff !important;
+  text-decoration: none !important;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  transition: all 0.2s ease;
+  border: 2px solid transparent;
+}
+
+.mayami-nav-btn:hover {
+  background: rgba(255, 255, 255, 0.2);
+  transform: translateY(-1px);
+}
+
+.mayami-nav-btn.active {
+  background: #13f7bc;
+  color: #0f0420 !important;
+  border-color: #13f7bc;
+  box-shadow: 0 0 0 3px rgba(19, 247, 188, 0.2);
+}
+
+/* Style des sections titres */
+.cmb2-id-section-hero-title .cmb-th,
+.cmb2-id-section-slider-title .cmb-th,
+.cmb2-id-section-stream-title .cmb-th,
+.cmb2-id-section-social-title .cmb-th,
+.cmb2-id-section-video-title .cmb-th,
+.cmb2-id-section-release-title .cmb-th,
+.cmb2-id-section-cta-title .cmb-th,
+.cmb2-id-section-footer-title .cmb-th,
+.cmb2-id-section-links-title .cmb-th,
+.cmb2-id-section-marquee-title .cmb-th {
+  background: linear-gradient(135deg, #6a1b78 0%, #410b49 100%);
+  color: #fff;
+  padding: 16px 20px;
+  border-radius: 8px;
+  margin-top: 60px;
+  margin-bottom: 20px;
+  padding-top: 80px;
+  font-size: 18px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  border-left: 5px solid #13f7bc;
+  scroll-margin-top: 120px;
+}
+
+.cmb2-id-section-hero-title {
+  margin-top: 0 !important;
+}
+
+.cmb2-id-section-hero-title .cmb-th {
+  margin-top: 0 !important;
+  padding-top: 16px !important;
+}
+
+/* Responsive */
+@media screen and (max-width: 782px) {
+  .mayami-admin-nav {
+    top: 46px; /* WordPress admin bar mobile height */
+  }
+  
+  .mayami-admin-nav-inner {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  
+  .mayami-admin-nav-buttons {
+    width: 100%;
+  }
+  
+  .mayami-nav-btn {
+    font-size: 11px;
+    padding: 6px 12px;
+  }
+}
+
+@media screen and (max-width: 600px) {
+  .mayami-admin-nav {
+    top: 0;
+  }
+}
+
+/*
+ * Use a single custom checkbox rendering to avoid duplicated native markers on mobile.
+ */
+.cmb2-wrap .cmb-type-checkbox input[type="checkbox"],
+.cmb2-wrap .cmb-row input[type="checkbox"] {
+  -webkit-appearance: none !important;
+  appearance: none !important;
+  width: 18px !important;
+  height: 18px !important;
+  min-width: 18px !important;
+  min-height: 18px !important;
+  margin: 0 !important;
+  background: #fff !important;
+  border: 2px solid #5b6cff !important;
+  border-radius: 3px !important;
+  display: inline-grid !important;
+  place-content: center !important;
+  vertical-align: middle !important;
+  cursor: pointer !important;
+  position: relative !important;
+  z-index: 2 !important;
+  pointer-events: auto !important;
+}
+
+.cmb2-wrap .cmb-type-checkbox input[type="checkbox"]::before,
+.cmb2-wrap .cmb-row input[type="checkbox"]::before {
+  content: "";
+  width: 5px;
+  height: 10px;
+  border: solid #6b21a8;
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg) scale(0);
+  transform-origin: center;
+  transition: transform 0.1s ease;
+}
+
+.cmb2-wrap .cmb-type-checkbox input[type="checkbox"]:checked::before,
+.cmb2-wrap .cmb-row input[type="checkbox"]:checked::before {
+  transform: rotate(45deg) scale(1);
+}
+
+.cmb2-wrap .cmb-row .cmb-th label,
+.cmb2-wrap .cmb-row .cmb-td label {
+  cursor: pointer;
+}
+
+/* Global alignment: keep field labels and inputs on the same left axis across sections. */
+.cmb2-wrap .cmb-row:not(.cmb-type-title) .cmb-th,
+.cmb2-wrap .cmb-row:not(.cmb-type-title) .cmb-td {
+  float: none;
+  width: 100%;
+  margin: 0;
+  padding-left: 0;
+  padding-right: 0;
+}
+
+.cmb2-wrap .cmb-row:not(.cmb-type-title) .cmb-th label {
+  display: inline-block;
+  margin-bottom: 6px;
+}
+
+/* Keep single checkbox fields on one compact line: label + checkbox. */
+.cmb2-wrap .cmb-type-checkbox:not(.cmb-repeatable-grouping) {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.cmb2-wrap .cmb-type-checkbox:not(.cmb-repeatable-grouping) .cmb-th,
+.cmb2-wrap .cmb-type-checkbox:not(.cmb-repeatable-grouping) .cmb-td {
+  width: auto;
+  padding: 0;
+}
+
+.cmb2-wrap .cmb-type-checkbox:not(.cmb-repeatable-grouping) .cmb-th label {
+  margin: 0;
+  font-weight: 600;
+}
+
+/* Specific row for marquee play icon toggle. */
+.cmb2-id-marquee-show-music-icon {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.cmb2-id-marquee-show-music-icon .cmb-th,
+.cmb2-id-marquee-show-music-icon .cmb-td {
+  width: auto;
+  padding: 0;
+}
+
+.cmb2-id-marquee-show-music-icon .cmb-th label {
+  margin: 0;
+}
+
+/* Compact layout for marquee group rows */
+.cmb2-id-marquee-items .cmb-repeatable-grouping {
+  margin-bottom: 10px;
+}
+
+.cmb2-id-marquee-items .cmb-repeatable-grouping .cmb-row {
+  padding-top: 8px;
+  padding-bottom: 8px;
+}
+
+.cmb2-id-marquee-items .cmb-repeatable-grouping .cmb-th,
+.cmb2-id-marquee-items .cmb-repeatable-grouping .cmb-td {
+  padding-top: 6px;
+  padding-bottom: 6px;
+}
+
+.cmb2-id-marquee-items .cmb-repeatable-grouping .cmb-row[class*="-external"],
+.cmb2-id-marquee-items .cmb-repeatable-grouping .cmb-row[class*="-is-hidden"] {
+  display: inline-flex;
+  width: calc(50% - 6px);
+  margin-right: 6px;
+  vertical-align: top;
+  align-items: center;
+  gap: 6px;
+}
+
+.cmb2-id-marquee-items .cmb-repeatable-grouping .cmb-row[class*="-external"] .cmb-th,
+.cmb2-id-marquee-items .cmb-repeatable-grouping .cmb-row[class*="-is-hidden"] .cmb-th,
+.cmb2-id-marquee-items .cmb-repeatable-grouping .cmb-row[class*="-external"] .cmb-td,
+.cmb2-id-marquee-items .cmb-repeatable-grouping .cmb-row[class*="-is-hidden"] .cmb-td {
+  width: auto !important;
+  float: none;
+  margin: 0;
+  padding: 0;
+}
+
+.cmb2-id-marquee-items .cmb-repeatable-grouping .cmb-row[class*="-external"] .cmb-td,
+.cmb2-id-marquee-items .cmb-repeatable-grouping .cmb-row[class*="-is-hidden"] .cmb-td {
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-start;
+}
+
+.cmb2-id-marquee-items .cmb-repeatable-grouping .cmb-row[class*="-external"] .cmb-td input[type="checkbox"],
+.cmb2-id-marquee-items .cmb-repeatable-grouping .cmb-row[class*="-is-hidden"] .cmb-td input[type="checkbox"] {
+  margin: 0;
+}
+
+.cmb2-id-marquee-items .cmb-repeatable-grouping .cmb-row[class*="-external"] .cmb-th label,
+.cmb2-id-marquee-items .cmb-repeatable-grouping .cmb-row[class*="-is-hidden"] .cmb-th label {
+  display: inline-block;
+  margin: 0;
+  font-weight: 600;
+}
+
+/* Keep Label + Lien blocks left-aligned (label and input start on same left axis). */
+.cmb2-id-marquee-items .cmb-repeatable-grouping .cmb-row[class*="-label"],
+.cmb2-id-marquee-items .cmb-repeatable-grouping .cmb-row[class*="-href"] {
+  display: block;
+}
+
+.cmb2-id-marquee-items .cmb-repeatable-grouping .cmb-row[class*="-label"] .cmb-th,
+.cmb2-id-marquee-items .cmb-repeatable-grouping .cmb-row[class*="-href"] .cmb-th,
+.cmb2-id-marquee-items .cmb-repeatable-grouping .cmb-row[class*="-label"] .cmb-td,
+.cmb2-id-marquee-items .cmb-repeatable-grouping .cmb-row[class*="-href"] .cmb-td {
+  width: 100%;
+  float: none;
+  margin: 0;
+  padding-left: 0;
+  padding-right: 0;
+}
+
+.cmb2-id-marquee-items .cmb-repeatable-grouping .cmb-row[class*="-label"] .cmb-th label,
+.cmb2-id-marquee-items .cmb-repeatable-grouping .cmb-row[class*="-href"] .cmb-th label {
+  display: inline-block;
+  margin-bottom: 6px;
+}
+
+.cmb2-id-marquee-items .cmb-repeatable-grouping .cmb-row[class*="-label"] .cmb-td input,
+.cmb2-id-marquee-items .cmb-repeatable-grouping .cmb-row[class*="-href"] .cmb-td input {
+  margin-left: 0;
+}
+
+@media screen and (max-width: 782px) {
+  .cmb2-id-marquee-items .cmb-repeatable-grouping .cmb-row {
+    padding-top: 6px;
+    padding-bottom: 6px;
+  }
+
+  .cmb2-id-marquee-items .cmb-repeatable-grouping .cmb-row[class*="-external"],
+  .cmb2-id-marquee-items .cmb-repeatable-grouping .cmb-row[class*="-is-hidden"] {
+    display: inline-flex;
+    width: calc(50% - 4px);
+    margin-right: 4px;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .cmb2-id-marquee-items .cmb-repeatable-grouping .cmb-row[class*="-external"] .cmb-th label,
+  .cmb2-id-marquee-items .cmb-repeatable-grouping .cmb-row[class*="-is-hidden"] .cmb-th label {
+    font-size: 14px;
+    line-height: 1.2;
+  }
+
+  .cmb2-id-marquee-show-music-icon {
+    gap: 6px;
+  }
+}

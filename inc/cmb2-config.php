@@ -1,0 +1,910 @@
+<?php
+/**
+ * CMB2 Configuration - Page unique avec navigation sticky
+ */
+
+if (!defined('ABSPATH')) exit;
+
+add_action('cmb2_admin_init', 'mayami_register_options');
+add_action('admin_init', 'mayami_initialize_default_content');
+add_action('admin_init', 'mayami_sync_platform_links_once', 20);
+add_action('admin_init', 'mayami_sync_hero_top_artist_once', 21);
+add_action('admin_init', 'mayami_sync_marquee_play_link_once', 22);
+add_action('admin_head', 'mayami_sticky_save_button');
+
+/**
+ * Add sticky save button at the top of CMB2 admin page
+ */
+function mayami_sticky_save_button() {
+    $screen = get_current_screen();
+    if ($screen && strpos($screen->id, 'mayami_landing_options') !== false) {
+        ?>
+        <style>
+            .wrap > h1,
+            .wrap > h1.wp-heading-inline {
+                display: none !important;
+            }
+            #mayami-save-button-sticky {
+                background: #fff !important;
+                color: #6b21a8 !important;
+                border: 2px solid #fff !important;
+                padding: 8px 20px !important;
+                font-size: 13px !important;
+                font-weight: 700 !important;
+                border-radius: 6px !important;
+                cursor: pointer !important;
+                transition: all 0.2s !important;
+                text-transform: uppercase !important;
+                letter-spacing: 0.5px !important;
+                margin-left: auto !important;
+            }
+            #mayami-save-button-sticky:hover {
+                background: #f0f0f1 !important;
+                transform: translateY(-1px) !important;
+                box-shadow: 0 3px 8px rgba(0,0,0,0.2) !important;
+            }
+        </style>
+        <script>
+            jQuery(document).ready(function($) {
+                // Attendre que la navbar soit créée par CMB2
+                setTimeout(function() {
+                    var $navbar = $('.cmb-tabs-nav, .cmb2-wrap > nav, [class*="cmb"] nav, .cmb-tabs');
+                    
+                    if (!$navbar.length) {
+                        // Chercher toute div qui contient les boutons de navigation
+                        $navbar = $('div').filter(function() {
+                            return $(this).css('background-color') === 'rgb(107, 33, 168)' || 
+                                   $(this).css('background-color').includes('107, 33, 168');
+                        });
+                    }
+                    
+                    if ($navbar.length) {
+                        var $saveButton = $('<button type="button" id="mayami-save-button-sticky">💾 Enregistrer</button>');
+                        
+                        $navbar.append($saveButton);
+                        
+                        $saveButton.on('click', function(e) {
+                            e.preventDefault();
+                            var $realButton = $('.cmb-form input[type="submit"], .cmb2-wrap input[type="submit"]').first();
+                            if ($realButton.length) {
+                                $realButton.trigger('click');
+                            }
+                        });
+                    } else {
+                        console.log('Navbar violette non trouvée');
+                    }
+                }, 500);
+            });
+        </script>
+        <?php
+    }
+}
+
+/**
+ * Initialize default content for groups (slider, marquee, release rows)
+ */
+function mayami_initialize_default_content() {
+    $option_key = 'mayami_landing_options';
+    
+    // Check if already initialized (or if reset is requested)
+    $reset_requested = isset($_GET['mayami_reset']) && $_GET['mayami_reset'] === '1';
+    
+    if (!$reset_requested && get_option('mayami_content_initialized')) {
+        return;
+    }
+    
+    $theme_url = get_template_directory_uri();
+    
+    // Default slider content
+    $default_slider = array(
+        array(
+            'slide_type' => 'image',
+            'slide_image' => $theme_url . '/assets/mayami-artist.jpg',
+            'alt_text' => 'Ellene Leya Masri — portrait 1',
+        ),
+        array(
+            'slide_type' => 'image',
+            'slide_image' => $theme_url . '/assets/mayami-cover.jpg',
+            'alt_text' => 'Ellene Leya Masri — portrait 2',
+        ),
+        array(
+            'slide_type' => 'video',
+            'video_url' => 'https://www.youtube.com/watch?v=WiB_UoexqVo&pp=0gcJCQoLAYcqIYzv',
+            'alt_text' => 'Mayami official video',
+        ),
+    );
+    
+    // Default marquee items
+    $default_marquee = array(
+        array(
+            'label' => 'Mayami, My Miami',
+            'href' => '#hero',
+            'external' => '',
+            'is_hidden' => '',
+        ),
+        array(
+            'label' => 'Out Now!',
+            'href' => '#stream',
+            'external' => '',
+            'is_hidden' => '',
+        ),
+        array(
+            'label' => 'Ellene Masri',
+            'href' => 'https://www.tiktok.com/@ellenemasri',
+            'external' => 'on',
+            'is_hidden' => '',
+        ),
+        array(
+            'label' => 'Stream · Watch · Share',
+            'href' => '#video',
+            'external' => '',
+            'is_hidden' => '',
+        ),
+    );
+    
+    // Default release rows
+    $default_release_rows = array(
+        array('key' => 'Artists', 'value' => 'Richard Bona & Ellene Masri'),
+        array('key' => 'Title', 'value' => 'Mayami, My Miami'),
+        array('key' => 'Release date', 'value' => 'May 29th'),
+        array('key' => 'Location', 'value' => 'Miami, USA'),
+        array('key' => 'Video', 'value' => 'Coming soon'),
+    );
+    
+    // Get current options
+    $options = get_option($option_key, array());
+    
+    // Initialize groups if empty
+    if (empty($options['hero_slider'])) {
+        $options['hero_slider'] = $default_slider;
+    }
+    
+    if (empty($options['marquee_items'])) {
+        $options['marquee_items'] = $default_marquee;
+    }
+    
+    if (empty($options['release_rows'])) {
+        $options['release_rows'] = $default_release_rows;
+    }
+
+    if (empty($options['marquee_play_link']) && !empty($options['link_spotify'])) {
+        $options['marquee_play_link'] = $options['link_spotify'];
+    }
+
+    if (!isset($options['marquee_show_music_icon'])) {
+        $options['marquee_show_music_icon'] = 'on';
+    }
+    
+    // Set default images
+    if (empty($options['social_texture_image'])) {
+        $options['social_texture_image'] = $theme_url . '/assets/mayami-texture.jpg';
+    }
+    
+    if (empty($options['video_cover_image'])) {
+        $options['video_cover_image'] = $theme_url . '/assets/mayami-cover.jpg';
+    }
+    
+    if (empty($options['release_cover_image'])) {
+        $options['release_cover_image'] = $theme_url . '/assets/mayami-cover.jpg';
+    }
+    
+    if (empty($options['cta_texture_image'])) {
+        $options['cta_texture_image'] = $theme_url . '/assets/mayami-texture.jpg';
+    }
+    
+    // Save options
+    update_option($option_key, $options);
+    
+    // Mark as initialized
+    update_option('mayami_content_initialized', true);
+}
+
+/**
+ * One-time sync of platform links stored in options.
+ *
+ * Why: previously saved values and legacy keys can keep old URLs in the admin UI,
+ * even when defaults are updated in code.
+ */
+function mayami_sync_platform_links_once() {
+    $sync_flag = 'mayami_platform_links_synced_20260529';
+    if (get_option($sync_flag)) {
+        return;
+    }
+
+    $option_key = 'mayami_landing_options';
+    $options = get_option($option_key, array());
+    if (!is_array($options)) {
+        update_option($sync_flag, true);
+        return;
+    }
+
+    $new_links = array(
+        'link_spotify' => 'https://open.spotify.com/intl-fr/track/3rzrziofCOwRrI1r99IUbQ?si=a2cd3f4cbe364a94',
+        'link_apple_music' => 'https://music.apple.com/fr/song/mayami-my-miami/6771742499',
+        'link_youtube_music' => 'https://youtu.be/EH_QcQ92hSk?si=gpybhKJbZrDN1Ew5',
+        'link_deezer' => 'https://link.deezer.com/s/33p3MydevJFz4yqu2aEam',
+        'link_amazon_music' => 'https://music.amazon.com/tracks/B0H2FR3WHQ?marketplaceId=ATVPDKIKX0DER&musicTerritory=US&ref=dm_sh_gPJPR79AtgfLS0EFarS9Xwi57',
+    );
+
+    $legacy_key_map = array(
+        'link_apple' => 'link_apple_music',
+        'link_amazon' => 'link_amazon_music',
+    );
+
+    $legacy_values = array(
+        'link_spotify' => array(
+            'https://open.spotify.com/intl-fr/artist/2c6x9IL7EvoUU6XQ642S8c',
+        ),
+        'link_apple_music' => array(
+            'https://music.apple.com/fr/album/music/1722440356',
+        ),
+        'link_youtube_music' => array(
+            'https://www.youtube.com/user/ellenemasriOFFICIAL',
+            'https://www.youtube.com/embed?listType=user_uploads&list=ellenemasriOFFICIAL',
+        ),
+        'link_deezer' => array(
+            'https://www.deezer.com/fr/artist/5316718',
+            'https://api.ffm.to/sl/e/c/mayami?',
+        ),
+        'link_amazon_music' => array(
+            'https://music.amazon.fr/artists/B00GBFZTHW/ellene-masri',
+        ),
+    );
+
+    $changed = false;
+
+    // Migrate legacy keys to current keys if needed.
+    foreach ($legacy_key_map as $legacy_key => $current_key) {
+        if (empty($options[$current_key]) && !empty($options[$legacy_key])) {
+            $options[$current_key] = $options[$legacy_key];
+            $changed = true;
+        }
+    }
+
+    // Replace empty/outdated values with the new canonical URLs.
+    foreach ($new_links as $key => $new_value) {
+        $current = isset($options[$key]) ? trim((string) $options[$key]) : '';
+        if ($current === '') {
+            $options[$key] = $new_value;
+            $changed = true;
+            continue;
+        }
+
+        if (!isset($legacy_values[$key])) {
+            continue;
+        }
+
+        $is_legacy = false;
+        foreach ($legacy_values[$key] as $legacy_value) {
+            if (stripos($current, $legacy_value) !== false) {
+                $is_legacy = true;
+                break;
+            }
+        }
+
+        if ($is_legacy) {
+            $options[$key] = $new_value;
+            $changed = true;
+        }
+    }
+
+    if ($changed) {
+        update_option($option_key, $options);
+    }
+
+    update_option($sync_flag, true);
+}
+
+/**
+ * One-time sync for hero top artist to align admin value with current front expectation.
+ */
+function mayami_sync_hero_top_artist_once() {
+    $sync_flag = 'mayami_hero_top_artist_synced_20260529';
+    if (get_option($sync_flag)) {
+        return;
+    }
+
+    $option_key = 'mayami_landing_options';
+    $options = get_option($option_key, array());
+    if (!is_array($options)) {
+        update_option($sync_flag, true);
+        return;
+    }
+
+    $target_value = 'Richard Bona & Ellen Masri';
+    $legacy_values = array(
+        '',
+        'Ellene Masri',
+        'Ellene Leya Masri',
+        'Richard Bona & Ellene Masri',
+    );
+
+    $current = isset($options['hero_top_artist']) ? trim((string) $options['hero_top_artist']) : '';
+    if (in_array($current, $legacy_values, true)) {
+        $options['hero_top_artist'] = $target_value;
+        update_option($option_key, $options);
+    }
+
+    update_option($sync_flag, true);
+}
+
+/**
+ * One-time sync for marquee play icon link based on Spotify link.
+ */
+function mayami_sync_marquee_play_link_once() {
+    $sync_flag = 'mayami_marquee_play_link_synced_20260529';
+    if (get_option($sync_flag)) {
+        return;
+    }
+
+    $option_key = 'mayami_landing_options';
+    $options = get_option($option_key, array());
+    if (!is_array($options)) {
+        update_option($sync_flag, true);
+        return;
+    }
+
+    $changed = false;
+
+    $spotify_link = isset($options['link_spotify']) ? trim((string) $options['link_spotify']) : '';
+    $marquee_play_link = isset($options['marquee_play_link']) ? trim((string) $options['marquee_play_link']) : '';
+
+    if ($marquee_play_link === '' && $spotify_link !== '') {
+        $options['marquee_play_link'] = $spotify_link;
+        $changed = true;
+    }
+
+    if (!isset($options['marquee_show_music_icon'])) {
+        $options['marquee_show_music_icon'] = 'on';
+        $changed = true;
+    }
+
+    if ($changed) {
+        update_option($option_key, $options);
+    }
+
+    update_option($sync_flag, true);
+}
+
+
+function mayami_register_options() {
+    
+    $option_key = 'mayami_landing_options';
+    
+    // PAGE UNIQUE
+    $cmb = new_cmb2_box(array(
+        'id'           => 'mayami_main_page',
+        'title'        => 'Mayami Landing Page',
+        'object_types' => array('options-page'),
+        'option_key'   => $option_key,
+        'icon_url'     => 'dashicons-admin-site-alt3',
+        'menu_title'   => 'Mayami Landing',
+        'position'     => 2,
+    ));
+    
+    // ========== SECTION: HERO ==========
+    $cmb->add_field(array(
+        'name' => '🎯 Hero Section',
+        'type' => 'title',
+        'id'   => 'section_hero_title',
+    ));
+
+    $cmb->add_field(array(
+        'name'    => 'Top Artist',
+        'id'      => 'hero_top_artist',
+        'type'    => 'text',
+        'default' => 'Richard Bona & Ellen Masri',
+    ));
+
+    $cmb->add_field(array(
+        'name'    => 'Top CTA Label',
+        'id'      => 'hero_top_cta_label',
+        'type'    => 'text',
+        'default' => 'Out tomorrow',
+    ));
+
+    $cmb->add_field(array(
+        'name'    => 'Badge Text',
+        'id'      => 'hero_badge_text',
+        'type'    => 'text',
+        'default' => 'New Single · Out Tomorrow',
+    ));
+
+    $cmb->add_field(array(
+        'name'    => 'Subtitle',
+        'id'      => 'hero_subtitle',
+        'type'    => 'text',
+        'default' => 'Mayami, My Miami',
+    ));
+
+    $cmb->add_field(array(
+        'name'    => 'Description',
+        'id'      => 'hero_description',
+        'type'    => 'textarea_small',
+        'default' => 'A sunset-soaked love letter to the city. Stream it, watch it, share it — and follow the journey from the painted walls of Miami.',
+    ));
+
+    $cmb->add_field(array(
+        'name'    => 'Stream Button - Label',
+        'id'      => 'hero_stream_label',
+        'type'    => 'text',
+        'default' => '◉ Stream',
+    ));
+
+    $cmb->add_field(array(
+        'name'    => 'Stream Button - Link',
+        'id'      => 'hero_stream_href',
+        'type'    => 'text_url',
+        'default' => 'https://ffm.to/mayami',
+    ));
+
+    $cmb->add_field(array(
+        'name'    => 'Watch Button - Label',
+        'id'      => 'hero_watch_label',
+        'type'    => 'text',
+        'default' => '▶ Watch',
+    ));
+
+    $cmb->add_field(array(
+        'name'    => 'Watch Button - Link',
+        'id'      => 'hero_watch_href',
+        'type'    => 'text',
+        'default' => '#video',
+    ));
+
+    // ========== SECTION: SLIDER ==========
+    $cmb->add_field(array(
+        'name' => '🎠 Hero Slider',
+        'type' => 'title',
+        'id'   => 'section_slider_title',
+    ));
+    $slider_group = $cmb->add_field(array(
+        'id'      => 'hero_slider',
+        'type'    => 'group',
+        'options' => array(
+            'group_title'   => 'Slide {#}',
+            'add_button'    => '+ Ajouter un slide',
+            'remove_button' => 'Supprimer',
+            'sortable'      => true,
+        ),
+    ));
+
+    $cmb->add_group_field($slider_group, array(
+        'name'    => 'Type',
+        'id'      => 'slide_type',
+        'type'    => 'select',
+        'options' => array(
+            'image' => 'Image',
+            'video' => 'Vidéo YouTube',
+        ),
+    ));
+
+    $cmb->add_group_field($slider_group, array(
+        'name' => 'Image',
+        'id'   => 'slide_image',
+        'type' => 'file',
+    ));
+
+    $cmb->add_group_field($slider_group, array(
+        'name' => 'URL YouTube',
+        'id'   => 'video_url',
+        'type' => 'text_url',
+    ));
+
+    $cmb->add_group_field($slider_group, array(
+        'name' => 'Texte Alt',
+        'id'   => 'alt_text',
+        'type' => 'text',
+    ));
+
+    // ========== SECTION: STREAM ==========
+    $cmb->add_field(array(
+        'name' => '🎵 Stream Section',
+        'type' => 'title',
+        'id'   => 'section_stream_title',
+    ));
+
+    $cmb->add_field(array(
+        'name'    => 'Kicker',
+        'id'      => 'stream_kicker',
+        'type'    => 'text',
+        'default' => '01 / Listen',
+    ));
+
+    $cmb->add_field(array(
+        'name'    => 'Title Prefix',
+        'id'      => 'stream_title_prefix',
+        'type'    => 'text',
+        'default' => 'Stream',
+    ));
+
+    $cmb->add_field(array(
+        'name'    => 'Title Highlight',
+        'id'      => 'stream_title_highlight',
+        'type'    => 'text',
+        'default' => 'MAYAMI',
+    ));
+
+    $cmb->add_field(array(
+        'name'    => 'Availability Text',
+        'id'      => 'stream_availability_text',
+        'type'    => 'text',
+        'default' => 'Available everywhere',
+    ));
+
+    $cmb->add_field(array(
+        'name'    => 'Card Label',
+        'id'      => 'stream_card_label',
+        'type'    => 'text',
+        'default' => 'Listen on',
+    ));
+
+    // ========== SECTION: SOCIAL ==========
+    $cmb->add_field(array(
+        'name' => '📱 Social Section',
+        'type' => 'title',
+        'id'   => 'section_social_title',
+    ));
+
+    $cmb->add_field(array(
+        'name'    => 'Kicker',
+        'id'      => 'social_kicker',
+        'type'    => 'text',
+        'default' => '02 / Follow',
+    ));
+
+    $cmb->add_field(array(
+        'name'    => 'Title Left',
+        'id'      => 'social_title_left',
+        'type'    => 'text',
+        'default' => 'Join the',
+    ));
+
+    $cmb->add_field(array(
+        'name'    => 'Title Right',
+        'id'      => 'social_title_right',
+        'type'    => 'text',
+        'default' => 'journey',
+    ));
+
+    $cmb->add_field(array(
+        'name'    => 'Description',
+        'id'      => 'social_description',
+        'type'    => 'textarea_small',
+        'default' => 'Snippets, behind-the-scenes, dance challenges — drop into the daily Miami diary.',
+    ));
+
+    $cmb->add_field(array(
+        'name' => 'Texture Image',
+        'id'   => 'social_texture_image',
+        'type' => 'file',
+    ));
+
+    // ========== SECTION: VIDEO ==========
+    $cmb->add_field(array(
+        'name' => '🎬 Video Section',
+        'type' => 'title',
+        'id'   => 'section_video_title',
+    ));
+
+    $cmb->add_field(array(
+        'name'    => 'Kicker',
+        'id'      => 'video_kicker',
+        'type'    => 'text',
+        'default' => '03 / Watch',
+    ));
+
+    $cmb->add_field(array(
+        'name'    => 'Title',
+        'id'      => 'video_title',
+        'type'    => 'text',
+        'default' => 'Official Video',
+    ));
+
+    $cmb->add_field(array(
+        'name'    => 'Description',
+        'id'      => 'video_description',
+        'type'    => 'textarea_small',
+        'default' => 'A love letter to Miami — shot on sunset walls, neon boulevards and the Atlantic shoreline.',
+    ));
+
+    $cmb->add_field(array(
+        'name'    => 'Status Text',
+        'id'      => 'video_status',
+        'type'    => 'text',
+        'default' => 'Coming soon',
+    ));
+
+    $cmb->add_field(array(
+        'name'    => 'Watch Button Label',
+        'id'      => 'video_watch_label',
+        'type'    => 'text',
+        'default' => 'Watch on YouTube',
+    ));
+
+    $cmb->add_field(array(
+        'name' => 'Cover Image',
+        'id'   => 'video_cover_image',
+        'type' => 'file',
+    ));
+
+    // ========== SECTION: RELEASE INFO ==========
+    $cmb->add_field(array(
+        'name' => '💿 Release Info',
+        'type' => 'title',
+        'id'   => 'section_release_title',
+    ));
+
+    $cmb->add_field(array(
+        'name'    => 'Kicker',
+        'id'      => 'release_kicker',
+        'type'    => 'text',
+        'default' => '04 / Release Info',
+    ));
+
+    $cmb->add_field(array(
+        'name'    => 'Title Left',
+        'id'      => 'release_title_left',
+        'type'    => 'text',
+        'default' => 'The',
+    ));
+
+    $cmb->add_field(array(
+        'name'    => 'Title Highlight',
+        'id'      => 'release_title_highlight',
+        'type'    => 'text',
+        'default' => 'credits',
+    ));
+
+    $cmb->add_field(array(
+        'name' => 'Cover Image',
+        'id'   => 'release_cover_image',
+        'type' => 'file',
+    ));
+
+    $release_rows = $cmb->add_field(array(
+        'id'      => 'release_rows',
+        'type'    => 'group',
+        'options' => array(
+            'group_title'   => 'Info {#}',
+            'add_button'    => '+ Ajouter',
+            'remove_button' => 'Supprimer',
+            'sortable'      => true,
+        ),
+    ));
+
+    $cmb->add_group_field($release_rows, array(
+        'name' => 'Label',
+        'id'   => 'key',
+        'type' => 'text',
+    ));
+
+    $cmb->add_group_field($release_rows, array(
+        'name' => 'Valeur',
+        'id'   => 'value',
+        'type' => 'text',
+    ));
+
+    // ========== SECTION: CTA ==========
+    $cmb->add_field(array(
+        'name' => '🎤 CTA Section',
+        'type' => 'title',
+        'id'   => 'section_cta_title',
+    ));
+
+    $cmb->add_field(array(
+        'name'    => 'Kicker',
+        'id'      => 'cta_kicker',
+        'type'    => 'text',
+        'default' => "05 / Don't sleep on it",
+    ));
+
+    $cmb->add_field(array(
+        'name'    => 'Title Left',
+        'id'      => 'cta_title_left',
+        'type'    => 'text',
+        'default' => 'Press',
+    ));
+
+    $cmb->add_field(array(
+        'name'    => 'Title Right',
+        'id'      => 'cta_title_right',
+        'type'    => 'text',
+        'default' => 'play.',
+    ));
+
+    $cmb->add_field(array(
+        'name'    => 'Description',
+        'id'      => 'cta_description',
+        'type'    => 'textarea_small',
+        'default' => 'Stream the single. Watch the video. Tag and ride the wave.',
+    ));
+
+    $cmb->add_field(array(
+        'name'    => 'Hashtag',
+        'id'      => 'cta_hashtag',
+        'type'    => 'text',
+        'default' => '#MayamiMyMiami',
+    ));
+
+    $cmb->add_field(array(
+        'name' => 'Texture Image',
+        'id'   => 'cta_texture_image',
+        'type' => 'file',
+    ));
+
+    // ========== SECTION: FOOTER & STICKY BAR ==========
+    $cmb->add_field(array(
+        'name' => '🦶 Footer & Sticky Bar',
+        'type' => 'title',
+        'id'   => 'section_footer_title',
+    ));
+
+    $cmb->add_field(array(
+        'name'    => 'Footer Line 1',
+        'id'      => 'footer_line1',
+        'type'    => 'text',
+        'default' => '© Ellene Leya Masri · Miami, USA',
+    ));
+
+    $cmb->add_field(array(
+        'name'    => 'Footer Line 2',
+        'id'      => 'footer_line2',
+        'type'    => 'text',
+        'default' => 'Mayami, My Miami — a release campaign.',
+    ));
+
+    $cmb->add_field(array(
+        'name'    => 'Sticky Bar - Stream',
+        'id'      => 'sticky_stream_label',
+        'type'    => 'text',
+        'default' => '▶ Stream',
+    ));
+
+    $cmb->add_field(array(
+        'name'    => 'Sticky Bar - Video',
+        'id'      => 'sticky_video_label',
+        'type'    => 'text',
+        'default' => '◉ Video',
+    ));
+
+    $cmb->add_field(array(
+        'name'    => 'Sticky Bar - TikTok',
+        'id'      => 'sticky_tiktok_label',
+        'type'    => 'text',
+        'default' => 'TikTok',
+    ));
+
+    // ========== SECTION: PLATFORM LINKS ==========
+    $cmb->add_field(array(
+        'name' => '🔗 Platform Links',
+        'type' => 'title',
+        'id'   => 'section_links_title',
+    ));
+
+    $cmb->add_field(array(
+        'name'    => 'FFM.to',
+        'id'      => 'link_ffm',
+        'type'    => 'text_url',
+        'default' => 'https://ffm.to/mayami',
+    ));
+
+    $cmb->add_field(array(
+        'name'    => 'Spotify',
+        'id'      => 'link_spotify',
+        'type'    => 'text_url',
+        'default' => 'https://open.spotify.com/intl-fr/track/3rzrziofCOwRrI1r99IUbQ?si=a2cd3f4cbe364a94',
+    ));
+
+    $cmb->add_field(array(
+        'name'    => 'Apple Music',
+        'id'      => 'link_apple_music',
+        'type'    => 'text_url',
+        'default' => 'https://music.apple.com/fr/song/mayami-my-miami/6771742499',
+    ));
+
+    $cmb->add_field(array(
+        'name'    => 'YouTube Music',
+        'id'      => 'link_youtube_music',
+        'type'    => 'text_url',
+        'default' => 'https://youtu.be/EH_QcQ92hSk?si=gpybhKJbZrDN1Ew5',
+    ));
+
+    $cmb->add_field(array(
+        'name'    => 'Deezer',
+        'id'      => 'link_deezer',
+        'type'    => 'text_url',
+        'default' => 'https://link.deezer.com/s/33p3MydevJFz4yqu2aEam',
+    ));
+
+    $cmb->add_field(array(
+        'name'    => 'Amazon Music',
+        'id'      => 'link_amazon_music',
+        'type'    => 'text_url',
+        'default' => 'https://music.amazon.com/tracks/B0H2FR3WHQ?marketplaceId=ATVPDKIKX0DER&musicTerritory=US&ref=dm_sh_gPJPR79AtgfLS0EFarS9Xwi57',
+    ));
+
+    $cmb->add_field(array(
+        'name'    => 'SoundCloud',
+        'id'      => 'link_soundcloud',
+        'type'    => 'text_url',
+        'default' => 'https://soundcloud.com/ellenemasri',
+    ));
+
+    $cmb->add_field(array(
+        'name'    => 'YouTube Video',
+        'id'      => 'link_youtube_video',
+        'type'    => 'text_url',
+        'default' => 'https://www.youtube.com/watch?v=WiB_UoexqVo&pp=0gcJCQoLAYcqIYzv',
+    ));
+
+    $cmb->add_field(array(
+        'name'    => 'TikTok',
+        'id'      => 'link_tiktok',
+        'type'    => 'text_url',
+        'default' => 'https://www.tiktok.com/@ellenemasri',
+    ));
+
+    $cmb->add_field(array(
+        'name'    => 'Instagram',
+        'id'      => 'link_instagram',
+        'type'    => 'text_url',
+        'default' => 'https://www.instagram.com/ellenemasri/',
+    ));
+
+    // ========== SECTION: MARQUEE ==========
+    $cmb->add_field(array(
+        'name' => '🎪 Marquee (Top Bar)',
+        'type' => 'title',
+        'id'   => 'section_marquee_title',
+    ));
+    $marquee_group = $cmb->add_field(array(
+        'id'      => 'marquee_items',
+        'type'    => 'group',
+        'options' => array(
+            'group_title'   => 'Item {#}',
+            'add_button'    => '+ Ajouter',
+            'remove_button' => 'Supprimer',
+            'sortable'      => true,
+        ),
+    ));
+
+    $cmb->add_group_field($marquee_group, array(
+        'name' => 'Label',
+        'id'   => 'label',
+        'type' => 'text',
+    ));
+
+    $cmb->add_group_field($marquee_group, array(
+        'name' => 'Lien',
+        'id'   => 'href',
+        'type' => 'text_url',
+    ));
+
+    $cmb->add_group_field($marquee_group, array(
+        'name' => 'Nouvel onglet',
+        'id'   => 'external',
+        'type' => 'checkbox',
+    ));
+
+    $cmb->add_group_field($marquee_group, array(
+        'name' => 'Masquer',
+        'id'   => 'is_hidden',
+        'type' => 'checkbox',
+    ));
+
+    $cmb->add_field(array(
+        'name' => 'Icône Play - Afficher',
+        'id'   => 'marquee_show_music_icon',
+        'type' => 'checkbox',
+        'default' => 'on',
+    ));
+
+    $cmb->add_field(array(
+        'name'    => 'Icône Play - Lien Spotify',
+        'id'      => 'marquee_play_link',
+        'type'    => 'text_url',
+        'default' => 'https://open.spotify.com/intl-fr/track/3rzrziofCOwRrI1r99IUbQ?si=a2cd3f4cbe364a94',
+        'desc'    => 'Lien utilisé par l\'icône Play de la marquee (desktop + mobile).',
+    ));
+}

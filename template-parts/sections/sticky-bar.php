@@ -1,0 +1,25 @@
+<?php
+/**
+ * Template part - Sticky Bar Mobile
+ * 
+ * @package Mayami
+ */
+
+$sticky_stream_label = cmb2_get_option('mayami_landing_options', 'sticky_stream_label') ?: '▶ Stream';
+$sticky_video_label = cmb2_get_option('mayami_landing_options', 'sticky_video_label') ?: '◉ Video';
+$sticky_tiktok_label = cmb2_get_option('mayami_landing_options', 'sticky_tiktok_label') ?: 'TikTok';
+$link_tiktok = cmb2_get_option('mayami_landing_options', 'link_tiktok') ?: 'https://www.tiktok.com/@ellenemasri';
+?>
+<div class="fixed inset-x-0 bottom-0 z-50 border-t-2 border-ink bg-cream/95 p-3 backdrop-blur md:hidden">
+    <div class="flex gap-2">
+        <a href="#stream" class="flex-1 rounded-full border-2 border-ink bg-[oklch(0.88_0.19_95)] px-4 py-3 text-center text-xs font-extrabold uppercase tracking-wider text-ink shadow-[3px_3px_0_var(--ink)]">
+            <?php echo esc_html($sticky_stream_label); ?>
+        </a>
+        <a href="#video" class="flex-1 rounded-full border-2 border-ink bg-aqua px-4 py-3 text-center text-xs font-extrabold uppercase tracking-wider text-ink shadow-[3px_3px_0_var(--ink)]">
+            <?php echo esc_html($sticky_video_label); ?>
+        </a>
+        <a href="<?php echo esc_url($link_tiktok); ?>" target="_blank" rel="noreferrer" class="flex-1 rounded-full border-2 border-ink bg-ink px-4 py-3 text-center text-xs font-extrabold uppercase tracking-wider text-cream shadow-[3px_3px_0_var(--magenta)]">
+            <?php echo esc_html($sticky_tiktok_label); ?>
+        </a>
+    </div>
+</div>
