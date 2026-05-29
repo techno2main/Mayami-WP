@@ -8,7 +8,7 @@
 $social_kicker = cmb2_get_option('mayami_landing_options', 'social_kicker') ?: '02 / Follow';
 $social_title_left = cmb2_get_option('mayami_landing_options', 'social_title_left') ?: 'Join the';
 $social_title_right = cmb2_get_option('mayami_landing_options', 'social_title_right') ?: 'journey';
-$social_description = cmb2_get_option('mayami_landing_options', 'social_description') ?: 'Snippets, behind-the-scenes drop into the daily Miami diary.';
+$social_description = cmb2_get_option('mayami_landing_options', 'social_description') ?: 'Snippets, behind-the-scenes drop into the Miami diary.';
 
 $link_tiktok = cmb2_get_option('mayami_landing_options', 'link_tiktok') ?: 'https://www.tiktok.com/@ellenemasri';
 $link_instagram = cmb2_get_option('mayami_landing_options', 'link_instagram') ?: 'https://www.instagram.com/ellenemasri/';

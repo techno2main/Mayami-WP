@@ -721,7 +721,7 @@ function mayami_register_options() {
         'name'    => 'Description',
         'id'      => 'social_description',
         'type'    => 'textarea_small',
-        'default' => 'Snippets, behind-the-scenes, dance challenges — drop into the daily Miami diary.',
+        'default' => 'Snippets, behind-the-scenes, dance challenges — drop into the Miami diary.',
     ));
 
     $cmb->add_field(array(
@@ -889,6 +889,34 @@ function mayami_register_options() {
         'id'      => 'cta_hashtag',
         'type'    => 'text',
         'default' => '#MayamiMyMiami',
+    ));
+
+    $cmb->add_field(array(
+        'name'    => 'Stream Button Link',
+        'id'      => 'cta_stream_link',
+        'type'    => 'text',
+        'default' => '#stream',
+    ));
+
+    $cmb->add_field(array(
+        'name'    => 'Video Button Link',
+        'id'      => 'cta_video_link',
+        'type'    => 'text',
+        'default' => '#video',
+    ));
+
+    $cmb->add_field(array(
+        'name'    => 'TikTok Button Link',
+        'id'      => 'cta_tiktok_link',
+        'type'    => 'text_url',
+        'default' => 'https://www.tiktok.com/@ellenemasri',
+    ));
+
+    $cmb->add_field(array(
+        'name'    => 'Instagram Button Link',
+        'id'      => 'cta_instagram_link',
+        'type'    => 'text_url',
+        'default' => 'https://www.instagram.com/ellenemasri/',
     ));
 
     $cmb->add_field(array(

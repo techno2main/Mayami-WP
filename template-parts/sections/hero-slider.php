@@ -252,10 +252,14 @@ function extract_youtube_id($url) {
     line-height: 1;
     box-shadow: 3px 3px 0 var(--ink);
     cursor: pointer;
-    opacity: 0.92;
+    opacity: 0.32;
     transition: transform .15s ease, opacity .15s ease;
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
 }
-.slider-arrow:hover {
+.slider-arrow:hover,
+.slider-arrow:focus-visible,
+.slider-arrow:active {
     transform: translateY(-50%) scale(1.06);
     opacity: 1;
 }
@@ -268,14 +272,24 @@ function extract_youtube_id($url) {
 
 @media (min-width: 1024px) {
     .hero-slider-root .slider-arrow {
-        opacity: 0;
-        pointer-events: none;
+        opacity: 0.16;
     }
 
     .hero-slider-root:hover .slider-arrow,
     .hero-slider-root:focus-within .slider-arrow {
-        opacity: 0.92;
-        pointer-events: auto;
+        opacity: 1;
+    }
+}
+
+@media (hover: none) and (pointer: coarse) {
+    .hero-slider-root .slider-arrow {
+        opacity: 0.55;
+    }
+
+    .hero-slider-root .slider-arrow:active,
+    .hero-slider-root .slider-arrow:focus,
+    .hero-slider-root .slider-arrow:focus-visible {
+        opacity: 1;
     }
 }
 </style>
