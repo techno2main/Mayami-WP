@@ -92,8 +92,14 @@ function mayami_enqueue_assets() {
         [], 
         '1.0.0'
     );
+
+    wp_add_inline_style(
+        'mayami-tailwind',
+        'img, video, iframe { -webkit-user-drag: none; -webkit-touch-callout: none; user-select: none; }'
+    );
     
     $stream_player_js_path = get_template_directory() . '/assets/stream-player.js';
+    $content_protection_js_path = get_template_directory() . '/assets/content-protection.js';
 
     // Stream platform player JS
     wp_enqueue_script(
@@ -101,6 +107,15 @@ function mayami_enqueue_assets() {
         get_template_directory_uri() . '/assets/stream-player.js',
         [],
         file_exists($stream_player_js_path) ? (string) filemtime($stream_player_js_path) : '1.0.0',
+        true
+    );
+
+    // Best-effort media protection script
+    wp_enqueue_script(
+        'mayami-content-protection',
+        get_template_directory_uri() . '/assets/content-protection.js',
+        [],
+        file_exists($content_protection_js_path) ? (string) filemtime($content_protection_js_path) : '1.0.0',
         true
     );
 }
