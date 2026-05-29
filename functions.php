@@ -261,3 +261,59 @@ function mayami_limit_admin_bar_for_client($wp_admin_bar) {
 }
 add_action('admin_bar_menu', 'mayami_limit_admin_bar_for_client', 999);
 
+// Statistics menu - GA4 shortcut for all admin users (including client)
+function mayami_add_statistics_menu() {
+    add_menu_page(
+        'Statistics',
+        'Statistics',
+        'manage_options',
+        'mayami_statistics',
+        'mayami_statistics_page',
+        'dashicons-chart-bar',
+        3
+    );
+}
+add_action('admin_menu', 'mayami_add_statistics_menu');
+
+function mayami_statistics_page() {
+    ?>
+    <div class="wrap">
+        <h1>📊 Statistics — ellenemasri.pro</h1>
+        <p>View your site analytics directly in Google Analytics 4.</p>
+        <a href="https://analytics.google.com/analytics/web/#/p539563734/reports/reportinghub"
+           target="_blank"
+           class="button button-primary" style="font-size:15px;padding:10px 20px;height:auto;margin-top:10px;">
+            Open Google Analytics 4 →
+        </a>
+        <p style="margin-top:20px;color:#666;font-size:13px;">
+            Opens in a new tab. Sign in with the Google account linked to this site.
+        </p>
+    </div>
+    <?php
+}
+
+// Google Tag Manager - snippet <head>
+function mayami_gtm_head() {
+    ?>
+    <!-- Google Tag Manager -->
+    <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+    new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+    j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+    'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+    })(window,document,'script','dataLayer','GTM-ND9D6VCZ');</script>
+    <!-- End Google Tag Manager -->
+    <?php
+}
+add_action('wp_head', 'mayami_gtm_head', 1);
+
+// Google Tag Manager - snippet <body>
+function mayami_gtm_body() {
+    ?>
+    <!-- Google Tag Manager (noscript) -->
+    <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-ND9D6VCZ"
+    height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+    <!-- End Google Tag Manager (noscript) -->
+    <?php
+}
+add_action('wp_body_open', 'mayami_gtm_body', 1);
+
