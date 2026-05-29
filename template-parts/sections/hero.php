@@ -27,6 +27,24 @@ if (file_exists($hero_logo_path)) {
         display: none;
     }
 
+    #hero .hero-logo-wrap {
+        text-align: left;
+    }
+
+    #hero .hero-main-logo {
+        display: block;
+        margin-left: -16px;
+        margin-right: auto;
+        max-width: min(100%, 560px);
+        width: 100%;
+    }
+
+    @media (min-width: 768px) {
+        #hero .hero-main-logo {
+            margin-left: -28px;
+        }
+    }
+
     @media (min-width: 768px) {
         #hero .hero-top-cta {
             display: inline-flex;
@@ -74,13 +92,13 @@ if (file_exists($hero_logo_path)) {
                 <?php echo esc_html($hero_subtitle); ?>
             </p>
 
-            <div class="mt-4">
+            <div class="hero-logo-wrap mt-4">
                 <img 
                     src="<?php echo esc_url($hero_logo_url); ?>" 
                     alt="Mayami" 
                     width="1200" 
                     height="620" 
-                    class="inline-block h-auto w-full max-w-120 select-none sm:max-w-140" 
+                    class="hero-main-logo h-auto w-full max-w-120 select-none sm:max-w-140" 
                     draggable="false"
                 />
                 <h1 class="sr-only">Mayami, My Miami</h1>
