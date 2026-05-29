@@ -23,3 +23,7 @@ coverage/
 *.zip
 *.tmp
 *.bak
+
+# Local-only files
+php.ini
+assets/mayami-logo_old.png
