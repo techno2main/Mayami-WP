@@ -13,6 +13,7 @@ $link_youtube_music = cmb2_get_option('mayami_landing_options', 'link_youtube_mu
 $link_deezer = cmb2_get_option('mayami_landing_options', 'link_deezer') ?: 'https://link.deezer.com/s/33p3MydevJFz4yqu2aEam';
 $link_amazon_music = cmb2_get_option('mayami_landing_options', 'link_amazon_music') ?: 'https://music.amazon.com/tracks/B0H2FR3WHQ?marketplaceId=ATVPDKIKX0DER&musicTerritory=US&ref=dm_sh_gPJPR79AtgfLS0EFarS9Xwi57';
 $link_soundcloud = cmb2_get_option('mayami_landing_options', 'link_soundcloud') ?: 'https://soundcloud.com/ellenemasri';
+$marquee_logo_png = cmb2_get_option('mayami_landing_options', 'marquee_logo_png') ?: (get_template_directory_uri() . '/assets/mayami-logo.png');
 
 if (is_array($marquee_items)) {
     $marquee_items = array_values(array_filter($marquee_items, static function ($item) {
@@ -128,6 +129,7 @@ $mobile_stream_link = $desktop_center_item;
         align-items: center;
         gap: 14px;
         width: 100%;
+        padding-bottom: 10px;
     }
 
     #hero-marquee .marquee-col-left {
@@ -174,6 +176,55 @@ $mobile_stream_link = $desktop_center_item;
         transform: translateY(-1px);
     }
 
+    #hero-marquee .marquee-logo-row {
+        display: grid;
+        grid-template-columns: auto 1fr;
+        align-items: center;
+        gap: 16px;
+        width: 100%;
+        max-width: 80rem;
+        margin: 0 auto;
+        padding: 0 20px 16px 0;
+    }
+
+    #hero-marquee .marquee-logo-mark,
+    #hero-marquee .marquee-logo-year {
+        flex: 0 0 auto;
+        color: oklch(0.92 0.18 95);
+        line-height: 1;
+        opacity: 0.9;
+        white-space: nowrap;
+    }
+
+    #hero-marquee .marquee-logo-image {
+        display: block;
+        width: auto;
+        height: auto;
+        max-width: 220px;
+        justify-self: start;
+    }
+
+    #hero-marquee .marquee-logo-copy {
+        display: inline-flex;
+        align-items: center;
+        justify-self: end;
+        gap: 10px;
+        text-align: right;
+    }
+
+    #hero-marquee .marquee-logo-mark {
+        font-family: "Brush Script MT", "Segoe Script", "Snell Roundhand", cursive;
+        font-size: 20px;
+        letter-spacing: 0.02em;
+    }
+
+    #hero-marquee .marquee-logo-year {
+        font-family: var(--font-poster);
+        font-size: 14px;
+        letter-spacing: 0.22em;
+        text-align: right;
+    }
+
     #hero-marquee-mobile {
         display: none;
     }
@@ -189,6 +240,26 @@ $mobile_stream_link = $desktop_center_item;
 
         #hero-marquee .marquee-platform-link {
             font-size: 26px;
+        }
+
+        #hero-marquee .marquee-logo-row {
+            padding: 0 32px 18px 0;
+        }
+
+        #hero-marquee .marquee-logo-copy {
+            gap: 12px;
+        }
+
+        #hero-marquee .marquee-logo-mark {
+            font-size: 20px;
+        }
+
+        #hero-marquee .marquee-logo-year {
+            font-size: 14px;
+        }
+
+        #hero-marquee .marquee-logo-image {
+            max-width: 280px;
         }
     }
 
@@ -206,6 +277,28 @@ $mobile_stream_link = $desktop_center_item;
             width: 100%;
         }
 
+        #hero-marquee .marquee-logo-row {
+            padding: 0 12px 12px 0;
+        }
+
+        #hero-marquee .marquee-logo-copy {
+            gap: 8px;
+        }
+
+        #hero-marquee .marquee-logo-mark {
+            font-size: 13px;
+            letter-spacing: 0.18em;
+        }
+
+        #hero-marquee .marquee-logo-year {
+            font-size: 11px;
+            letter-spacing: 0.18em;
+        }
+
+        #hero-marquee .marquee-logo-image {
+            max-width: 160px;
+        }
+
         #hero-marquee .marquee-mobile-row {
             display: flex;
             align-items: center;
@@ -217,9 +310,7 @@ $mobile_stream_link = $desktop_center_item;
         }
 
         #hero-marquee .marquee-mobile-row-bottom {
-            justify-content: space-between;
-            gap: 12px;
-            flex-wrap: nowrap;
+            display: none;
         }
 
         #hero-marquee .marquee-mobile-title {
@@ -235,33 +326,37 @@ $mobile_stream_link = $desktop_center_item;
             color: var(--aqua);
         }
 
-        #hero-marquee .marquee-mobile-stream-link {
-            color: var(--cream);
-            font-size: 13px;
-            line-height: 1;
-            letter-spacing: 0.06em;
-            transition: color .15s ease;
-            white-space: nowrap;
-        }
-
-        #hero-marquee .marquee-mobile-stream-link:hover {
-            color: var(--aqua);
-        }
-
-        #hero-marquee .marquee-mobile-row-bottom .marquee-platform-icons {
+        #hero-marquee .marquee-mobile-row-top .marquee-platform-icons {
+            margin-left: auto;
             gap: 8px;
             flex-shrink: 0;
         }
 
-        #hero-marquee .marquee-mobile-row-bottom .marquee-platform-link {
-            font-size: 14px;
+        #hero-marquee .marquee-mobile-row-top .marquee-platform-link {
+            font-size: 18px;
         }
     }
 </style>
 <div id="hero-marquee" class="relative z-20 overflow-hidden py-3">
+    <div class="marquee-logo-row">
+        <img src="<?php echo esc_url($marquee_logo_png); ?>" alt="Mayami" class="marquee-logo-image" loading="lazy" decoding="async" />
+        <div class="marquee-logo-copy">
+            <span class="marquee-logo-mark">Ellene Masri</span>
+            <span class="marquee-logo-year">© 2026</span>
+        </div>
+    </div>
     <div id="hero-marquee-mobile">
         <div class="marquee-mobile-row marquee-mobile-row-top">
             <a href="#page-top" class="marquee-mobile-title font-poster uppercase"><?php echo esc_html($mobile_title); ?></a>
+            <?php if (!empty($marquee_platform_links)): ?>
+                <span class="marquee-platform-icons">
+                    <?php foreach ($marquee_platform_links as $platform): ?>
+                        <a href="<?php echo esc_url($platform['href']); ?>" data-open-platform="<?php echo esc_attr($platform['platform']); ?>" aria-label="<?php echo esc_attr($platform['label']); ?>" title="<?php echo esc_attr($platform['label']); ?>" class="marquee-platform-link">
+                            <i class="fa-brands <?php echo esc_attr($platform['icon']); ?>" aria-hidden="true"></i>
+                        </a>
+                    <?php endforeach; ?>
+                </span>
+            <?php endif; ?>
         </div>
 
         <div class="marquee-mobile-row marquee-mobile-row-bottom">
@@ -273,16 +368,6 @@ $mobile_stream_link = $desktop_center_item;
                 $mobile_stream_rel = $mobile_stream_external ? 'noreferrer' : '';
             ?>
             <a href="<?php echo esc_url($mobile_stream_href); ?>" <?php if ($mobile_stream_external): ?>target="<?php echo esc_attr($mobile_stream_target); ?>" rel="<?php echo esc_attr($mobile_stream_rel); ?>"<?php endif; ?> class="marquee-mobile-stream-link font-poster uppercase"><?php echo esc_html($mobile_stream_label); ?></a>
-
-            <?php if (!empty($marquee_platform_links)): ?>
-                <span class="marquee-platform-icons">
-                    <?php foreach ($marquee_platform_links as $platform): ?>
-                        <a href="<?php echo esc_url($platform['href']); ?>" data-open-platform="<?php echo esc_attr($platform['platform']); ?>" aria-label="<?php echo esc_attr($platform['label']); ?>" title="<?php echo esc_attr($platform['label']); ?>" class="marquee-platform-link">
-                            <i class="fa-brands <?php echo esc_attr($platform['icon']); ?>" aria-hidden="true"></i>
-                        </a>
-                    <?php endforeach; ?>
-                </span>
-            <?php endif; ?>
         </div>
     </div>
 

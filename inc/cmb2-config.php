@@ -179,6 +179,10 @@ function mayami_initialize_default_content() {
     if (!isset($options['marquee_show_music_icon'])) {
         $options['marquee_show_music_icon'] = 'on';
     }
+
+    if (empty($options['marquee_logo_png'])) {
+        $options['marquee_logo_png'] = $theme_url . '/assets/mayami-logo.png';
+    }
     
     // Set default images
     if (empty($options['social_texture_image'])) {
@@ -1090,6 +1094,12 @@ function mayami_register_options() {
         'id'   => 'marquee_show_music_icon',
         'type' => 'checkbox',
         'default' => 'on',
+    ));
+
+    $cmb->add_field(array(
+        'name' => 'Marquee Logo PNG',
+        'id'   => 'marquee_logo_png',
+        'type' => 'file',
     ));
 
     $cmb->add_field(array(

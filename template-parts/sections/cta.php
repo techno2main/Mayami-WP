@@ -45,8 +45,8 @@ $texture_image = get_template_directory_uri() . '/assets/mayami-texture.jpg';
             <?php echo esc_html($cta_description); ?> <span class="font-bold text-ink"><?php echo esc_html($cta_hashtag); ?></span>
         </p>
         <div class="mt-10 flex flex-wrap gap-3">
-            <a href="<?php echo esc_url($cta_stream_link); ?>" class="btn-pop btn-magenta">Stream the Single</a>
-            <a href="<?php echo esc_url($cta_video_link); ?>" class="btn-pop btn-aqua">Watch the Video</a>
+            <a href="<?php echo esc_url($cta_stream_link); ?>" class="btn-pop btn-magenta">Stream</a>
+            <a href="<?php echo esc_url($cta_video_link); ?>" class="btn-pop btn-aqua">Watch</a>
             <a href="<?php echo esc_url($cta_tiktok_link); ?>" target="_blank" rel="noreferrer" class="btn-pop" style="background: linear-gradient(135deg, #111318 0%, #1f2230 65%, #2b1430 100%); color: var(--cream) !important;">TikTok</a>
             <a href="<?php echo esc_url($cta_instagram_link); ?>" target="_blank" rel="noreferrer" class="btn-pop" style="background: linear-gradient(135deg, #f58529 0%, #dd2a7b 48%, #8134af 74%, #515bd4 100%); color: var(--cream) !important;">Instagram</a>
         </div>
