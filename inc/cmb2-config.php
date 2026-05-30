@@ -16,6 +16,8 @@ add_action('admin_init', 'mayami_sync_marquee_items_once', 25);
 add_action('admin_init', 'mayami_sync_social_links_once', 26);
 add_action('admin_init', 'mayami_sync_sticky_links_once', 27);
 add_action('admin_init', 'mayami_sync_stream_values_to_front_once', 28);
+add_action('admin_init', 'mayami_sync_stream_platforms_from_canonical_links_once', 29);
+add_action('admin_init', 'mayami_force_working_youtube_stream_url_once', 30);
 add_action('admin_head', 'mayami_sticky_save_button');
 
 /**
@@ -407,6 +409,119 @@ function mayami_sync_stream_values_to_front_once() {
     if ($existing_platforms !== $aligned_platforms) {
         $options['stream_platforms'] = $aligned_platforms;
         $changed = true;
+    }
+
+    if ($changed) {
+        update_option($option_key, $options);
+    }
+
+    update_option($sync_flag, true);
+}
+
+/**
+ * One-time hard alignment: rebuild stream_platforms from canonical link_* values.
+ */
+function mayami_sync_stream_platforms_from_canonical_links_once() {
+    $sync_flag = 'mayami_stream_platforms_from_links_synced_20260530';
+    if (get_option($sync_flag)) {
+        return;
+    }
+
+    $option_key = 'mayami_landing_options';
+    $options = get_option($option_key, array());
+    if (!is_array($options)) {
+        update_option($sync_flag, true);
+        return;
+    }
+
+    $defs = array(
+        array('label' => 'Spotify', 'link_key' => 'link_spotify'),
+        array('label' => 'Apple Music', 'link_key' => 'link_apple_music'),
+        array('label' => 'YouTube Music', 'link_key' => 'link_youtube_music'),
+        array('label' => 'Deezer', 'link_key' => 'link_deezer'),
+        array('label' => 'Amazon Music', 'link_key' => 'link_amazon_music'),
+        array('label' => 'SoundCloud', 'link_key' => 'link_soundcloud'),
+    );
+
+    $old_platforms = isset($options['stream_platforms']) && is_array($options['stream_platforms'])
+        ? $options['stream_platforms']
+        : array();
+
+    $old_by_label = array();
+    foreach ($old_platforms as $item) {
+        if (!is_array($item)) {
+            continue;
+        }
+        $label = isset($item['label']) ? trim((string) $item['label']) : '';
+        if ($label !== '') {
+            $old_by_label[$label] = $item;
+        }
+    }
+
+    $new_platforms = array();
+    foreach ($defs as $def) {
+        $label = $def['label'];
+        $href = isset($options[$def['link_key']]) ? trim((string) $options[$def['link_key']]) : '';
+
+        if ($href === '') {
+            continue;
+        }
+
+        $old = isset($old_by_label[$label]) ? $old_by_label[$label] : array();
+        $new_platforms[] = array(
+            'is_active' => isset($old['is_active']) && $old['is_active'] !== '' ? $old['is_active'] : 'on',
+            'label' => $label,
+            'href' => $href,
+        );
+    }
+
+    $options['stream_platforms'] = $new_platforms;
+    update_option($option_key, $options);
+    update_option($sync_flag, true);
+}
+
+/**
+ * One-time force of a known working YouTube stream URL in admin and stream platforms.
+ */
+function mayami_force_working_youtube_stream_url_once() {
+    $sync_flag = 'mayami_force_youtube_stream_url_20260530';
+    if (get_option($sync_flag)) {
+        return;
+    }
+
+    $option_key = 'mayami_landing_options';
+    $options = get_option($option_key, array());
+    if (!is_array($options)) {
+        update_option($sync_flag, true);
+        return;
+    }
+
+    $target_youtube_url = 'https://youtu.be/EH_QcQ92hSk?si=gpybhKJbZrDN1Ew5';
+    $changed = false;
+
+    if (!isset($options['link_youtube_music']) || trim((string) $options['link_youtube_music']) !== $target_youtube_url) {
+        $options['link_youtube_music'] = $target_youtube_url;
+        $changed = true;
+    }
+
+    if (isset($options['stream_platforms']) && is_array($options['stream_platforms'])) {
+        foreach ($options['stream_platforms'] as $idx => $platform) {
+            if (!is_array($platform)) {
+                continue;
+            }
+
+            $label = isset($platform['label']) ? trim((string) $platform['label']) : '';
+            if ($label === 'YouTube Music') {
+                if (!isset($platform['href']) || trim((string) $platform['href']) !== $target_youtube_url) {
+                    $options['stream_platforms'][$idx]['href'] = $target_youtube_url;
+                    $changed = true;
+                }
+                if (empty($platform['is_active'])) {
+                    $options['stream_platforms'][$idx]['is_active'] = 'on';
+                    $changed = true;
+                }
+            }
+        }
     }
 
     if ($changed) {

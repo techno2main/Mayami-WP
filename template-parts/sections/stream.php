@@ -77,6 +77,57 @@ function mayami_get_oembed_iframe_src($url) {
     return $src;
 }
 
+function mayami_extract_youtube_channel_id_from_html($html) {
+    if (!is_string($html) || $html === '') {
+        return '';
+    }
+
+    if (preg_match('/"channelId"\s*:\s*"(UC[0-9A-Za-z_-]+)"/', $html, $matches)) {
+        return $matches[1];
+    }
+
+    return '';
+}
+
+function mayami_get_youtube_channel_id_from_url($url) {
+    $url = trim((string) $url);
+    if ($url === '') {
+        return '';
+    }
+
+    $cache_key = 'mayami_stream_yt_channel_' . md5($url);
+    $cached = get_transient($cache_key);
+    if (is_string($cached) && $cached !== '') {
+        return $cached;
+    }
+
+    $parts = wp_parse_url($url);
+    $path = is_array($parts) && !empty($parts['path']) ? trim((string) $parts['path'], '/') : '';
+
+    if (preg_match('#^channel/(UC[0-9A-Za-z_-]+)$#i', $path, $matches)) {
+        set_transient($cache_key, $matches[1], DAY_IN_SECONDS);
+        return $matches[1];
+    }
+
+    $response = wp_safe_remote_get($url, array(
+        'timeout' => 6,
+        'redirection' => 5,
+        'sslverify' => false,
+        'user-agent' => 'WordPress/Mayami YouTube Resolver',
+    ));
+    if (is_wp_error($response)) {
+        return '';
+    }
+
+    $body = wp_remote_retrieve_body($response);
+    $channel_id = mayami_extract_youtube_channel_id_from_html((string) $body);
+    if ($channel_id !== '') {
+        set_transient($cache_key, $channel_id, DAY_IN_SECONDS);
+    }
+
+    return $channel_id;
+}
+
 function mayami_resolve_stream_final_url($url) {
     $url = trim((string) $url);
     if ($url === '') {
@@ -209,13 +260,23 @@ function mayami_build_stream_embed_src($platform_key, $href) {
             return '';
 
         case 'youtube-music':
+            if (preg_match('#youtube\.com/embed(?:/[^?&#]*)?(?:\?.*)?$#i', $href)) {
+                return $href;
+            }
             if (preg_match('#youtube\.com/embed(?:/[^?&#]*)?(?:\?.*)?$#i', $resolved_href)) {
                 return $resolved_href;
             }
 
-            $video_id = mayami_extract_youtube_id($resolved_href);
+            $video_id = mayami_extract_youtube_id($href);
+            if ($video_id === '') {
+                $video_id = mayami_extract_youtube_id($resolved_href);
+            }
             if ($video_id !== '') {
                 return 'https://www.youtube-nocookie.com/embed/' . $video_id . '?rel=0';
+            }
+
+            if (preg_match('#youtube\.com/channel/(UC[0-9A-Za-z_-]+)#i', $resolved_href, $matches)) {
+                return 'https://www.youtube.com/embed/videoseries?list=' . preg_replace('/^UC/', 'UU', $matches[1]);
             }
 
             if (preg_match('#youtube\.com/user/([^/?#]+)#i', $resolved_href, $matches)) {
@@ -223,7 +284,17 @@ function mayami_build_stream_embed_src($platform_key, $href) {
             }
 
             if (preg_match('#youtube\.com/@([^/?#]+)#i', $resolved_href, $matches)) {
-                return 'https://www.youtube.com/embed?listType=user_uploads&list=' . rawurlencode($matches[1]);
+                $channel_id = mayami_get_youtube_channel_id_from_url($resolved_href);
+                if ($channel_id !== '') {
+                    return 'https://www.youtube.com/embed/videoseries?list=' . preg_replace('/^UC/', 'UU', $channel_id);
+                }
+            }
+
+            if (preg_match('#youtube\.com/c/([^/?#]+)#i', $resolved_href)) {
+                $channel_id = mayami_get_youtube_channel_id_from_url($resolved_href);
+                if ($channel_id !== '') {
+                    return 'https://www.youtube.com/embed/videoseries?list=' . preg_replace('/^UC/', 'UU', $channel_id);
+                }
             }
 
             $youtube_oembed_src = mayami_get_oembed_iframe_src($resolved_href);
@@ -353,21 +424,41 @@ $stream_platform_meta = array(
                 if ($platform_key === '') {
                     $platform_key = 'platform-' . $platform_index;
                 }
-                $platform_key = mayami_detect_stream_platform_key($platform_key, $platform_href);
+                $platform_type = mayami_detect_stream_platform_key($platform_key, $platform_href);
 
-                $platform_meta = isset($stream_platform_meta[$platform_key]) ? $stream_platform_meta[$platform_key] : array(
+                $platform_meta = isset($stream_platform_meta[$platform_type]) ? $stream_platform_meta[$platform_type] : array(
                     'icon' => 'fa-link',
                     'icon_style' => 'solid',
                     'color' => '#410b49',
                 );
                 $icon_style_class = (isset($platform_meta['icon_style']) && $platform_meta['icon_style'] === 'solid') ? 'fa-solid' : 'fa-brands';
-                $embed_src = mayami_build_stream_embed_src($platform_key, $platform_href);
+                $embed_src = mayami_build_stream_embed_src($platform_type, $platform_href);
+
+                if ($embed_src === '') {
+                    $canonical_option_map = array(
+                        'spotify' => 'link_spotify',
+                        'apple-music' => 'link_apple_music',
+                        'youtube-music' => 'link_youtube_music',
+                        'deezer' => 'link_deezer',
+                        'amazon-music' => 'link_amazon_music',
+                        'soundcloud' => 'link_soundcloud',
+                    );
+
+                    if (isset($canonical_option_map[$platform_type])) {
+                        $canonical_href = trim((string) cmb2_get_option('mayami_landing_options', $canonical_option_map[$platform_type]));
+                        if ($canonical_href !== '') {
+                            $embed_src = mayami_build_stream_embed_src($platform_type, $canonical_href);
+                        }
+                    }
+                }
+
                 $has_player = $embed_src !== '';
-                $player_height = mayami_stream_player_height($platform_key);
+                $player_height = mayami_stream_player_height($platform_type);
 
                 $active_stream_platforms_count++;
                 $active_stream_platforms[] = array(
                     'key' => $platform_key,
+                    'type' => $platform_type,
                     'label' => $platform_label,
                     'href' => $platform_href,
                     'embed_src' => $embed_src,
