@@ -101,18 +101,21 @@ function mayami_initialize_default_content() {
     // Default slider content
     $default_slider = array(
         array(
+            'slide_admin_title' => 'Slide 1',
             'slide_type' => 'image',
             'slide_image' => $theme_url . '/assets/mayami-artist.jpg',
             'alt_text' => 'Ellene Leya Masri — portrait 1',
             'slide_duration' => '5',
         ),
         array(
+            'slide_admin_title' => 'Slide 2',
             'slide_type' => 'image',
             'slide_image' => $theme_url . '/assets/mayami-cover.jpg',
             'alt_text' => 'Ellene Leya Masri — portrait 2',
             'slide_duration' => '5',
         ),
         array(
+            'slide_admin_title' => 'Slide 3',
             'slide_type' => 'video',
             'video_url' => 'https://www.youtube.com/watch?v=WiB_UoexqVo&pp=0gcJCQoLAYcqIYzv',
             'alt_text' => 'Mayami official video',
@@ -642,6 +645,12 @@ function mayami_register_options() {
     ));
 
     $cmb->add_group_field($slider_group, array(
+        'name' => 'Nom du slide',
+        'id'   => 'slide_admin_title',
+        'type' => 'text',
+    ));
+
+    $cmb->add_group_field($slider_group, array(
         'name'    => 'Type',
         'id'      => 'slide_type',
         'type'    => 'select',
@@ -721,10 +730,10 @@ function mayami_register_options() {
     ));
 
     $cmb->add_field(array(
-        'name'    => 'Title Highlight',
+        'name'    => 'Title Logo',
         'id'      => 'stream_title_highlight',
-        'type'    => 'text',
-        'default' => 'MAYAMI',
+        'type'    => 'file',
+        'desc'    => 'Logo image affiche a droite de "Stream" dans la section front.',
     ));
 
     $cmb->add_field(array(
@@ -760,7 +769,7 @@ function mayami_register_options() {
     ));
 
     $cmb->add_group_field($stream_platforms, array(
-        'name' => 'Nom de la plateforme',
+        'name' => 'Nom',
         'id'   => 'label',
         'type' => 'text',
     ));
@@ -1029,101 +1038,24 @@ function mayami_register_options() {
     ));
 
     $cmb->add_field(array(
-        'name'    => 'Sticky Bar - Stream',
+        'name'    => 'Sticky Bar (Mobile) - Stream',
         'id'      => 'sticky_stream_label',
         'type'    => 'text',
         'default' => '▶ Stream',
     ));
 
     $cmb->add_field(array(
-        'name'    => 'Sticky Bar - Video',
+        'name'    => 'Sticky Bar (Mobile) - Video',
         'id'      => 'sticky_video_label',
         'type'    => 'text',
         'default' => '◉ Video',
     ));
 
     $cmb->add_field(array(
-        'name'    => 'Sticky Bar - TikTok',
+        'name'    => 'Sticky Bar (Mobile) - TikTok',
         'id'      => 'sticky_tiktok_label',
         'type'    => 'text',
         'default' => 'TikTok',
-    ));
-
-    // ========== SECTION: PLATFORM LINKS ==========
-    $cmb->add_field(array(
-        'name' => 'Links',
-        'type' => 'title',
-        'id'   => 'section_links_title',
-    ));
-
-    $cmb->add_field(array(
-        'name'    => 'FFM.to',
-        'id'      => 'link_ffm',
-        'type'    => 'text_url',
-        'default' => 'https://ffm.to/mayami',
-    ));
-
-    $cmb->add_field(array(
-        'name'    => 'Spotify',
-        'id'      => 'link_spotify',
-        'type'    => 'text_url',
-        'default' => 'https://open.spotify.com/intl-fr/track/3rzrziofCOwRrI1r99IUbQ?si=a2cd3f4cbe364a94',
-    ));
-
-    $cmb->add_field(array(
-        'name'    => 'Apple Music',
-        'id'      => 'link_apple_music',
-        'type'    => 'text_url',
-        'default' => 'https://music.apple.com/fr/song/mayami-my-miami/6771742499',
-    ));
-
-    $cmb->add_field(array(
-        'name'    => 'YouTube Music',
-        'id'      => 'link_youtube_music',
-        'type'    => 'text_url',
-        'default' => 'https://youtu.be/EH_QcQ92hSk?si=gpybhKJbZrDN1Ew5',
-    ));
-
-    $cmb->add_field(array(
-        'name'    => 'Deezer',
-        'id'      => 'link_deezer',
-        'type'    => 'text_url',
-        'default' => 'https://link.deezer.com/s/33p3MydevJFz4yqu2aEam',
-    ));
-
-    $cmb->add_field(array(
-        'name'    => 'Amazon Music',
-        'id'      => 'link_amazon_music',
-        'type'    => 'text_url',
-        'default' => 'https://music.amazon.com/tracks/B0H2FR3WHQ?marketplaceId=ATVPDKIKX0DER&musicTerritory=US&ref=dm_sh_gPJPR79AtgfLS0EFarS9Xwi57',
-    ));
-
-    $cmb->add_field(array(
-        'name'    => 'SoundCloud',
-        'id'      => 'link_soundcloud',
-        'type'    => 'text_url',
-        'default' => 'https://soundcloud.com/ellenemasri',
-    ));
-
-    $cmb->add_field(array(
-        'name'    => 'YouTube Video',
-        'id'      => 'link_youtube_video',
-        'type'    => 'text_url',
-        'default' => 'http://www.youtube.com/@ELLENEMASRI',
-    ));
-
-    $cmb->add_field(array(
-        'name'    => 'TikTok',
-        'id'      => 'link_tiktok',
-        'type'    => 'text_url',
-        'default' => 'https://www.tiktok.com/@ellenemasri',
-    ));
-
-    $cmb->add_field(array(
-        'name'    => 'Instagram',
-        'id'      => 'link_instagram',
-        'type'    => 'text_url',
-        'default' => 'https://www.instagram.com/ellenemasri/',
     ));
 
     // ========== SECTION: MARQUEE ==========

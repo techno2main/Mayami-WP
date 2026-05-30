@@ -210,10 +210,9 @@ function mayami_register_options_page() {
     ]);
     
     $cmb_options->add_field([
-        'name'    => 'Title Highlight',
+        'name'    => 'Title Logo',
         'id'      => 'stream_title_highlight',
-        'type'    => 'text',
-        'default' => 'MAYAMI',
+        'type'    => 'file',
     ]);
     
     $cmb_options->add_field([
@@ -467,21 +466,21 @@ function mayami_register_options_page() {
     ]);
     
     $cmb_options->add_field([
-        'name'    => 'Sticky Bar - Stream Label',
+        'name'    => 'Sticky Bar (Mobile) - Stream Label',
         'id'      => 'sticky_stream_label',
         'type'    => 'text',
         'default' => 'Stream',
     ]);
     
     $cmb_options->add_field([
-        'name'    => 'Sticky Bar - Video Label',
+        'name'    => 'Sticky Bar (Mobile) - Video Label',
         'id'      => 'sticky_video_label',
         'type'    => 'text',
         'default' => 'Video',
     ]);
     
     $cmb_options->add_field([
-        'name'    => 'Sticky Bar - TikTok Label',
+        'name'    => 'Sticky Bar (Mobile) - TikTok Label',
         'id'      => 'sticky_tiktok_label',
         'type'    => 'text',
         'default' => 'TikTok',
@@ -706,10 +705,9 @@ function mayami_register_meta_boxes($meta_boxes) {
                 'std'  => 'Listen to',
             ],
             [
-                'name' => 'Title Highlight',
+                'name' => 'Title Logo',
                 'id'   => 'stream_title_highlight',
-                'type' => 'text',
-                'std'  => 'MAYAMI',
+                'type' => 'image_advanced',
             ],
             [
                 'name' => 'Availability Text',
@@ -937,19 +935,19 @@ function mayami_register_meta_boxes($meta_boxes) {
                 'std'  => 'All rights reserved',
             ],
             [
-                'name' => 'Sticky Bar - Stream Label',
+                'name' => 'Sticky Bar (Mobile) - Stream Label',
                 'id'   => 'sticky_stream_label',
                 'type' => 'text',
                 'std'  => 'Stream',
             ],
             [
-                'name' => 'Sticky Bar - Video Label',
+                'name' => 'Sticky Bar (Mobile) - Video Label',
                 'id'   => 'sticky_video_label',
                 'type' => 'text',
                 'std'  => 'Video',
             ],
             [
-                'name' => 'Sticky Bar - TikTok Label',
+                'name' => 'Sticky Bar (Mobile) - TikTok Label',
                 'id'   => 'sticky_tiktok_label',
                 'type' => 'text',
                 'std'  => 'TikTok',

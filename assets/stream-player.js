@@ -53,6 +53,11 @@ document.addEventListener('DOMContentLoaded', function() {
 
   platformLinks.forEach(link => {
     link.addEventListener('click', function(e) {
+      const hasPlayer = this.dataset.hasPlayer === '1';
+      if (!hasPlayer) {
+        return;
+      }
+
       e.preventDefault();
 
       const platformName = this.dataset.platform;
@@ -75,11 +80,20 @@ document.addEventListener('DOMContentLoaded', function() {
       // Fallback: if IDs are missing, try to trigger the Listen card behavior.
       const matchingCard = document.querySelector(`.platform-card[data-platform="${platformName}"]`);
       if (matchingCard) {
-        matchingCard.dispatchEvent(new MouseEvent('click', {
-          bubbles: true,
-          cancelable: true,
-          view: window,
-        }));
+        const hasPlayer = matchingCard.dataset.hasPlayer === '1';
+        if (hasPlayer) {
+          matchingCard.dispatchEvent(new MouseEvent('click', {
+            bubbles: true,
+            cancelable: true,
+            view: window,
+          }));
+          return;
+        }
+
+        const href = matchingCard.getAttribute('href');
+        if (href) {
+          window.open(href, '_blank', 'noopener,noreferrer');
+        }
       }
     }, 220);
   };

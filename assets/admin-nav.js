@@ -13,8 +13,7 @@
     'section_video_title',
     'section_release_title',
     'section_cta_title',
-    'section_footer_title',
-    'section_links_title'
+    'section_footer_title'
   ];
 
   const MARQUEE_ITEM_TITLES = [
@@ -23,7 +22,11 @@
     'Nom Artiste'
   ];
 
+  const ACTIVE_SECTION_STORAGE_KEY = 'mayami_active_section_after_save';
+
   let isOverviewMode = true;
+  let pendingDeleteControl = null;
+  let deleteModalElements = null;
 
   // Attendre que le DOM soit chargé
   if (document.readyState === 'loading') {
@@ -42,14 +45,725 @@
     setTimeout(removeNativePageHeading, 1200);
     createStickyNav();
     reorderSectionsInDom();
+    bindSaveSectionPersistence();
+    bindDeleteConfirmationGuard();
     setupAccordion();
     collapseMarqueeItemsByDefault();
+    collapseSliderItemsByDefault();
+    collapseStreamPlatformItemsByDefault();
+    collapseReleaseRowsByDefault();
+    syncSliderTypeVisibility();
+    syncEditableSliderTitles(false);
+    syncStreamPlatformTitles();
+    syncReleaseRowTitles();
+    bindSliderNameEvents();
+    bindStreamPlatformNameEvents();
+    bindReleaseRowNameEvents();
+    observeSliderGroups();
+    renameAllMediaUploadButtons();
+    observeDynamicMediaButtons();
     renameMarqueeItemTitles();
     refreshTopBarVisualFieldUi();
     layoutTopBarVisualInlineToggle();
+    bindRepeatableGroupAccordionEvents();
     bindTopBarVisualEvents();
+    bindSliderTypeEvents();
     styleBottomSaveButtons();
+    restoreActiveSectionAfterSave();
     addSmoothScroll();
+  }
+
+  function getCurrentOpenSectionId() {
+    for (let i = 0; i < SECTION_IDS.length; i += 1) {
+      const sectionId = SECTION_IDS[i];
+      const sectionTitle = getSectionTitleElement(sectionId);
+      if (sectionTitle && sectionTitle.classList.contains('mayami-section-open')) {
+        return sectionId;
+      }
+    }
+    return '';
+  }
+
+  function bindSaveSectionPersistence() {
+    const forms = document.querySelectorAll('.cmb2-wrap form, .cmb-form');
+    if (!forms.length) {
+      return;
+    }
+
+    forms.forEach(function(form) {
+      if (!form || form.dataset.mayamiSaveSectionBound === '1') {
+        return;
+      }
+
+      form.dataset.mayamiSaveSectionBound = '1';
+      form.addEventListener('submit', function() {
+        try {
+          const sectionId = getCurrentOpenSectionId();
+          if (!sectionId) {
+            sessionStorage.removeItem(ACTIVE_SECTION_STORAGE_KEY);
+            return;
+          }
+          sessionStorage.setItem(ACTIVE_SECTION_STORAGE_KEY, sectionId);
+        } catch (error) {
+          // Ignore storage access issues in restricted browser contexts.
+        }
+      });
+    });
+  }
+
+  function restoreActiveSectionAfterSave() {
+    let sectionId = '';
+
+    try {
+      sectionId = sessionStorage.getItem(ACTIVE_SECTION_STORAGE_KEY) || '';
+      if (sectionId) {
+        sessionStorage.removeItem(ACTIVE_SECTION_STORAGE_KEY);
+      }
+    } catch (error) {
+      return;
+    }
+
+    if (!sectionId || SECTION_IDS.indexOf(sectionId) === -1) {
+      return;
+    }
+
+    if (!getSectionTitleElement(sectionId)) {
+      return;
+    }
+
+    isOverviewMode = false;
+    openSection(sectionId);
+    setActiveButtonBySection(sectionId);
+    window.setTimeout(function() {
+      scrollToSection(sectionId);
+    }, 30);
+  }
+
+  function bindDeleteConfirmationGuard() {
+    const scope = document.querySelector('.cmb2-wrap');
+    if (!scope || scope.dataset.mayamiDeleteGuard === '1') {
+      return;
+    }
+
+    scope.dataset.mayamiDeleteGuard = '1';
+    ensureDeleteConfirmModal();
+
+    document.addEventListener('click', function(event) {
+      const target = event.target;
+      if (!target) {
+        return;
+      }
+
+      if (target.closest('.mayami-delete-modal, .mayami-delete-modal-backdrop')) {
+        return;
+      }
+
+      const destructiveControl = findDestructiveControl(target);
+      if (!destructiveControl) {
+        return;
+      }
+
+      if (destructiveControl.dataset.mayamiDeleteConfirmed === '1') {
+        delete destructiveControl.dataset.mayamiDeleteConfirmed;
+        return;
+      }
+
+      event.preventDefault();
+      if (typeof event.stopImmediatePropagation === 'function') {
+        event.stopImmediatePropagation();
+      }
+      event.stopPropagation();
+
+      openDeleteConfirmModal(destructiveControl);
+    }, true);
+  }
+
+  function findDestructiveControl(target) {
+    const scope = target.closest('.cmb2-wrap');
+    if (!scope) {
+      return null;
+    }
+
+    const control = target.closest('a, button, input[type="button"], input[type="submit"], .cmb-remove-group-row, .cmb-remove-group-row-button, .cmb2-remove-file-button, .cmb-remove-row');
+    if (!control) {
+      return null;
+    }
+
+    if (control.matches('.cmb-remove-group-row, .cmb-remove-group-row-button, .cmb2-remove-file-button, .cmb-remove-row')) {
+      return control;
+    }
+
+    const signature = [
+      control.className,
+      control.getAttribute('title') || '',
+      control.getAttribute('aria-label') || '',
+      control.getAttribute('href') || '',
+      control.textContent || '',
+      control.value || ''
+    ].join(' ').toLowerCase();
+
+    if (signature.indexOf('supprimer') !== -1 || signature.indexOf('delete') !== -1 || signature.indexOf('remove') !== -1) {
+      return control;
+    }
+
+    return null;
+  }
+
+  function ensureDeleteConfirmModal() {
+    const existing = document.getElementById('mayami-delete-confirm');
+    if (existing) {
+      deleteModalElements = {
+        root: existing,
+        title: existing.querySelector('.mayami-delete-modal-title'),
+        message: existing.querySelector('.mayami-delete-modal-message'),
+        confirmBtn: existing.querySelector('.mayami-delete-confirm-btn'),
+        cancelBtn: existing.querySelector('.mayami-delete-cancel-btn')
+      };
+      return;
+    }
+
+    const root = document.createElement('div');
+    root.id = 'mayami-delete-confirm';
+    root.className = 'mayami-delete-modal-backdrop';
+    root.hidden = true;
+    root.innerHTML = '' +
+      '<div class="mayami-delete-modal" role="dialog" aria-modal="true" aria-labelledby="mayami-delete-title">' +
+        '<h3 id="mayami-delete-title" class="mayami-delete-modal-title">Confirmer la suppression</h3>' +
+        '<p class="mayami-delete-modal-message">Cette action est définitive. Veux-tu vraiment supprimer cet élément ?</p>' +
+        '<div class="mayami-delete-modal-actions">' +
+          '<button type="button" class="button mayami-delete-cancel-btn">Annuler</button>' +
+          '<button type="button" class="button button-primary mayami-delete-confirm-btn">Oui, supprimer</button>' +
+        '</div>' +
+      '</div>';
+
+    document.body.appendChild(root);
+
+    const title = root.querySelector('.mayami-delete-modal-title');
+    const message = root.querySelector('.mayami-delete-modal-message');
+    const confirmBtn = root.querySelector('.mayami-delete-confirm-btn');
+    const cancelBtn = root.querySelector('.mayami-delete-cancel-btn');
+
+    cancelBtn.addEventListener('click', closeDeleteConfirmModal);
+    confirmBtn.addEventListener('click', function() {
+      const control = pendingDeleteControl;
+      closeDeleteConfirmModal();
+      if (!control) {
+        return;
+      }
+      control.dataset.mayamiDeleteConfirmed = '1';
+      if (typeof control.click === 'function') {
+        control.click();
+      }
+    });
+
+    root.addEventListener('click', function(event) {
+      if (event.target === root) {
+        closeDeleteConfirmModal();
+      }
+    });
+
+    document.addEventListener('keydown', function(event) {
+      if (event.key === 'Escape' && deleteModalElements && !deleteModalElements.root.hidden) {
+        closeDeleteConfirmModal();
+      }
+    });
+
+    deleteModalElements = {
+      root: root,
+      title: title,
+      message: message,
+      confirmBtn: confirmBtn,
+      cancelBtn: cancelBtn
+    };
+  }
+
+  function openDeleteConfirmModal(control) {
+    ensureDeleteConfirmModal();
+    pendingDeleteControl = control;
+
+    if (!deleteModalElements) {
+      return;
+    }
+
+    const groupTitle = control.closest('.cmb-repeatable-grouping')?.querySelector('.cmb-group-title > span');
+    const label = groupTitle ? String(groupTitle.textContent || '').trim() : '';
+
+    deleteModalElements.title.textContent = 'Confirmer la suppression';
+    deleteModalElements.message.textContent = label
+      ? 'Tu es sur le point de supprimer "' + label + '". Cette action est définitive.'
+      : 'Cette action est définitive. Veux-tu vraiment supprimer cet élément ?';
+
+    deleteModalElements.root.hidden = false;
+    document.body.classList.add('mayami-delete-modal-open');
+    deleteModalElements.cancelBtn.focus();
+  }
+
+  function closeDeleteConfirmModal() {
+    if (!deleteModalElements) {
+      return;
+    }
+
+    deleteModalElements.root.hidden = true;
+    document.body.classList.remove('mayami-delete-modal-open');
+    pendingDeleteControl = null;
+  }
+
+  function bindRepeatableGroupAccordionEvents() {
+    document.addEventListener('click', function(event) {
+      const target = event.target;
+      if (!target) {
+        return;
+      }
+
+      const toggleControl = target.closest('.cmb-repeatable-grouping .cmbhandlediv, .cmb-repeatable-grouping .handlediv, .cmb-repeatable-grouping .cmb-group-title');
+      if (toggleControl) {
+        const group = toggleControl.closest('.cmb-repeatable-grouping');
+        if (group) {
+          window.setTimeout(function() {
+            if (!group.classList.contains('closed')) {
+              closeSiblingRepeatableGroups(group);
+            }
+          }, 0);
+        }
+      }
+
+      if (target.closest('.cmb2-upload-button, .cmb2-remove-file-button, .add-group-row, .cmb-remove-group-row, .cmb-remove-group-row-button, .cmb-shift-rows')) {
+        window.setTimeout(function() {
+          renameAllMediaUploadButtons();
+          collapseStreamPlatformItemsByDefault();
+          syncStreamPlatformTitles();
+          collapseReleaseRowsByDefault();
+          syncReleaseRowTitles();
+        }, 0);
+      }
+    });
+  }
+
+  function getDefaultReleaseRowTitle(index) {
+    return 'Info ' + (index + 1);
+  }
+
+  function setReleaseRowTitle(group, title) {
+    const titleSpan = group.querySelector('.cmb-group-title > span');
+    if (!titleSpan) {
+      return;
+    }
+    titleSpan.textContent = title;
+  }
+
+  function syncReleaseRowTitles() {
+    const groups = document.querySelectorAll('.cmb2-id-release-rows .cmb-repeatable-grouping');
+    if (!groups.length) {
+      return;
+    }
+
+    groups.forEach(function(group, index) {
+      const labelInput = group.querySelector('input[name*="[key]"]');
+      if (!labelInput) {
+        return;
+      }
+
+      const fallbackTitle = getDefaultReleaseRowTitle(index);
+      const value = String(labelInput.value || '').trim();
+      setReleaseRowTitle(group, value || fallbackTitle);
+    });
+  }
+
+  function bindReleaseRowNameEvents() {
+    if (document.body.dataset.mayamiReleaseRowNameBound === '1') {
+      return;
+    }
+
+    document.body.dataset.mayamiReleaseRowNameBound = '1';
+
+    const syncFromInput = function(target) {
+      if (!target || !target.matches('.cmb2-id-release-rows .cmb-repeatable-grouping input[name*="[key]"]')) {
+        return;
+      }
+
+      const group = target.closest('.cmb-repeatable-grouping');
+      if (!group) {
+        return;
+      }
+
+      const groups = Array.from(document.querySelectorAll('.cmb2-id-release-rows .cmb-repeatable-grouping'));
+      const index = Math.max(groups.indexOf(group), 0);
+      const fallbackTitle = getDefaultReleaseRowTitle(index);
+      const value = String(target.value || '').trim();
+      setReleaseRowTitle(group, value || fallbackTitle);
+    };
+
+    document.addEventListener('input', function(event) {
+      syncFromInput(event.target);
+    });
+
+    document.addEventListener('change', function(event) {
+      syncFromInput(event.target);
+    });
+  }
+
+  function collapseReleaseRowsByDefault() {
+    const groups = document.querySelectorAll('.cmb2-id-release-rows .cmb-repeatable-grouping');
+    if (!groups.length) {
+      return;
+    }
+
+    groups.forEach(function(group) {
+      if (group.dataset.mayamiReleaseRowInit === '1') {
+        return;
+      }
+
+      closeSliderGroup(group);
+      group.dataset.mayamiReleaseRowInit = '1';
+    });
+  }
+
+  function getDefaultPlatformTitle(index) {
+    return 'Plateforme ' + (index + 1);
+  }
+
+  function setStreamPlatformTitle(group, title) {
+    const titleSpan = group.querySelector('.cmb-group-title > span');
+    if (!titleSpan) {
+      return;
+    }
+    titleSpan.textContent = title;
+  }
+
+  function syncStreamPlatformTitles() {
+    const groups = document.querySelectorAll('.cmb2-id-stream-platforms .cmb-repeatable-grouping');
+    if (!groups.length) {
+      return;
+    }
+
+    groups.forEach(function(group, index) {
+      const labelInput = group.querySelector('input[name*="[label]"]');
+      if (!labelInput) {
+        return;
+      }
+
+      const fallbackTitle = getDefaultPlatformTitle(index);
+      const value = String(labelInput.value || '').trim();
+      setStreamPlatformTitle(group, value || fallbackTitle);
+    });
+  }
+
+  function bindStreamPlatformNameEvents() {
+    if (document.body.dataset.mayamiStreamPlatformNameBound === '1') {
+      return;
+    }
+
+    document.body.dataset.mayamiStreamPlatformNameBound = '1';
+
+    const syncFromInput = function(target) {
+      if (!target || !target.matches('.cmb2-id-stream-platforms .cmb-repeatable-grouping input[name*="[label]"]')) {
+        return;
+      }
+
+      const group = target.closest('.cmb-repeatable-grouping');
+      if (!group) {
+        return;
+      }
+
+      const groups = Array.from(document.querySelectorAll('.cmb2-id-stream-platforms .cmb-repeatable-grouping'));
+      const index = Math.max(groups.indexOf(group), 0);
+      const fallbackTitle = getDefaultPlatformTitle(index);
+      const value = String(target.value || '').trim();
+      setStreamPlatformTitle(group, value || fallbackTitle);
+    };
+
+    document.addEventListener('input', function(event) {
+      syncFromInput(event.target);
+    });
+
+    document.addEventListener('change', function(event) {
+      syncFromInput(event.target);
+    });
+  }
+
+  function collapseStreamPlatformItemsByDefault() {
+    const groups = document.querySelectorAll('.cmb2-id-stream-platforms .cmb-repeatable-grouping');
+    if (!groups.length) {
+      return;
+    }
+
+    groups.forEach(function(group) {
+      if (group.dataset.mayamiStreamPlatformInit === '1') {
+        return;
+      }
+
+      closeSliderGroup(group);
+      group.dataset.mayamiStreamPlatformInit = '1';
+    });
+  }
+
+  function bindSliderTypeEvents() {
+    document.addEventListener('change', function(event) {
+      const target = event.target;
+      if (!target) {
+        return;
+      }
+
+      if (target.matches('.cmb2-id-hero-slider .cmb-repeatable-grouping select[name*="[slide_type]"]')) {
+        const group = target.closest('.cmb-repeatable-grouping');
+        if (group) {
+          applySliderTypeVisibility(group);
+        }
+      }
+    });
+
+    document.addEventListener('click', function(event) {
+      const target = event.target;
+      if (!target) {
+        return;
+      }
+
+      const isAddSliderClick = !!target.closest('.cmb2-id-hero-slider .add-group-row');
+
+      if (target.closest('.cmb2-id-hero-slider .add-group-row, .cmb2-id-hero-slider .cmb-remove-group-row, .cmb2-id-hero-slider .cmb-remove-group-row-button, .cmb2-id-hero-slider .cmb-shift-rows')) {
+        window.setTimeout(function() {
+          syncSliderTypeVisibility();
+
+          if (isAddSliderClick) {
+            const groups = document.querySelectorAll('.cmb2-id-hero-slider .cmb-repeatable-grouping');
+            const newGroup = groups.length ? groups[groups.length - 1] : null;
+            if (newGroup) {
+              newGroup.dataset.mayamiSliderInit = '1';
+              openSliderGroup(newGroup);
+              closeSiblingRepeatableGroups(newGroup);
+              syncEditableSliderTitles(false);
+            }
+            return;
+          }
+
+          collapseSliderItemsByDefault();
+          syncEditableSliderTitles(false);
+        }, 0);
+      }
+    });
+  }
+
+  function getDefaultSlideTitle(index) {
+    return 'Slide ' + (index + 1);
+  }
+
+  function setSliderGroupTitle(group, title) {
+    const titleSpan = group.querySelector('.cmb-group-title > span');
+    if (!titleSpan) {
+      return;
+    }
+    titleSpan.textContent = title;
+  }
+
+  function syncEditableSliderTitles(openEditorForNewGroup) {
+    const groups = document.querySelectorAll('.cmb2-id-hero-slider .cmb-repeatable-grouping');
+    if (!groups.length) {
+      return;
+    }
+
+    groups.forEach(function(group, index) {
+      const titleInput = group.querySelector('input[name*="[slide_admin_title]"]');
+      const titleSpan = group.querySelector('.cmb-group-title > span');
+      if (!titleInput || !titleSpan) {
+        return;
+      }
+
+      const defaultTitle = getDefaultSlideTitle(index);
+      const currentValue = String(titleInput.value || '').trim();
+      const effectiveTitle = currentValue || defaultTitle;
+
+      if (titleInput.value !== effectiveTitle) {
+        titleInput.value = effectiveTitle;
+      }
+      setSliderGroupTitle(group, effectiveTitle);
+    });
+  }
+
+  function bindSliderNameEvents() {
+    if (document.body.dataset.mayamiSliderNameBound === '1') {
+      return;
+    }
+
+    document.body.dataset.mayamiSliderNameBound = '1';
+
+    const syncFromInput = function(target) {
+      if (!target || !target.matches('.cmb2-id-hero-slider .cmb-repeatable-grouping input[name*="[slide_admin_title]"]')) {
+        return;
+      }
+
+      const group = target.closest('.cmb-repeatable-grouping');
+      if (!group) {
+        return;
+      }
+
+      const groups = Array.from(document.querySelectorAll('.cmb2-id-hero-slider .cmb-repeatable-grouping'));
+      const index = Math.max(groups.indexOf(group), 0);
+      const fallbackTitle = getDefaultSlideTitle(index);
+      const value = String(target.value || '').trim();
+      setSliderGroupTitle(group, value || fallbackTitle);
+    };
+
+    document.addEventListener('input', function(event) {
+      syncFromInput(event.target);
+    });
+
+    document.addEventListener('change', function(event) {
+      syncFromInput(event.target);
+    });
+  }
+
+  function observeSliderGroups() {
+    const sliderRoot = document.querySelector('.cmb2-id-hero-slider');
+    if (!sliderRoot || sliderRoot.dataset.mayamiSliderObserver === '1' || typeof MutationObserver === 'undefined') {
+      return;
+    }
+
+    sliderRoot.dataset.mayamiSliderObserver = '1';
+    const observer = new MutationObserver(function(mutations) {
+      let hasNewGroup = false;
+
+      mutations.forEach(function(mutation) {
+        if (!mutation.addedNodes || !mutation.addedNodes.length) {
+          return;
+        }
+
+        mutation.addedNodes.forEach(function(node) {
+          if (!node || node.nodeType !== 1) {
+            return;
+          }
+
+          if (node.matches && node.matches('.cmb-repeatable-grouping')) {
+            hasNewGroup = true;
+            return;
+          }
+
+          if (node.querySelector && node.querySelector('.cmb-repeatable-grouping')) {
+            hasNewGroup = true;
+          }
+        });
+      });
+
+      if (hasNewGroup) {
+        window.setTimeout(function() {
+          syncSliderTypeVisibility();
+          const groups = document.querySelectorAll('.cmb2-id-hero-slider .cmb-repeatable-grouping');
+          const newGroup = groups.length ? groups[groups.length - 1] : null;
+          if (newGroup) {
+            newGroup.dataset.mayamiSliderInit = '1';
+            openSliderGroup(newGroup);
+            closeSiblingRepeatableGroups(newGroup);
+            syncEditableSliderTitles(false);
+          } else {
+            syncEditableSliderTitles(false);
+          }
+          renameAllMediaUploadButtons();
+        }, 0);
+      }
+    });
+
+    observer.observe(sliderRoot, {
+      childList: true,
+      subtree: true
+    });
+  }
+
+  function closeSliderGroup(group) {
+    if (!group) {
+      return;
+    }
+
+    group.classList.add('closed');
+    const toggleButton = group.querySelector('.cmbhandlediv button, .handlediv button');
+    if (toggleButton) {
+      toggleButton.setAttribute('aria-expanded', 'false');
+    }
+  }
+
+  function openSliderGroup(group) {
+    if (!group) {
+      return;
+    }
+
+    group.classList.remove('closed');
+    const toggleButton = group.querySelector('.cmbhandlediv button, .handlediv button');
+    if (toggleButton) {
+      toggleButton.setAttribute('aria-expanded', 'true');
+    }
+  }
+
+  function closeSiblingRepeatableGroups(activeGroup) {
+    if (!activeGroup) {
+      return;
+    }
+
+    const parentGroup = activeGroup.closest('.cmb-repeatable-group');
+    if (!parentGroup) {
+      return;
+    }
+
+    const groups = parentGroup.querySelectorAll('.cmb-repeatable-grouping');
+    groups.forEach(function(group) {
+      if (group === activeGroup) {
+        return;
+      }
+      closeSliderGroup(group);
+    });
+  }
+
+  function collapseSliderItemsByDefault() {
+    const groups = document.querySelectorAll('.cmb2-id-hero-slider .cmb-repeatable-grouping');
+    if (!groups.length) {
+      return;
+    }
+
+    groups.forEach(function(group) {
+      if (group.dataset.mayamiSliderInit === '1') {
+        return;
+      }
+
+      closeSliderGroup(group);
+      group.dataset.mayamiSliderInit = '1';
+    });
+  }
+
+  function setRowVisibility(row, isVisible) {
+    if (!row) {
+      return;
+    }
+
+    row.style.display = isVisible ? '' : 'none';
+  }
+
+  function applySliderTypeVisibility(group) {
+    const typeSelect = group.querySelector('select[name*="[slide_type]"]');
+    if (!typeSelect) {
+      return;
+    }
+
+    const slideType = String(typeSelect.value || 'image').toLowerCase();
+
+    const imageRow = group.querySelector('.cmb-row[class*="-slide-image"]');
+    const youtubeRow = group.querySelector('.cmb-row[class*="-video-url"]');
+    const tiktokUrlRow = group.querySelector('.cmb-row[class*="-tiktok-url"]');
+    const tiktokMp4Row = group.querySelector('.cmb-row[class*="-tiktok-video-url"]');
+    const durationRow = group.querySelector('.cmb-row[class*="-slide-duration"]');
+
+    setRowVisibility(imageRow, slideType === 'image');
+    setRowVisibility(youtubeRow, slideType === 'video');
+    setRowVisibility(tiktokUrlRow, slideType === 'tiktok');
+    setRowVisibility(tiktokMp4Row, slideType === 'tiktok');
+    setRowVisibility(durationRow, slideType === 'image');
+  }
+
+  function syncSliderTypeVisibility() {
+    const groups = document.querySelectorAll('.cmb2-id-hero-slider .cmb-repeatable-grouping');
+    if (!groups.length) {
+      return;
+    }
+
+    groups.forEach(function(group) {
+      applySliderTypeVisibility(group);
+    });
   }
 
   function refreshTopBarVisualFieldUi() {
@@ -62,6 +776,51 @@
     if (uploadButton) {
       uploadButton.textContent = 'Modifier';
     }
+  }
+
+  function renameAllMediaUploadButtons() {
+    const uploadButtons = document.querySelectorAll('.cmb2-upload-button');
+    if (!uploadButtons.length) {
+      return;
+    }
+
+    uploadButtons.forEach(function(button) {
+      const textLabel = String(button.textContent || '').trim().toLowerCase();
+      const valueLabel = String(button.value || '').trim().toLowerCase();
+      const ariaLabel = String(button.getAttribute('aria-label') || '').trim().toLowerCase();
+
+      const shouldRename = textLabel.indexOf('ajouter ou mettre un fichier en ligne') !== -1 ||
+        valueLabel.indexOf('ajouter ou mettre un fichier en ligne') !== -1 ||
+        ariaLabel.indexOf('ajouter ou mettre un fichier en ligne') !== -1 ||
+        textLabel === 'ajouter' ||
+        valueLabel === 'ajouter';
+
+      if (shouldRename) {
+        if ('value' in button) {
+          button.value = 'Modifier';
+        }
+        button.textContent = 'Modifier';
+        button.setAttribute('aria-label', 'Modifier');
+      }
+    });
+  }
+
+  function observeDynamicMediaButtons() {
+    const scope = document.querySelector('.cmb2-wrap');
+    if (!scope || scope.dataset.mayamiMediaObserver === '1' || typeof MutationObserver === 'undefined') {
+      return;
+    }
+
+    scope.dataset.mayamiMediaObserver = '1';
+    const observer = new MutationObserver(function() {
+      renameAllMediaUploadButtons();
+    });
+
+    observer.observe(scope, {
+      childList: true,
+      subtree: true,
+      characterData: true
+    });
   }
 
   function layoutTopBarVisualInlineToggle() {
@@ -135,6 +894,7 @@
       if (target.closest('.cmb2-id-marquee-items .add-group-row, .cmb2-id-marquee-items .cmb-remove-group-row, .cmb2-id-marquee-items .cmb-remove-group-row-button, .cmb2-id-marquee-items .cmb-shift-rows, .cmb2-id-marquee-items .cmbhandlediv, .cmb2-id-marquee-items .handlediv')) {
         window.setTimeout(function() {
           renameMarqueeItemTitles();
+          renameAllMediaUploadButtons();
           refreshTopBarVisualFieldUi();
           layoutTopBarVisualInlineToggle();
         }, 0);
@@ -142,6 +902,7 @@
 
       if (target.closest('.cmb2-id-marquee-logo-png .cmb2-upload-button, .cmb2-id-marquee-logo-png .cmb2-remove-file-button')) {
         window.setTimeout(function() {
+          renameAllMediaUploadButtons();
           refreshTopBarVisualFieldUi();
           layoutTopBarVisualInlineToggle();
         }, 0);
@@ -217,8 +978,7 @@
       { id: 'section_video_title', label: 'Video' },
       { id: 'section_release_title', label: 'Release' },
       { id: 'section_cta_title', label: 'CTA' },
-      { id: 'section_footer_title', label: 'Footer' },
-      { id: 'section_links_title', label: 'Links' }
+      { id: 'section_footer_title', label: 'Footer' }
     ];
 
     // Trouver le conteneur du formulaire
