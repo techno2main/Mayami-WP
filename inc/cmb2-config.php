@@ -15,6 +15,7 @@ add_action('admin_init', 'mayami_sync_follow_youtube_link_once', 24);
 add_action('admin_init', 'mayami_sync_marquee_items_once', 25);
 add_action('admin_init', 'mayami_sync_social_links_once', 26);
 add_action('admin_init', 'mayami_sync_sticky_links_once', 27);
+add_action('admin_init', 'mayami_sync_stream_values_to_front_once', 28);
 add_action('admin_head', 'mayami_sticky_save_button');
 
 /**
@@ -329,6 +330,89 @@ function mayami_sync_stream_platforms_once() {
     );
 
     update_option($option_key, $options);
+    update_option($sync_flag, true);
+}
+
+/**
+ * One-time sync to ensure admin values exactly match current working front stream values.
+ */
+function mayami_sync_stream_values_to_front_once() {
+    $sync_flag = 'mayami_stream_values_aligned_with_front_20260530';
+    if (get_option($sync_flag)) {
+        return;
+    }
+
+    $option_key = 'mayami_landing_options';
+    $options = get_option($option_key, array());
+    if (!is_array($options)) {
+        update_option($sync_flag, true);
+        return;
+    }
+
+    $target_links = array(
+        'Spotify' => 'https://open.spotify.com/intl-fr/track/3rzrziofCOwRrI1r99IUbQ?si=a2cd3f4cbe364a94',
+        'Apple Music' => 'https://music.apple.com/fr/song/mayami-my-miami/6771742499',
+        'YouTube Music' => 'https://youtu.be/EH_QcQ92hSk?si=gpybhKJbZrDN1Ew5',
+        'Deezer' => 'https://www.deezer.com/track/4034160411',
+        'Amazon Music' => 'https://music.amazon.com/tracks/B0H2FR3WHQ?marketplaceId=ATVPDKIKX0DER&musicTerritory=US&ref=dm_sh_gPJPR79AtgfLS0EFarS9Xwi57',
+        'SoundCloud' => 'https://soundcloud.com/ellenemasri',
+    );
+
+    $target_option_links = array(
+        'link_spotify' => $target_links['Spotify'],
+        'link_apple_music' => $target_links['Apple Music'],
+        'link_youtube_music' => $target_links['YouTube Music'],
+        'link_deezer' => $target_links['Deezer'],
+        'link_amazon_music' => $target_links['Amazon Music'],
+        'link_soundcloud' => $target_links['SoundCloud'],
+    );
+
+    $changed = false;
+
+    foreach ($target_option_links as $option_id => $target_value) {
+        $current = isset($options[$option_id]) ? trim((string) $options[$option_id]) : '';
+        if ($current !== $target_value) {
+            $options[$option_id] = $target_value;
+            $changed = true;
+        }
+    }
+
+    $existing_platforms = isset($options['stream_platforms']) && is_array($options['stream_platforms'])
+        ? $options['stream_platforms']
+        : array();
+
+    $platforms_by_label = array();
+    foreach ($existing_platforms as $platform) {
+        if (!is_array($platform)) {
+            continue;
+        }
+
+        $label = isset($platform['label']) ? trim((string) $platform['label']) : '';
+        if ($label !== '') {
+            $platforms_by_label[$label] = $platform;
+        }
+    }
+
+    $aligned_platforms = array();
+    foreach ($target_links as $label => $href) {
+        $platform = isset($platforms_by_label[$label]) ? $platforms_by_label[$label] : array();
+        $platform['label'] = $label;
+        $platform['href'] = $href;
+        if (!isset($platform['is_active']) || $platform['is_active'] === '') {
+            $platform['is_active'] = 'on';
+        }
+        $aligned_platforms[] = $platform;
+    }
+
+    if ($existing_platforms !== $aligned_platforms) {
+        $options['stream_platforms'] = $aligned_platforms;
+        $changed = true;
+    }
+
+    if ($changed) {
+        update_option($option_key, $options);
+    }
+
     update_option($sync_flag, true);
 }
 
