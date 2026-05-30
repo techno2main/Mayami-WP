@@ -1050,7 +1050,7 @@ function mayami_register_options() {
 
     // ========== SECTION: MARQUEE ==========
     $cmb->add_field(array(
-        'name' => 'Marquee',
+        'name' => 'Top-Bar',
         'type' => 'title',
         'id'   => 'section_marquee_title',
     ));

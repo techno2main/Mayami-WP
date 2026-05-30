@@ -70,19 +70,58 @@
 .cmb2-id-section-footer-title .cmb-th,
 .cmb2-id-section-links-title .cmb-th,
 .cmb2-id-section-marquee-title .cmb-th {
-  background: linear-gradient(135deg, #6a1b78 0%, #410b49 100%);
-  color: #fff;
+  background: #f2f2f3;
+  color: #1f2937;
   padding: 16px 20px;
   border-radius: 8px;
   margin-top: 60px;
   margin-bottom: 20px;
-  padding-top: 80px;
-  font-size: 18px;
+  padding-top: 16px;
+  font-size: 22px;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 1px;
-  border-left: 5px solid #13f7bc;
+  border-left: 5px solid #dadde2;
   scroll-margin-top: 120px;
+}
+
+.cmb2-wrap .cmb-row.mayami-section-open .cmb-th {
+  background: linear-gradient(135deg, #6a1b78 0%, #410b49 100%) !important;
+  color: #fff !important;
+  border-left-color: #13f7bc !important;
+}
+
+/* CMB2 applies background on the title row itself (.cmb-type-title). */
+.cmb2-wrap .cmb-row.cmb-type-title.mayami-section-open {
+  background: linear-gradient(135deg, #6a1b78 0%, #410b49 100%) !important;
+  border-left: 5px solid #13f7bc !important;
+}
+
+.cmb2-wrap .cmb-row.cmb-type-title.mayami-section-closed {
+  background: #f2f2f3 !important;
+  border-left: 5px solid #dadde2 !important;
+}
+
+.cmb2-wrap .cmb-row.mayami-section-open .cmb-th .cmb2-metabox-title,
+.cmb2-wrap .cmb-row.mayami-section-open .cmb-th h3,
+.cmb2-wrap .cmb-row.mayami-section-open .cmb-th label {
+  color: #fff !important;
+}
+
+.cmb2-wrap .cmb-row.cmb-type-title.mayami-section-open .cmb2-metabox-title,
+.cmb2-wrap .cmb-row.cmb-type-title.mayami-section-open h3,
+.cmb2-wrap .cmb-row.cmb-type-title.mayami-section-open label {
+  color: #fff !important;
+}
+
+.cmb2-wrap .cmb-row.mayami-section-open .mayami-eye-indicator {
+  color: #fff !important;
+}
+
+.cmb2-wrap .cmb-row.mayami-section-closed .cmb-th .cmb2-metabox-title,
+.cmb2-wrap .cmb-row.mayami-section-closed .cmb-th h3,
+.cmb2-wrap .cmb-row.mayami-section-closed .cmb-th label {
+  color: #1f2937 !important;
 }
 
 .cmb2-id-section-hero-title.mayami-section-toggle .cmb-th,

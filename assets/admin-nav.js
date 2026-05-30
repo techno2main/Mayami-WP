@@ -5,6 +5,7 @@
   'use strict';
 
   const SECTION_IDS = [
+    'section_marquee_title',
     'section_hero_title',
     'section_slider_title',
     'section_stream_title',
@@ -13,8 +14,7 @@
     'section_release_title',
     'section_cta_title',
     'section_footer_title',
-    'section_links_title',
-    'section_marquee_title'
+    'section_links_title'
   ];
 
   let isOverviewMode = true;
@@ -35,9 +35,37 @@
     setTimeout(removeNativePageHeading, 500);
     setTimeout(removeNativePageHeading, 1200);
     createStickyNav();
+    reorderSectionsInDom();
     setupAccordion();
     styleBottomSaveButtons();
     addSmoothScroll();
+  }
+
+  function reorderSectionsInDom() {
+    const firstSection = SECTION_IDS
+      .map(getSectionTitleElement)
+      .find(function(el) { return !!el; });
+
+    if (!firstSection || !firstSection.parentNode) {
+      return;
+    }
+
+    const container = firstSection.parentNode;
+    const fragment = document.createDocumentFragment();
+
+    SECTION_IDS.forEach(function(sectionId) {
+      const titleEl = getSectionTitleElement(sectionId);
+      if (!titleEl) {
+        return;
+      }
+
+      const blockRows = [titleEl].concat(getSectionContentRows(sectionId));
+      blockRows.forEach(function(row) {
+        fragment.appendChild(row);
+      });
+    });
+
+    container.appendChild(fragment);
   }
 
   function removeNativePageHeading() {
@@ -57,6 +85,7 @@
 
   function createStickyNav() {
     const sections = [
+      { id: 'section_marquee_title', label: 'TOP-BAR' },
       { id: 'section_hero_title', label: 'Hero' },
       { id: 'section_slider_title', label: 'Slider' },
       { id: 'section_stream_title', label: 'Stream' },
@@ -65,8 +94,7 @@
       { id: 'section_release_title', label: 'Release' },
       { id: 'section_cta_title', label: 'CTA' },
       { id: 'section_footer_title', label: 'Footer' },
-      { id: 'section_links_title', label: 'Links' },
-      { id: 'section_marquee_title', label: 'Marquee' }
+      { id: 'section_links_title', label: 'Links' }
     ];
 
     // Trouver le conteneur du formulaire
@@ -262,6 +290,12 @@
       btn.style.boxShadow = 'none';
       btn.style.transition = 'all 0.2s ease';
 
+      if (btn.tagName === 'INPUT') {
+        btn.value = '💾 Enregistrer';
+      } else {
+        btn.textContent = '💾 Enregistrer';
+      }
+
       if (btn.dataset.mayamiSaveStyled === '1') {
         return;
       }
@@ -363,6 +397,7 @@
       titleEl.classList.remove('mayami-section-open');
       titleEl.classList.add('mayami-section-closed');
       titleEl.setAttribute('aria-expanded', 'false');
+      applySectionHeaderState(titleEl, false);
     }
   }
 
@@ -384,6 +419,40 @@
       titleEl.classList.remove('mayami-section-closed');
       titleEl.classList.add('mayami-section-open');
       titleEl.setAttribute('aria-expanded', 'true');
+      applySectionHeaderState(titleEl, true);
+    }
+  }
+
+  function applySectionHeaderState(titleEl, isOpen) {
+    const headerCell = titleEl.querySelector('.cmb-th');
+    const heading = titleEl.querySelector('.cmb2-metabox-title') || titleEl.querySelector('h3');
+    const eye = titleEl.querySelector('.mayami-eye-indicator');
+    const neutralBg = '#f2f2f3';
+    const neutralText = '#1f2937';
+    const activeBg = 'linear-gradient(135deg, #6a1b78 0%, #410b49 100%)';
+
+    if (headerCell) {
+      if (isOpen) {
+        headerCell.style.setProperty('background-color', '#5b1b78', 'important');
+        headerCell.style.setProperty('background-image', activeBg, 'important');
+        headerCell.style.setProperty('background', activeBg, 'important');
+        headerCell.style.setProperty('color', '#ffffff', 'important');
+        headerCell.style.setProperty('border-left-color', '#13f7bc', 'important');
+      } else {
+        headerCell.style.setProperty('background-image', 'none', 'important');
+        headerCell.style.setProperty('background-color', neutralBg, 'important');
+        headerCell.style.setProperty('background', neutralBg, 'important');
+        headerCell.style.setProperty('color', neutralText, 'important');
+        headerCell.style.setProperty('border-left-color', '#dadde2', 'important');
+      }
+    }
+
+    if (heading) {
+      heading.style.setProperty('color', isOpen ? '#ffffff' : neutralText, 'important');
+    }
+
+    if (eye) {
+      eye.style.setProperty('color', isOpen ? '#ffffff' : '#6b21a8', 'important');
     }
   }
 
