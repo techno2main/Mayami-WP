@@ -1105,7 +1105,7 @@ function mayami_register_options() {
         'name'    => 'Description',
         'id'      => 'video_description',
         'type'    => 'textarea_small',
-        'default' => 'A love letter to Miami — shot on sunset walls, neon boulevards and the Atlantic shoreline.',
+        'default' => 'Describe the official video for this release.',
     ));
 
     $cmb->add_field(array(
@@ -1119,14 +1119,14 @@ function mayami_register_options() {
         'name'    => 'Watch Button Label',
         'id'      => 'video_watch_label',
         'type'    => 'text',
-        'default' => 'Watch on YouTube',
+        'default' => 'Watch',
     ));
 
     $cmb->add_field(array(
         'name'    => 'Watch Button Link',
         'id'      => 'video_watch_href',
         'type'    => 'text_url',
-        'default' => 'https://www.youtube.com/watch?v=WiB_UoexqVo&pp=0gcJCQoLAYcqIYzv',
+        'default' => '',
     ));
 
     $cmb->add_field(array(
@@ -1210,7 +1210,7 @@ function mayami_register_options() {
         'name'    => 'Kicker',
         'id'      => 'cta_kicker',
         'type'    => 'text',
-        'default' => "05 / Don't sleep on it",
+        'default' => '05 / Call To Action',
     ));
 
     $cmb->add_field(array(
@@ -1231,14 +1231,14 @@ function mayami_register_options() {
         'name'    => 'Description',
         'id'      => 'cta_description',
         'type'    => 'textarea_small',
-        'default' => 'Stream the single. Watch the video. Tag and ride the wave.',
+        'default' => 'Invite your audience to stream, watch, and share.',
     ));
 
     $cmb->add_field(array(
         'name'    => 'Hashtag',
         'id'      => 'cta_hashtag',
         'type'    => 'text',
-        'default' => '#MayamiMyMiami',
+        'default' => '#YourHashtag',
     ));
 
     $cmb->add_field(array(
@@ -1259,14 +1259,14 @@ function mayami_register_options() {
         'name'    => 'TikTok Button Link',
         'id'      => 'cta_tiktok_link',
         'type'    => 'text_url',
-        'default' => 'https://www.tiktok.com/@ellenemasri',
+        'default' => '',
     ));
 
     $cmb->add_field(array(
         'name'    => 'Instagram Button Link',
         'id'      => 'cta_instagram_link',
         'type'    => 'text_url',
-        'default' => 'https://www.instagram.com/ellenemasri/',
+        'default' => '',
     ));
 
     $cmb->add_field(array(
@@ -1286,14 +1286,14 @@ function mayami_register_options() {
         'name'    => 'Footer Line 1',
         'id'      => 'footer_line1',
         'type'    => 'text',
-        'default' => '© Ellene Leya Masri · Miami, USA',
+        'default' => '© Your Artist Name',
     ));
 
     $cmb->add_field(array(
         'name'    => 'Footer Line 2',
         'id'      => 'footer_line2',
         'type'    => 'text',
-        'default' => 'Mayami, My Miami — a release campaign.',
+        'default' => 'Your project tagline.',
     ));
 
     $cmb->add_field(array(
