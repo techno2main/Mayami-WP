@@ -23,9 +23,6 @@ if (is_array($marquee_items)) {
         }
 
         $label = strtolower(trim(remove_accents((string) ($item['label'] ?? ''))));
-        if (strpos($label, 'out now') !== false) {
-            return false;
-        }
 
         if ($label === 'icone plateformes' || $label === 'icones stream' || $label === 'afficher les icones') {
             return false;
