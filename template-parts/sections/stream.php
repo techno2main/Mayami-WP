@@ -434,24 +434,6 @@ $stream_platform_meta = array(
                 $icon_style_class = (isset($platform_meta['icon_style']) && $platform_meta['icon_style'] === 'solid') ? 'fa-solid' : 'fa-brands';
                 $embed_src = mayami_build_stream_embed_src($platform_type, $platform_href);
 
-                if ($embed_src === '') {
-                    $canonical_option_map = array(
-                        'spotify' => 'link_spotify',
-                        'apple-music' => 'link_apple_music',
-                        'youtube-music' => 'link_youtube_music',
-                        'deezer' => 'link_deezer',
-                        'amazon-music' => 'link_amazon_music',
-                        'soundcloud' => 'link_soundcloud',
-                    );
-
-                    if (isset($canonical_option_map[$platform_type])) {
-                        $canonical_href = trim((string) cmb2_get_option('mayami_landing_options', $canonical_option_map[$platform_type]));
-                        if ($canonical_href !== '') {
-                            $embed_src = mayami_build_stream_embed_src($platform_type, $canonical_href);
-                        }
-                    }
-                }
-
                 $has_player = $embed_src !== '';
                 $player_height = mayami_stream_player_height($platform_type);
 

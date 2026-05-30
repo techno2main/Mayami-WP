@@ -10,14 +10,12 @@ add_action('admin_init', 'mayami_initialize_default_content');
 add_action('admin_init', 'mayami_sync_platform_links_once', 20);
 add_action('admin_init', 'mayami_sync_hero_top_artist_once', 21);
 add_action('admin_init', 'mayami_sync_marquee_play_link_once', 22);
-add_action('admin_init', 'mayami_sync_stream_platforms_once', 23);
+// Stream sync disabled to keep stream URLs fully admin-driven and avoid re-injection.
 add_action('admin_init', 'mayami_sync_follow_youtube_link_once', 24);
 add_action('admin_init', 'mayami_sync_marquee_items_once', 25);
 add_action('admin_init', 'mayami_sync_social_links_once', 26);
 add_action('admin_init', 'mayami_sync_sticky_links_once', 27);
-add_action('admin_init', 'mayami_sync_stream_values_to_front_once', 28);
-add_action('admin_init', 'mayami_sync_stream_platforms_from_canonical_links_once', 29);
-add_action('admin_init', 'mayami_force_working_youtube_stream_url_once', 30);
+// Stream force/sync hooks disabled to avoid hardcoded stream URL writes.
 add_action('admin_head', 'mayami_sticky_save_button');
 
 /**
