@@ -13,6 +13,7 @@ add_action('admin_init', 'mayami_sync_marquee_play_link_once', 22);
 add_action('admin_init', 'mayami_sync_stream_platforms_once', 23);
 add_action('admin_init', 'mayami_sync_follow_youtube_link_once', 24);
 add_action('admin_init', 'mayami_sync_marquee_items_once', 25);
+add_action('admin_init', 'mayami_sync_social_links_once', 26);
 add_action('admin_head', 'mayami_sticky_save_button');
 
 /**
@@ -187,10 +188,6 @@ function mayami_initialize_default_content() {
     }
 
     // Set default images
-    if (empty($options['social_texture_image'])) {
-        $options['social_texture_image'] = $theme_url . '/assets/mayami-texture.jpg';
-    }
-    
     if (empty($options['video_cover_image'])) {
         $options['video_cover_image'] = $theme_url . '/assets/mayami-cover.jpg';
     }
@@ -541,6 +538,46 @@ function mayami_sync_marquee_items_once() {
     update_option($sync_flag, true);
 }
 
+/**
+ * One-time migration of Social links from legacy link_* keys.
+ */
+function mayami_sync_social_links_once() {
+    $sync_flag = 'mayami_social_links_synced_20260530';
+    if (get_option($sync_flag)) {
+        return;
+    }
+
+    $option_key = 'mayami_landing_options';
+    $options = get_option($option_key, array());
+    if (!is_array($options)) {
+        update_option($sync_flag, true);
+        return;
+    }
+
+    $map = array(
+        'social_tiktok_link' => 'link_tiktok',
+        'social_instagram_link' => 'link_instagram',
+        'social_youtube_link' => 'link_youtube_video',
+    );
+
+    $changed = false;
+    foreach ($map as $new_key => $legacy_key) {
+        $new_value = isset($options[$new_key]) ? trim((string) $options[$new_key]) : '';
+        $legacy_value = isset($options[$legacy_key]) ? trim((string) $options[$legacy_key]) : '';
+
+        if ($new_value === '' && $legacy_value !== '') {
+            $options[$new_key] = $legacy_value;
+            $changed = true;
+        }
+    }
+
+    if ($changed) {
+        update_option($option_key, $options);
+    }
+
+    update_option($sync_flag, true);
+}
+
 
 function mayami_register_options() {
     
@@ -816,9 +853,21 @@ function mayami_register_options() {
     ));
 
     $cmb->add_field(array(
-        'name' => 'Texture Image',
-        'id'   => 'social_texture_image',
-        'type' => 'file',
+        'name' => 'TikTok Link',
+        'id'   => 'social_tiktok_link',
+        'type' => 'text_url',
+    ));
+
+    $cmb->add_field(array(
+        'name' => 'Instagram Link',
+        'id'   => 'social_instagram_link',
+        'type' => 'text_url',
+    ));
+
+    $cmb->add_field(array(
+        'name' => 'YouTube Link',
+        'id'   => 'social_youtube_link',
+        'type' => 'text_url',
     ));
 
     // ========== SECTION: VIDEO ==========

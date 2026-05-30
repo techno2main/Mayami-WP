@@ -268,12 +268,6 @@ function mayami_register_options_page() {
         'default' => 'From studio sessions to city streets. Follow the story behind Mayami.',
     ]);
     
-    $cmb_options->add_field([
-        'name' => 'Texture Image',
-        'id'   => 'social_texture_image',
-        'type' => 'file',
-    ]);
-
     // ============================================
     // TAB: VIDEO SECTION
     // ============================================
@@ -756,11 +750,6 @@ function mayami_register_meta_boxes($meta_boxes) {
                 'id'   => 'social_description',
                 'type' => 'textarea',
                 'std'  => 'From studio sessions to city streets. Follow the story behind Mayami.',
-            ],
-            [
-                'name' => 'Texture Image',
-                'id'   => 'social_texture_image',
-                'type' => 'image_advanced',
             ],
         ],
     ];
