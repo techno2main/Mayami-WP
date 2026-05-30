@@ -17,6 +17,12 @@
     'section_links_title'
   ];
 
+  const MARQUEE_ITEM_TITLES = [
+    'Titre Single',
+    'CTA central',
+    'Nom Artiste'
+  ];
+
   let isOverviewMode = true;
 
   // Attendre que le DOM soit chargé
@@ -37,8 +43,126 @@
     createStickyNav();
     reorderSectionsInDom();
     setupAccordion();
+    collapseMarqueeItemsByDefault();
+    renameMarqueeItemTitles();
+    refreshTopBarVisualFieldUi();
+    layoutTopBarVisualInlineToggle();
+    bindTopBarVisualEvents();
     styleBottomSaveButtons();
     addSmoothScroll();
+  }
+
+  function refreshTopBarVisualFieldUi() {
+    const row = document.querySelector('.cmb2-id-marquee-logo-png');
+    if (!row) {
+      return;
+    }
+
+    const uploadButton = row.querySelector('.cmb2-upload-button');
+    if (uploadButton) {
+      uploadButton.textContent = 'Modifier';
+    }
+  }
+
+  function layoutTopBarVisualInlineToggle() {
+    const logoRow = document.querySelector('.cmb2-id-marquee-logo-png');
+    const hideRow = document.querySelector('.cmb2-id-marquee-logo-hidden');
+    if (!logoRow || !hideRow) {
+      return;
+    }
+
+    const logoTd = logoRow.querySelector('.cmb-td');
+    if (!logoTd) {
+      return;
+    }
+
+    const hideInput = hideRow.querySelector('input[type="checkbox"]');
+    if (!hideInput) {
+      return;
+    }
+
+    let inlineWrap = logoTd.querySelector('.mayami-inline-hide-toggle');
+    if (!inlineWrap) {
+      inlineWrap = document.createElement('span');
+      inlineWrap.className = 'mayami-inline-hide-toggle';
+
+      const label = document.createElement('span');
+      label.className = 'mayami-inline-hide-label';
+      label.textContent = 'Masquer';
+      inlineWrap.appendChild(label);
+
+      const mediaButton = logoTd.querySelector('.cmb2-upload-button, .button');
+      if (mediaButton && mediaButton.parentNode) {
+        mediaButton.insertAdjacentElement('afterend', inlineWrap);
+      } else {
+        logoTd.appendChild(inlineWrap);
+      }
+    }
+
+    if (hideInput.parentNode !== inlineWrap) {
+      inlineWrap.appendChild(hideInput);
+    }
+
+    hideRow.classList.add('mayami-hidden-source-row');
+  }
+
+  function renameMarqueeItemTitles() {
+    const groups = document.querySelectorAll('.cmb2-id-marquee-items .cmb-repeatable-grouping');
+    if (!groups.length) {
+      return;
+    }
+
+    groups.forEach(function(group, index) {
+      const titleSpan = group.querySelector('.cmb-group-title > span');
+      if (!titleSpan) {
+        return;
+      }
+
+      const customTitle = MARQUEE_ITEM_TITLES[index];
+      if (customTitle) {
+        titleSpan.textContent = customTitle;
+      }
+    });
+  }
+
+  function bindTopBarVisualEvents() {
+    document.addEventListener('click', function(event) {
+      const target = event.target;
+      if (!target) {
+        return;
+      }
+
+      if (target.closest('.cmb2-id-marquee-items .add-group-row, .cmb2-id-marquee-items .cmb-remove-group-row, .cmb2-id-marquee-items .cmb-remove-group-row-button, .cmb2-id-marquee-items .cmb-shift-rows, .cmb2-id-marquee-items .cmbhandlediv, .cmb2-id-marquee-items .handlediv')) {
+        window.setTimeout(function() {
+          renameMarqueeItemTitles();
+          refreshTopBarVisualFieldUi();
+          layoutTopBarVisualInlineToggle();
+        }, 0);
+      }
+
+      if (target.closest('.cmb2-id-marquee-logo-png .cmb2-upload-button, .cmb2-id-marquee-logo-png .cmb2-remove-file-button')) {
+        window.setTimeout(function() {
+          refreshTopBarVisualFieldUi();
+          layoutTopBarVisualInlineToggle();
+        }, 0);
+      }
+    });
+  }
+
+  function collapseMarqueeItemsByDefault() {
+    const groups = document.querySelectorAll('.cmb2-id-marquee-items .cmb-repeatable-grouping');
+    if (!groups.length) {
+      return;
+    }
+
+    groups.forEach(function(group) {
+      group.classList.add('closed');
+
+      const toggleButton = group.querySelector('.cmbhandlediv button, .handlediv button');
+      if (toggleButton) {
+        toggleButton.setAttribute('aria-expanded', 'false');
+      }
+    });
   }
 
   function reorderSectionsInDom() {

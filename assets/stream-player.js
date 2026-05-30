@@ -3,6 +3,7 @@
  */
 document.addEventListener('DOMContentLoaded', function() {
   const platformLinks = document.querySelectorAll('.platform-card');
+  const marqueePlatformLinks = document.querySelectorAll('.marquee-platform-link[data-open-platform]');
   let activePlatform = null;
 
   const openPlatform = function(platformName, sourceCard) {
@@ -59,6 +60,50 @@ document.addEventListener('DOMContentLoaded', function() {
     });
   });
 
+  const openFromMarquee = function(platformName) {
+    const streamSection = document.querySelector('#stream');
+    if (streamSection) {
+      streamSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+
+    setTimeout(() => {
+      const opened = openPlatform(platformName, null);
+      if (opened) {
+        return;
+      }
+
+      // Fallback: if IDs are missing, try to trigger the Listen card behavior.
+      const matchingCard = document.querySelector(`.platform-card[data-platform="${platformName}"]`);
+      if (matchingCard) {
+        matchingCard.dispatchEvent(new MouseEvent('click', {
+          bubbles: true,
+          cancelable: true,
+          view: window,
+        }));
+      }
+    }, 220);
+  };
+
+  marqueePlatformLinks.forEach(link => {
+    link.addEventListener('click', function(e) {
+      e.preventDefault();
+      e.stopPropagation();
+      if (typeof e.stopImmediatePropagation === 'function') {
+        e.stopImmediatePropagation();
+      }
+
+      const platformName = this.getAttribute('data-open-platform');
+      if (!platformName) {
+        return;
+      }
+
+      openFromMarquee(platformName);
+
+      const cleanUrl = window.location.pathname + window.location.search;
+      window.history.replaceState(null, '', cleanUrl);
+    });
+  });
+
   // Internal anchors: smooth scroll and keep base URL without hash.
   document.addEventListener('click', function(e) {
     const anchor = e.target.closest('a[href^="#"]');
@@ -77,16 +122,6 @@ document.addEventListener('DOMContentLoaded', function() {
 
     e.preventDefault();
     target.scrollIntoView({ behavior: 'smooth', block: 'start' });
-
-    const requestedPlatform = anchor.getAttribute('data-open-platform');
-    if (requestedPlatform) {
-      const matchingCard = document.querySelector(`.platform-card[data-platform="${requestedPlatform}"]`);
-      if (matchingCard) {
-        setTimeout(() => {
-          openPlatform(requestedPlatform, matchingCard);
-        }, 250);
-      }
-    }
 
     const cleanUrl = window.location.pathname + window.location.search;
     window.history.replaceState(null, '', cleanUrl);

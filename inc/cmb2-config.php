@@ -12,6 +12,7 @@ add_action('admin_init', 'mayami_sync_hero_top_artist_once', 21);
 add_action('admin_init', 'mayami_sync_marquee_play_link_once', 22);
 add_action('admin_init', 'mayami_sync_stream_platforms_once', 23);
 add_action('admin_init', 'mayami_sync_follow_youtube_link_once', 24);
+add_action('admin_init', 'mayami_sync_marquee_items_once', 25);
 add_action('admin_head', 'mayami_sticky_save_button');
 
 /**
@@ -128,20 +129,14 @@ function mayami_initialize_default_content() {
             'is_hidden' => '',
         ),
         array(
-            'label' => 'Out Now!',
+            'label' => 'Stream · Watch · Share',
             'href' => '#stream',
             'external' => '',
             'is_hidden' => '',
         ),
         array(
             'label' => 'Ellene Masri',
-            'href' => 'https://www.tiktok.com/@ellenemasri',
-            'external' => 'on',
-            'is_hidden' => '',
-        ),
-        array(
-            'label' => 'Stream · Watch · Share',
-            'href' => '#video',
+            'href' => '#social',
             'external' => '',
             'is_hidden' => '',
         ),
@@ -183,7 +178,11 @@ function mayami_initialize_default_content() {
     if (empty($options['marquee_logo_png'])) {
         $options['marquee_logo_png'] = $theme_url . '/assets/mayami-logo.png';
     }
-    
+
+    if (!isset($options['marquee_logo_hidden'])) {
+        $options['marquee_logo_hidden'] = '';
+    }
+
     // Set default images
     if (empty($options['social_texture_image'])) {
         $options['social_texture_image'] = $theme_url . '/assets/mayami-texture.jpg';
@@ -454,6 +453,82 @@ function mayami_sync_marquee_play_link_once() {
     }
 
     if ($changed) {
+        update_option($option_key, $options);
+    }
+
+    update_option($sync_flag, true);
+}
+
+/**
+ * Ensure TOP-BAR has required management items and clean legacy icon-toggle items.
+ */
+function mayami_sync_marquee_items_once() {
+     $sync_flag = 'mayami_marquee_items_synced_20260530_v5';
+    if (get_option($sync_flag)) {
+        return;
+    }
+
+    $option_key = 'mayami_landing_options';
+    $options = get_option($option_key, array());
+    if (!is_array($options)) {
+        update_option($sync_flag, true);
+        return;
+    }
+
+    $items = isset($options['marquee_items']) && is_array($options['marquee_items']) ? $options['marquee_items'] : array();
+    $clean_items = array();
+
+    $has_ellene = false;
+    $changed = false;
+
+    if (array_key_exists('marquee_show_stream_icons', $options)) {
+        unset($options['marquee_show_stream_icons']);
+        $changed = true;
+    }
+
+    if (array_key_exists('marquee_stream_icons_new_tab', $options)) {
+        unset($options['marquee_stream_icons_new_tab']);
+        $changed = true;
+    }
+
+    foreach ($items as $item) {
+        if (!is_array($item)) {
+            continue;
+        }
+
+        $label = strtolower(trim(remove_accents((string) ($item['label'] ?? ''))));
+        if ($label === 'afficher les icones' || $label === 'icones stream' || $label === 'icone plateformes') {
+            $changed = true;
+            continue;
+        }
+
+        if ($label === 'ellene masri') {
+            $has_ellene = true;
+
+            $current_href = trim((string) ($item['href'] ?? ''));
+            $current_external = !empty($item['external']);
+            if ($current_href === '' || strpos($current_href, '#') !== 0 || $current_external) {
+                $item['href'] = '#social';
+                $item['external'] = '';
+                $changed = true;
+            }
+        }
+
+        $clean_items[] = $item;
+    }
+
+    if (!$has_ellene) {
+        $clean_items[] = array(
+            'label'    => 'Ellene Masri',
+            'href'     => '#social',
+            'external' => '',
+            'is_hidden'=> '',
+        );
+        $changed = true;
+    }
+
+    if ($changed) {
+        $options['marquee_items'] = $clean_items;
         update_option($option_key, $options);
     }
 
@@ -1090,23 +1165,17 @@ function mayami_register_options() {
     ));
 
     $cmb->add_field(array(
-        'name' => 'Icône Play - Afficher',
-        'id'   => 'marquee_show_music_icon',
-        'type' => 'checkbox',
-        'default' => 'on',
-    ));
-
-    $cmb->add_field(array(
-        'name' => 'Marquee Logo PNG',
+        'name' => 'Visuel TOP-BAR',
         'id'   => 'marquee_logo_png',
         'type' => 'file',
+        'text' => array(
+            'add_upload_file_text' => 'Modifier',
+        ),
     ));
 
     $cmb->add_field(array(
-        'name'    => 'Icône Play - Lien Spotify',
-        'id'      => 'marquee_play_link',
-        'type'    => 'text_url',
-        'default' => 'https://open.spotify.com/intl-fr/track/3rzrziofCOwRrI1r99IUbQ?si=a2cd3f4cbe364a94',
-        'desc'    => 'Lien utilisé par l\'icône Play de la marquee (desktop + mobile).',
+        'name' => 'Masquer',
+        'id'   => 'marquee_logo_hidden',
+        'type' => 'checkbox',
     ));
 }

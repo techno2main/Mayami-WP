@@ -14,6 +14,10 @@ $link_deezer = cmb2_get_option('mayami_landing_options', 'link_deezer') ?: 'http
 $link_amazon_music = cmb2_get_option('mayami_landing_options', 'link_amazon_music') ?: 'https://music.amazon.com/tracks/B0H2FR3WHQ?marketplaceId=ATVPDKIKX0DER&musicTerritory=US&ref=dm_sh_gPJPR79AtgfLS0EFarS9Xwi57';
 $link_soundcloud = cmb2_get_option('mayami_landing_options', 'link_soundcloud') ?: 'https://soundcloud.com/ellenemasri';
 $marquee_logo_png = cmb2_get_option('mayami_landing_options', 'marquee_logo_png') ?: (get_template_directory_uri() . '/assets/mayami-logo.png');
+$hide_marquee_visual = !empty(cmb2_get_option('mayami_landing_options', 'marquee_logo_hidden'));
+
+$show_platform_icons = true;
+$open_platform_icons_in_new_tab = false;
 
 if (is_array($marquee_items)) {
     $marquee_items = array_values(array_filter($marquee_items, static function ($item) {
@@ -25,8 +29,12 @@ if (is_array($marquee_items)) {
             return false;
         }
 
-        $label = strtolower(trim((string) ($item['label'] ?? '')));
+        $label = strtolower(trim(remove_accents((string) ($item['label'] ?? ''))));
         if (strpos($label, 'out now') !== false) {
+            return false;
+        }
+
+        if ($label === 'icone plateformes' || $label === 'icones stream' || $label === 'afficher les icones') {
             return false;
         }
 
@@ -43,15 +51,22 @@ if (empty($marquee_items)) {
 
 $desktop_left_item = $marquee_items[0] ?? array('label' => 'Mayami, My Miami', 'href' => '#page-top', 'external' => false);
 $desktop_center_item = null;
+$desktop_right_item = null;
 foreach ($marquee_items as $item) {
     $label = strtolower(trim((string) ($item['label'] ?? '')));
     if (strpos($label, 'stream') !== false && strpos($label, 'watch') !== false) {
         $desktop_center_item = $item;
-        break;
+    }
+
+    if (strpos($label, 'ellene') !== false) {
+        $desktop_right_item = $item;
     }
 }
 if (!$desktop_center_item) {
     $desktop_center_item = $marquee_items[1] ?? array('label' => 'Stream · Watch · Share', 'href' => '#stream', 'external' => false);
+}
+if (!$desktop_right_item) {
+    $desktop_right_item = array('label' => 'Ellene Leya Masri', 'href' => '#social', 'external' => false);
 }
 
 $stream_platforms = cmb2_get_option('mayami_landing_options', 'stream_platforms');
@@ -76,26 +91,29 @@ $platform_icon_map = array(
 );
 
 $marquee_platform_links = array();
-foreach ($stream_platforms as $platform) {
-    $is_active = !empty($platform['is_active']);
-    $label = isset($platform['label']) ? trim((string) $platform['label']) : '';
-    $href = isset($platform['href']) ? trim((string) $platform['href']) : '';
+if ($show_platform_icons) {
+    foreach ($stream_platforms as $platform) {
+        $is_active = !empty($platform['is_active']);
+        $label = isset($platform['label']) ? trim((string) $platform['label']) : '';
+        $href = isset($platform['href']) ? trim((string) $platform['href']) : '';
 
-    if (!$is_active || $label === '' || $href === '') {
-        continue;
+        if (!$is_active || $label === '' || $href === '') {
+            continue;
+        }
+
+        $key = sanitize_title($label);
+        if (!isset($platform_icon_map[$key])) {
+            continue;
+        }
+
+        $marquee_platform_links[] = array(
+            'href' => $open_platform_icons_in_new_tab ? $href : '#stream',
+            'platform' => $key,
+            'icon' => $platform_icon_map[$key]['icon'],
+            'label' => $platform_icon_map[$key]['label'],
+            'external' => $open_platform_icons_in_new_tab,
+        );
     }
-
-    $key = sanitize_title($label);
-    if (!isset($platform_icon_map[$key])) {
-        continue;
-    }
-
-    $marquee_platform_links[] = array(
-        'href' => '#stream',
-        'platform' => $key,
-        'icon' => $platform_icon_map[$key]['icon'],
-        'label' => $platform_icon_map[$key]['label'],
-    );
 }
 
 $mobile_title = !empty($desktop_left_item['label']) ? $desktop_left_item['label'] : 'Mayami, My Miami';
@@ -165,10 +183,14 @@ $mobile_stream_link = $desktop_center_item;
         display: inline-flex;
         align-items: center;
         justify-content: center;
+        border: 0;
+        background: transparent;
+        padding: 0;
         color: var(--cream);
         font-size: 18px;
         line-height: 1;
         transition: color .15s ease, transform .15s ease;
+        cursor: pointer;
     }
 
     #hero-marquee .marquee-platform-link:hover {
@@ -185,6 +207,10 @@ $mobile_stream_link = $desktop_center_item;
         max-width: 80rem;
         margin: 0 auto;
         padding: 0 20px 16px 0;
+    }
+
+    #hero-marquee .marquee-logo-row.no-visual {
+        grid-template-columns: 1fr;
     }
 
     #hero-marquee .marquee-logo-mark,
@@ -338,10 +364,21 @@ $mobile_stream_link = $desktop_center_item;
     }
 </style>
 <div id="hero-marquee" class="relative z-20 overflow-hidden py-3">
-    <div class="marquee-logo-row">
-        <img src="<?php echo esc_url($marquee_logo_png); ?>" alt="Mayami" class="marquee-logo-image" loading="lazy" decoding="async" />
+    <div class="marquee-logo-row<?php echo $hide_marquee_visual ? ' no-visual' : ''; ?>">
+        <?php if (!$hide_marquee_visual): ?>
+            <img src="<?php echo esc_url($marquee_logo_png); ?>" alt="Mayami" class="marquee-logo-image" loading="lazy" decoding="async" />
+        <?php endif; ?>
         <div class="marquee-logo-copy">
-            <span class="marquee-logo-mark">Ellene Leya Masri</span>
+            <?php
+                $right_href = !empty($desktop_right_item['href']) ? $desktop_right_item['href'] : '#social';
+                $right_label = !empty($desktop_right_item['label']) ? $desktop_right_item['label'] : 'Ellene Leya Masri';
+                $right_is_external = !empty($desktop_right_item['external']);
+                $right_target = $right_is_external ? '_blank' : '_self';
+                $right_rel = $right_is_external ? 'noreferrer' : '';
+            ?>
+            <a href="<?php echo esc_url($right_href); ?>" <?php if ($right_is_external): ?>target="<?php echo esc_attr($right_target); ?>" rel="<?php echo esc_attr($right_rel); ?>"<?php endif; ?> class="marquee-logo-mark marquee-link">
+                <?php echo esc_html($right_label); ?>
+            </a>
         </div>
     </div>
     <div id="hero-marquee-mobile">
@@ -350,9 +387,9 @@ $mobile_stream_link = $desktop_center_item;
             <?php if (!empty($marquee_platform_links)): ?>
                 <span class="marquee-platform-icons">
                     <?php foreach ($marquee_platform_links as $platform): ?>
-                        <a href="<?php echo esc_url($platform['href']); ?>" data-open-platform="<?php echo esc_attr($platform['platform']); ?>" aria-label="<?php echo esc_attr($platform['label']); ?>" title="<?php echo esc_attr($platform['label']); ?>" class="marquee-platform-link">
+                        <button type="button" data-open-platform="<?php echo esc_attr($platform['platform']); ?>" aria-label="<?php echo esc_attr($platform['label']); ?>" title="<?php echo esc_attr($platform['label']); ?>" class="marquee-platform-link">
                             <i class="fa-brands <?php echo esc_attr($platform['icon']); ?>" aria-hidden="true"></i>
-                        </a>
+                        </button>
                     <?php endforeach; ?>
                 </span>
             <?php endif; ?>
@@ -407,9 +444,9 @@ $mobile_stream_link = $desktop_center_item;
                     <?php if (!empty($marquee_platform_links)): ?>
                         <span class="marquee-platform-icons">
                             <?php foreach ($marquee_platform_links as $platform): ?>
-                                <a href="<?php echo esc_url($platform['href']); ?>" data-open-platform="<?php echo esc_attr($platform['platform']); ?>" aria-label="<?php echo esc_attr($platform['label']); ?>" title="<?php echo esc_attr($platform['label']); ?>" class="marquee-platform-link">
+                                <button type="button" data-open-platform="<?php echo esc_attr($platform['platform']); ?>" aria-label="<?php echo esc_attr($platform['label']); ?>" title="<?php echo esc_attr($platform['label']); ?>" class="marquee-platform-link">
                                     <i class="fa-brands <?php echo esc_attr($platform['icon']); ?>" aria-hidden="true"></i>
-                                </a>
+                                </button>
                             <?php endforeach; ?>
                         </span>
                     <?php endif; ?>

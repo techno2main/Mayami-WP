@@ -180,6 +180,29 @@
   filter: brightness(1.08);
 }
 
+/* TOP-BAR visual field: narrower path input for better balance. */
+.cmb2-id-marquee-logo-png .cmb-td input[type="text"],
+.cmb2-id-marquee-logo-png .cmb-td input[type="url"] {
+  width: min(100%, 360px) !important;
+  max-width: 360px !important;
+}
+
+.cmb2-id-marquee-logo-png .mayami-inline-hide-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: 12px;
+  vertical-align: middle;
+}
+
+.cmb2-id-marquee-logo-png .mayami-inline-hide-toggle .mayami-inline-hide-label {
+  font-weight: 600;
+}
+
+.cmb2-id-marquee-logo-hidden.mayami-hidden-source-row {
+  display: none !important;
+}
+
 .cmb2-id-section-hero-title.mayami-section-toggle:focus .cmb-th,
 .cmb2-id-section-slider-title.mayami-section-toggle:focus .cmb-th,
 .cmb2-id-section-stream-title.mayami-section-toggle:focus .cmb-th,
@@ -307,19 +330,63 @@
   cursor: pointer;
 }
 
-/* Global alignment: keep field labels and inputs on the same left axis across sections. */
-.cmb2-wrap .cmb-row:not(.cmb-type-title) .cmb-th,
-.cmb2-wrap .cmb-row:not(.cmb-type-title) .cmb-td {
-  float: none;
-  width: 100%;
-  margin: 0;
-  padding-left: 0;
-  padding-right: 0;
+/* Compact two-column layout for top-level fields in every section. */
+.cmb2-wrap .cmb-metabox > .cmb-row:not(.cmb-type-title):not(.cmb-type-checkbox):not(.cmb-repeatable-grouping) {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  padding-top: 10px;
+  padding-bottom: 10px;
 }
 
-.cmb2-wrap .cmb-row:not(.cmb-type-title) .cmb-th label {
-  display: inline-block;
-  margin-bottom: 6px;
+.cmb2-wrap .cmb-metabox > .cmb-row:not(.cmb-type-title):not(.cmb-type-checkbox):not(.cmb-repeatable-grouping) .cmb-th {
+  float: none;
+  width: 220px;
+  min-width: 220px;
+  margin: 0;
+  padding: 0 8px 0 0;
+}
+
+.cmb2-wrap .cmb-metabox > .cmb-row:not(.cmb-type-title):not(.cmb-type-checkbox):not(.cmb-repeatable-grouping) .cmb-td {
+  float: none;
+  flex: 1;
+  width: auto;
+  margin: 0;
+  padding: 0;
+}
+
+.cmb2-wrap .cmb-metabox > .cmb-row:not(.cmb-type-title):not(.cmb-type-checkbox):not(.cmb-repeatable-grouping) .cmb-th label {
+  display: block;
+  margin: 0;
+  font-weight: 600;
+}
+
+.cmb2-wrap .cmb-metabox > .cmb-row:not(.cmb-type-title):not(.cmb-type-checkbox):not(.cmb-repeatable-grouping) .cmb-td input[type="text"],
+.cmb2-wrap .cmb-metabox > .cmb-row:not(.cmb-type-title):not(.cmb-type-checkbox):not(.cmb-repeatable-grouping) .cmb-td input[type="url"],
+.cmb2-wrap .cmb-metabox > .cmb-row:not(.cmb-type-title):not(.cmb-type-checkbox):not(.cmb-repeatable-grouping) .cmb-td input[type="number"],
+.cmb2-wrap .cmb-metabox > .cmb-row:not(.cmb-type-title):not(.cmb-type-checkbox):not(.cmb-repeatable-grouping) .cmb-td select {
+  width: 100%;
+  max-width: 560px;
+}
+
+.cmb2-wrap .cmb-metabox > .cmb-row:not(.cmb-type-title):not(.cmb-type-checkbox):not(.cmb-repeatable-grouping) .cmb-td textarea {
+  width: 100%;
+  max-width: 720px;
+  min-height: 96px;
+}
+
+@media screen and (max-width: 900px) {
+  .cmb2-wrap .cmb-metabox > .cmb-row:not(.cmb-type-title):not(.cmb-type-checkbox):not(.cmb-repeatable-grouping) {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 6px;
+  }
+
+  .cmb2-wrap .cmb-metabox > .cmb-row:not(.cmb-type-title):not(.cmb-type-checkbox):not(.cmb-repeatable-grouping) .cmb-th,
+  .cmb2-wrap .cmb-metabox > .cmb-row:not(.cmb-type-title):not(.cmb-type-checkbox):not(.cmb-repeatable-grouping) .cmb-td {
+    width: 100%;
+    min-width: 0;
+  }
 }
 
 /* Keep single checkbox fields on one compact line: label + checkbox. */
@@ -362,6 +429,62 @@
   margin-bottom: 10px;
 }
 
+/* TOP-BAR item header: keep native CMB2 controls visible and stable. */
+.cmb2-id-marquee-items .cmb-repeatable-grouping .cmb-group-title {
+  padding-left: 12px !important;
+}
+
+.cmb2-id-marquee-items .cmb-repeatable-grouping {
+  position: relative;
+}
+
+/* Hide the red remove cross in item header. */
+.cmb2-id-marquee-items .cmb-repeatable-grouping > .cmb-remove-group-row:not(.cmb-remove-group-row-button) {
+  display: none !important;
+}
+
+/* Move native up/down arrows to title line, after the red cross (only top-level item controls). */
+.cmb2-id-marquee-items .cmb-repeatable-grouping > a.cmb-shift-rows,
+.cmb2-id-marquee-items .cmb-repeatable-grouping > button.cmb-shift-rows {
+  position: absolute;
+  top: 15px;
+  left: 30px;
+  z-index: 3;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 !important;
+}
+
+/* Safety reset: any nested shift controls must stay in normal flow. */
+.cmb2-id-marquee-items .cmb-repeatable-grouping .cmb-row .cmb-shift-rows,
+.cmb2-id-marquee-items .cmb-repeatable-grouping .cmb-td .cmb-shift-rows,
+.cmb2-id-marquee-items .cmb-repeatable-grouping .cmb-th .cmb-shift-rows {
+  position: static !important;
+  top: auto !important;
+  left: auto !important;
+}
+
+/* Shift "Item" text to the right so it doesn't overlap controls. */
+.cmb2-id-marquee-items .cmb-repeatable-grouping .cmb-group-title > span {
+  display: inline-block;
+  padding-left: 0;
+}
+
+/* Show bottom remove button next to arrows. */
+.cmb2-id-marquee-items .cmb-repeatable-grouping .cmb-remove-row {
+  display: inline-flex;
+  align-items: center;
+  float: none !important;
+  margin-left: 8px;
+}
+
+.cmb2-id-marquee-items .cmb-repeatable-grouping .cmb-remove-group-row-button {
+  display: inline-block !important;
+  float: none !important;
+  margin: 0 !important;
+}
+
 .cmb2-id-marquee-items .cmb-repeatable-grouping .cmb-row {
   padding-top: 8px;
   padding-bottom: 8px;
@@ -376,11 +499,15 @@
 .cmb2-id-marquee-items .cmb-repeatable-grouping .cmb-row[class*="-external"],
 .cmb2-id-marquee-items .cmb-repeatable-grouping .cmb-row[class*="-is-hidden"] {
   display: inline-flex;
-  width: calc(50% - 6px);
+  width: calc(18% - 6px);
   margin-right: 6px;
   vertical-align: top;
   align-items: center;
   gap: 6px;
+}
+
+.cmb2-id-marquee-items .cmb-repeatable-grouping .cmb-row[class*="-is-hidden"] {
+  margin-right: 0;
 }
 
 .cmb2-id-marquee-items .cmb-repeatable-grouping .cmb-row[class*="-external"] .cmb-th,
@@ -410,37 +537,123 @@
   display: inline-block;
   margin: 0;
   font-weight: 600;
+  white-space: nowrap;
 }
 
-/* Keep Label + Lien blocks left-aligned (label and input start on same left axis). */
+/* TOP-BAR group line 1: Label + Lien on the same row. */
 .cmb2-id-marquee-items .cmb-repeatable-grouping .cmb-row[class*="-label"],
 .cmb2-id-marquee-items .cmb-repeatable-grouping .cmb-row[class*="-href"] {
-  display: block;
+  display: inline-flex;
+  width: calc(32% - 8px);
+  vertical-align: top;
+  margin-right: 8px;
+  align-items: center;
+  gap: 8px;
+  padding-top: 6px;
+  padding-bottom: 6px;
+}
+
+.cmb2-id-marquee-items .cmb-repeatable-grouping .cmb-row[class*="-href"] {
+  margin-right: 8px;
 }
 
 .cmb2-id-marquee-items .cmb-repeatable-grouping .cmb-row[class*="-label"] .cmb-th,
-.cmb2-id-marquee-items .cmb-repeatable-grouping .cmb-row[class*="-href"] .cmb-th,
-.cmb2-id-marquee-items .cmb-repeatable-grouping .cmb-row[class*="-label"] .cmb-td,
-.cmb2-id-marquee-items .cmb-repeatable-grouping .cmb-row[class*="-href"] .cmb-td {
-  width: 100%;
+.cmb2-id-marquee-items .cmb-repeatable-grouping .cmb-row[class*="-href"] .cmb-th {
+  width: 70px;
+  min-width: 70px;
   float: none;
   margin: 0;
-  padding-left: 0;
-  padding-right: 0;
+  padding: 0;
+}
+
+.cmb2-id-marquee-items .cmb-repeatable-grouping .cmb-row[class*="-label"] .cmb-td,
+.cmb2-id-marquee-items .cmb-repeatable-grouping .cmb-row[class*="-href"] .cmb-td {
+  flex: 1;
+  width: auto;
+  float: none;
+  margin: 0;
+  padding: 0;
 }
 
 .cmb2-id-marquee-items .cmb-repeatable-grouping .cmb-row[class*="-label"] .cmb-th label,
 .cmb2-id-marquee-items .cmb-repeatable-grouping .cmb-row[class*="-href"] .cmb-th label {
-  display: inline-block;
-  margin-bottom: 6px;
+  display: block;
+  margin: 0;
+  font-weight: 600;
 }
 
 .cmb2-id-marquee-items .cmb-repeatable-grouping .cmb-row[class*="-label"] .cmb-td input,
 .cmb2-id-marquee-items .cmb-repeatable-grouping .cmb-row[class*="-href"] .cmb-td input {
-  margin-left: 0;
+  margin: 0;
+  width: 100%;
+  max-width: none;
+}
+
+/* Ensure TOP-BAR text fields stay readable and never collapse to tiny squares. */
+.cmb2-id-marquee-items .cmb-repeatable-grouping .cmb-row[class*="-label"] .cmb-td input[type="text"],
+.cmb2-id-marquee-items .cmb-repeatable-grouping .cmb-row[class*="-href"] .cmb-td input[type="url"],
+.cmb2-id-marquee-items .cmb-repeatable-grouping .cmb-row[class*="-href"] .cmb-td input[type="text"] {
+  -webkit-appearance: auto !important;
+  appearance: auto !important;
+  box-sizing: border-box;
+  display: block;
+  width: min(100%, 420px) !important;
+  min-width: 220px;
+  height: 40px;
+  padding: 8px 10px;
+  color: #1d2327 !important;
+  background-color: #fff !important;
+  border: 1px solid #8c8f94 !important;
+  border-radius: 2px;
+}
+
+/* TOP-BAR native move controls: icon-only visual cleanup. */
+.cmb2-id-marquee-items .cmb-repeatable-grouping > a.cmb-shift-rows,
+.cmb2-id-marquee-items .cmb-repeatable-grouping > button.cmb-shift-rows {
+  border: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+  min-width: 0 !important;
+  min-height: 0 !important;
+  width: auto !important;
+  height: auto !important;
+  line-height: 1 !important;
+}
+
+.cmb2-id-marquee-items .cmb-repeatable-grouping > a.cmb-shift-rows,
+.cmb2-id-marquee-items .cmb-repeatable-grouping > button.cmb-shift-rows,
+.cmb2-id-marquee-items .cmb-repeatable-grouping > a.cmb-shift-rows:focus,
+.cmb2-id-marquee-items .cmb-repeatable-grouping > a.cmb-shift-rows:hover,
+.cmb2-id-marquee-items .cmb-repeatable-grouping > button.cmb-shift-rows:focus,
+.cmb2-id-marquee-items .cmb-repeatable-grouping > button.cmb-shift-rows:hover {
+  border: 0 !important;
+  border-style: none !important;
+  box-shadow: none !important;
+  background: transparent !important;
+  outline: 0 !important;
+}
+
+.cmb2-id-marquee-items .cmb-repeatable-grouping > a.cmb-shift-rows .dashicons,
+.cmb2-id-marquee-items .cmb-repeatable-grouping > button.cmb-shift-rows .dashicons {
+  color: #6b21a8 !important;
+  font-size: 18px;
+  width: 18px;
+  height: 18px;
+  line-height: 18px;
 }
 
 @media screen and (max-width: 782px) {
+  .cmb2-id-marquee-items .cmb-repeatable-grouping > .cmb-remove-group-row:not(.cmb-remove-group-row-button),
+  .cmb2-id-marquee-items .cmb-repeatable-grouping > a.cmb-shift-rows,
+  .cmb2-id-marquee-items .cmb-repeatable-grouping > button.cmb-shift-rows {
+    position: static !important;
+  }
+
+  .cmb2-id-marquee-items .cmb-repeatable-grouping .cmb-group-title > span {
+    padding-left: 0;
+  }
+
   .cmb2-id-marquee-items .cmb-repeatable-grouping .cmb-row {
     padding-top: 6px;
     padding-bottom: 6px;
@@ -448,9 +661,9 @@
 
   .cmb2-id-marquee-items .cmb-repeatable-grouping .cmb-row[class*="-external"],
   .cmb2-id-marquee-items .cmb-repeatable-grouping .cmb-row[class*="-is-hidden"] {
-    display: inline-flex;
-    width: calc(50% - 4px);
-    margin-right: 4px;
+    display: flex;
+    width: 100%;
+    margin-right: 0;
     align-items: center;
     gap: 6px;
   }
@@ -461,7 +674,27 @@
     line-height: 1.2;
   }
 
+  .cmb2-id-marquee-items .cmb-repeatable-grouping .cmb-row[class*="-label"],
+  .cmb2-id-marquee-items .cmb-repeatable-grouping .cmb-row[class*="-href"] {
+    display: flex;
+    width: 100%;
+    margin-right: 0;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 6px;
+  }
+
+  .cmb2-id-marquee-items .cmb-repeatable-grouping .cmb-row[class*="-label"] .cmb-th,
+  .cmb2-id-marquee-items .cmb-repeatable-grouping .cmb-row[class*="-href"] .cmb-th,
+  .cmb2-id-marquee-items .cmb-repeatable-grouping .cmb-row[class*="-label"] .cmb-td,
+  .cmb2-id-marquee-items .cmb-repeatable-grouping .cmb-row[class*="-href"] .cmb-td {
+    width: 100%;
+    min-width: 0;
+  }
+
   .cmb2-id-marquee-show-music-icon {
     gap: 6px;
   }
+
+  /* No custom item controls on mobile. */
 }
