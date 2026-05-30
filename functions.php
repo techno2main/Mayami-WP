@@ -153,6 +153,19 @@ function mayami_enqueue_admin_assets($hook) {
 add_action('admin_enqueue_scripts', 'mayami_enqueue_admin_assets');
 
 /**
+ * Hide default WordPress footer text on Mayami settings page.
+ */
+function mayami_hide_wp_footer_text_on_landing($text) {
+    $screen = get_current_screen();
+    if ($screen && $screen->id === 'toplevel_page_mayami_landing_options') {
+        return '';
+    }
+
+    return $text;
+}
+add_filter('admin_footer_text', 'mayami_hide_wp_footer_text_on_landing', 20);
+
+/**
  * Add a prominent "Modifier les détails" button in the media modal for client accounts.
  * The WP media modal has no visible save button — this makes it obvious.
  */
@@ -266,15 +279,62 @@ function mayami_limit_admin_bar_for_client($wp_admin_bar) {
         return;
     }
 
-    // Keep only media creation in the + New menu for client admins.
+    // Keep only media creation for client admins.
+    // Remove the default "+ New / Créer" parent and its children,
+    // then add a single direct shortcut to media upload.
+    $wp_admin_bar->remove_node('new-content');
     $wp_admin_bar->remove_node('new-post');
     $wp_admin_bar->remove_node('new-page');
     $wp_admin_bar->remove_node('new-user');
+    $wp_admin_bar->remove_node('new-media');
+
+    $wp_admin_bar->add_node([
+        'id'    => 'mayami-new-media',
+        'title' => 'Ajouter un media',
+        'href'  => admin_url('media-new.php'),
+        'meta'  => [
+            'title' => 'Ajouter un media',
+        ],
+    ]);
 
     // Hide comments bubble since comments menu is also hidden.
     $wp_admin_bar->remove_node('comments');
+
+    // Hide Customizer shortcut for client admins.
+    $wp_admin_bar->remove_node('customize');
 }
 add_action('admin_bar_menu', 'mayami_limit_admin_bar_for_client', 999);
+
+/**
+ * Redirect the front-end admin bar "Edit" link to Mayami Landing settings.
+ */
+function mayami_redirect_admin_bar_edit_to_landing($wp_admin_bar) {
+    if (!is_admin_bar_showing() || is_admin()) {
+        return;
+    }
+
+    if (!current_user_can('manage_options') || !is_front_page()) {
+        return;
+    }
+
+    $current_user = wp_get_current_user();
+    if (!$current_user || empty($current_user->user_login)) {
+        return;
+    }
+
+    if ($current_user->user_login === 'admin-my') {
+        return;
+    }
+
+    $edit_node = $wp_admin_bar->get_node('edit');
+    if (!$edit_node) {
+        return;
+    }
+
+    $edit_node->href = admin_url('admin.php?page=mayami_landing_options');
+    $wp_admin_bar->add_node($edit_node);
+}
+add_action('admin_bar_menu', 'mayami_redirect_admin_bar_edit_to_landing', 1001);
 
 // Statistics menu - GA4 shortcut for all admin users (including client)
 function mayami_add_statistics_menu() {

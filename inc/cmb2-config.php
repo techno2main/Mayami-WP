@@ -468,7 +468,7 @@ function mayami_register_options() {
     // PAGE UNIQUE
     $cmb = new_cmb2_box(array(
         'id'           => 'mayami_main_page',
-        'title'        => 'Mayami Landing Page',
+        'title'        => 'Mayami Landing Settings',
         'object_types' => array('options-page'),
         'option_key'   => $option_key,
         'icon_url'     => 'dashicons-admin-site-alt3',

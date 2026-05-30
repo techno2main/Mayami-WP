@@ -85,6 +85,75 @@
   scroll-margin-top: 120px;
 }
 
+.cmb2-id-section-hero-title.mayami-section-toggle .cmb-th,
+.cmb2-id-section-slider-title.mayami-section-toggle .cmb-th,
+.cmb2-id-section-stream-title.mayami-section-toggle .cmb-th,
+.cmb2-id-section-social-title.mayami-section-toggle .cmb-th,
+.cmb2-id-section-video-title.mayami-section-toggle .cmb-th,
+.cmb2-id-section-release-title.mayami-section-toggle .cmb-th,
+.cmb2-id-section-cta-title.mayami-section-toggle .cmb-th,
+.cmb2-id-section-footer-title.mayami-section-toggle .cmb-th,
+.cmb2-id-section-links-title.mayami-section-toggle .cmb-th,
+.cmb2-id-section-marquee-title.mayami-section-toggle .cmb-th {
+  position: relative;
+  padding-right: 48px;
+  cursor: pointer;
+}
+
+.cmb2-wrap .cmb-row.mayami-section-toggle,
+.cmb2-wrap .cmb-row.mayami-section-toggle * {
+  cursor: pointer;
+}
+
+.cmb2-wrap .cmb-row.mayami-section-toggle,
+.cmb2-wrap .cmb-row.mayami-section-toggle .cmb-th {
+  position: relative;
+}
+
+.cmb2-wrap .cmb-row.mayami-section-toggle .mayami-eye-indicator {
+  width: 20px;
+  height: 20px;
+  font-size: 20px;
+  line-height: 20px;
+  position: absolute;
+  right: 18px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #6b21a8;
+  opacity: 0.95;
+  pointer-events: none;
+}
+
+.cmb2-wrap .cmb-row.mayami-section-toggle.mayami-section-open .mayami-eye-indicator {
+  opacity: 1;
+}
+
+.cmb2-id-section-hero-title.mayami-section-toggle .cmb-th:hover,
+.cmb2-id-section-slider-title.mayami-section-toggle .cmb-th:hover,
+.cmb2-id-section-stream-title.mayami-section-toggle .cmb-th:hover,
+.cmb2-id-section-social-title.mayami-section-toggle .cmb-th:hover,
+.cmb2-id-section-video-title.mayami-section-toggle .cmb-th:hover,
+.cmb2-id-section-release-title.mayami-section-toggle .cmb-th:hover,
+.cmb2-id-section-cta-title.mayami-section-toggle .cmb-th:hover,
+.cmb2-id-section-footer-title.mayami-section-toggle .cmb-th:hover,
+.cmb2-id-section-links-title.mayami-section-toggle .cmb-th:hover,
+.cmb2-id-section-marquee-title.mayami-section-toggle .cmb-th:hover {
+  filter: brightness(1.08);
+}
+
+.cmb2-id-section-hero-title.mayami-section-toggle:focus .cmb-th,
+.cmb2-id-section-slider-title.mayami-section-toggle:focus .cmb-th,
+.cmb2-id-section-stream-title.mayami-section-toggle:focus .cmb-th,
+.cmb2-id-section-social-title.mayami-section-toggle:focus .cmb-th,
+.cmb2-id-section-video-title.mayami-section-toggle:focus .cmb-th,
+.cmb2-id-section-release-title.mayami-section-toggle:focus .cmb-th,
+.cmb2-id-section-cta-title.mayami-section-toggle:focus .cmb-th,
+.cmb2-id-section-footer-title.mayami-section-toggle:focus .cmb-th,
+.cmb2-id-section-links-title.mayami-section-toggle:focus .cmb-th,
+.cmb2-id-section-marquee-title.mayami-section-toggle:focus .cmb-th {
+  box-shadow: 0 0 0 3px rgba(19, 247, 188, 0.35);
+}
+
 .cmb2-id-section-hero-title {
   margin-top: 0 !important;
 }
@@ -113,6 +182,38 @@
     font-size: 11px;
     padding: 6px 12px;
   }
+}
+
+/* Bottom save button: match top white/violet action style. */
+.toplevel_page_mayami_landing_options .cmb2-wrap input[type="submit"],
+.toplevel_page_mayami_landing_options .cmb2-wrap button[type="submit"],
+.toplevel_page_mayami_landing_options .cmb2-wrap .button-primary,
+.toplevel_page_mayami_landing_options .wrap p.submit input[type="submit"],
+.toplevel_page_mayami_landing_options .wrap .button.button-primary {
+  background: #fff !important;
+  color: #6b21a8 !important;
+  border: 2px solid #fff !important;
+  padding: 8px 20px !important;
+  font-size: 13px !important;
+  font-weight: 700 !important;
+  border-radius: 6px !important;
+  cursor: pointer !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.5px !important;
+  transition: all 0.2s !important;
+  box-shadow: none !important;
+}
+
+.toplevel_page_mayami_landing_options .cmb2-wrap input[type="submit"]:hover,
+.toplevel_page_mayami_landing_options .cmb2-wrap button[type="submit"]:hover,
+.toplevel_page_mayami_landing_options .cmb2-wrap .button-primary:hover,
+.toplevel_page_mayami_landing_options .wrap p.submit input[type="submit"]:hover,
+.toplevel_page_mayami_landing_options .wrap .button.button-primary:hover {
+  background: #f0f0f1 !important;
+  color: #6b21a8 !important;
+  border-color: #fff !important;
+  transform: translateY(-1px);
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.2) !important;
 }
 
 @media screen and (max-width: 600px) {
