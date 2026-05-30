@@ -478,7 +478,7 @@ function mayami_register_options() {
     
     // ========== SECTION: HERO ==========
     $cmb->add_field(array(
-        'name' => '🎯 Hero Section',
+        'name' => 'Hero',
         'type' => 'title',
         'id'   => 'section_hero_title',
     ));
@@ -548,7 +548,7 @@ function mayami_register_options() {
 
     // ========== SECTION: SLIDER ==========
     $cmb->add_field(array(
-        'name' => '🎠 Hero Slider',
+        'name' => 'Slider',
         'type' => 'title',
         'id'   => 'section_slider_title',
     ));
@@ -623,7 +623,7 @@ function mayami_register_options() {
 
     // ========== SECTION: STREAM ==========
     $cmb->add_field(array(
-        'name' => '🎵 Stream Section',
+        'name' => 'Stream',
         'type' => 'title',
         'id'   => 'section_stream_title',
     ));
@@ -695,7 +695,7 @@ function mayami_register_options() {
 
     // ========== SECTION: SOCIAL ==========
     $cmb->add_field(array(
-        'name' => '📱 Social Section',
+        'name' => 'Social',
         'type' => 'title',
         'id'   => 'section_social_title',
     ));
@@ -736,7 +736,7 @@ function mayami_register_options() {
 
     // ========== SECTION: VIDEO ==========
     $cmb->add_field(array(
-        'name' => '🎬 Video Section',
+        'name' => 'Video',
         'type' => 'title',
         'id'   => 'section_video_title',
     ));
@@ -798,7 +798,7 @@ function mayami_register_options() {
 
     // ========== SECTION: RELEASE INFO ==========
     $cmb->add_field(array(
-        'name' => '💿 Release Info',
+        'name' => 'Release',
         'type' => 'title',
         'id'   => 'section_release_title',
     ));
@@ -855,7 +855,7 @@ function mayami_register_options() {
 
     // ========== SECTION: CTA ==========
     $cmb->add_field(array(
-        'name' => '🎤 CTA Section',
+        'name' => 'CTA',
         'type' => 'title',
         'id'   => 'section_cta_title',
     ));
@@ -931,7 +931,7 @@ function mayami_register_options() {
 
     // ========== SECTION: FOOTER & STICKY BAR ==========
     $cmb->add_field(array(
-        'name' => '🦶 Footer & Sticky Bar',
+        'name' => 'Footer',
         'type' => 'title',
         'id'   => 'section_footer_title',
     ));
@@ -973,7 +973,7 @@ function mayami_register_options() {
 
     // ========== SECTION: PLATFORM LINKS ==========
     $cmb->add_field(array(
-        'name' => '🔗 Platform Links',
+        'name' => 'Links',
         'type' => 'title',
         'id'   => 'section_links_title',
     ));
@@ -1050,7 +1050,7 @@ function mayami_register_options() {
 
     // ========== SECTION: MARQUEE ==========
     $cmb->add_field(array(
-        'name' => '🎪 Marquee (Top Bar)',
+        'name' => 'Marquee',
         'type' => 'title',
         'id'   => 'section_marquee_title',
     ));
