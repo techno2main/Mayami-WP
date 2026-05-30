@@ -5,27 +5,17 @@
  * @package Mayami
  */
 
-$cta_kicker = cmb2_get_option('mayami_landing_options', 'cta_kicker') ?: '05 / Don\'t sleep on it';
-$cta_title_left = cmb2_get_option('mayami_landing_options', 'cta_title_left') ?: 'Press';
-$cta_title_right = cmb2_get_option('mayami_landing_options', 'cta_title_right') ?: 'play.';
-$cta_description = cmb2_get_option('mayami_landing_options', 'cta_description') ?: 'Stream the single. Watch the video. Tag and ride the wave.';
-$cta_hashtag = cmb2_get_option('mayami_landing_options', 'cta_hashtag') ?: '#MayamiMyMiami';
+$cta_kicker = trim((string) cmb2_get_option('mayami_landing_options', 'cta_kicker'));
+$cta_title_left = trim((string) cmb2_get_option('mayami_landing_options', 'cta_title_left'));
+$cta_title_right = trim((string) cmb2_get_option('mayami_landing_options', 'cta_title_right'));
+$cta_description = trim((string) cmb2_get_option('mayami_landing_options', 'cta_description'));
+$cta_hashtag = trim((string) cmb2_get_option('mayami_landing_options', 'cta_hashtag'));
 
-$cta_stream_link = cmb2_get_option('mayami_landing_options', 'cta_stream_link') ?: '#stream';
-$cta_video_link = cmb2_get_option('mayami_landing_options', 'cta_video_link') ?: '#video';
-$cta_tiktok_link = cmb2_get_option('mayami_landing_options', 'cta_tiktok_link') ?: 'https://www.tiktok.com/@ellenemasri';
-$cta_instagram_link = cmb2_get_option('mayami_landing_options', 'cta_instagram_link') ?: 'https://www.instagram.com/ellenemasri/';
-
-$cta_options = get_option('mayami_landing_options', null);
-$texture_image_default = get_template_directory_uri() . '/assets/mayami-texture.jpg';
-
-// Keep default only on fresh install (no options saved yet).
-if (!is_array($cta_options) || empty($cta_options)) {
-    $texture_image = $texture_image_default;
-} else {
-    // If admin removed the file, keep texture disabled on the frontend.
-    $texture_image = trim((string) ($cta_options['cta_texture_image'] ?? ''));
-}
+$cta_stream_link = trim((string) cmb2_get_option('mayami_landing_options', 'cta_stream_link'));
+$cta_video_link = trim((string) cmb2_get_option('mayami_landing_options', 'cta_video_link'));
+$cta_tiktok_link = trim((string) cmb2_get_option('mayami_landing_options', 'cta_tiktok_link'));
+$cta_instagram_link = trim((string) cmb2_get_option('mayami_landing_options', 'cta_instagram_link'));
+$texture_image = trim((string) cmb2_get_option('mayami_landing_options', 'cta_texture_image'));
 ?>
 <section id="cta" class="relative overflow-hidden bg-[oklch(0.68_0.17_182)] py-24 text-ink sm:py-32">
     <?php if ($texture_image !== ''): ?>
@@ -45,21 +35,36 @@ if (!is_array($cta_options) || empty($cta_options)) {
         </div>
         <div class="flex items-start justify-between gap-3">
             <div>
-                <p class="font-poster text-xs uppercase tracking-[0.3em] text-ink/80"><?php echo esc_html($cta_kicker); ?></p>
+                <?php if ($cta_kicker !== ''): ?>
+                    <p class="font-poster text-xs uppercase tracking-[0.3em] text-ink/80"><?php echo esc_html($cta_kicker); ?></p>
+                <?php endif; ?>
                 <h2 class="mt-3 font-display text-6xl leading-[0.85] sm:text-[140px]">
                     <span class="text-ink"><?php echo esc_html($cta_title_left); ?> </span>
                     <span class="text-ink"><?php echo esc_html($cta_title_right); ?></span>
                 </h2>
             </div>
         </div>
-        <p class="mt-6 max-w-xl text-lg text-ink/85">
-            <?php echo esc_html($cta_description); ?> <span class="font-bold text-ink"><?php echo esc_html($cta_hashtag); ?></span>
-        </p>
+        <?php if ($cta_description !== '' || $cta_hashtag !== ''): ?>
+            <p class="mt-6 max-w-xl text-lg text-ink/85">
+                <?php echo esc_html($cta_description); ?>
+                <?php if ($cta_hashtag !== ''): ?>
+                    <span class="font-bold text-ink"><?php echo esc_html($cta_hashtag); ?></span>
+                <?php endif; ?>
+            </p>
+        <?php endif; ?>
         <div class="mt-10 flex flex-wrap gap-3">
-            <a href="<?php echo esc_url($cta_stream_link); ?>" class="btn-pop btn-magenta">Stream</a>
-            <a href="<?php echo esc_url($cta_video_link); ?>" class="btn-pop btn-aqua">Watch</a>
-            <a href="<?php echo esc_url($cta_tiktok_link); ?>" target="_blank" rel="noreferrer" class="btn-pop" style="background: linear-gradient(135deg, #111318 0%, #1f2230 65%, #2b1430 100%); color: var(--cream) !important;">TikTok</a>
-            <a href="<?php echo esc_url($cta_instagram_link); ?>" target="_blank" rel="noreferrer" class="btn-pop" style="background: linear-gradient(135deg, #f58529 0%, #dd2a7b 48%, #8134af 74%, #515bd4 100%); color: var(--cream) !important;">Instagram</a>
+            <?php if ($cta_stream_link !== ''): ?>
+                <a href="<?php echo esc_url($cta_stream_link); ?>" class="btn-pop btn-magenta">Stream</a>
+            <?php endif; ?>
+            <?php if ($cta_video_link !== ''): ?>
+                <a href="<?php echo esc_url($cta_video_link); ?>" class="btn-pop btn-aqua">Watch</a>
+            <?php endif; ?>
+            <?php if ($cta_tiktok_link !== ''): ?>
+                <a href="<?php echo esc_url($cta_tiktok_link); ?>" target="_blank" rel="noreferrer" class="btn-pop" style="background: linear-gradient(135deg, #111318 0%, #1f2230 65%, #2b1430 100%); color: var(--cream) !important;">TikTok</a>
+            <?php endif; ?>
+            <?php if ($cta_instagram_link !== ''): ?>
+                <a href="<?php echo esc_url($cta_instagram_link); ?>" target="_blank" rel="noreferrer" class="btn-pop" style="background: linear-gradient(135deg, #f58529 0%, #dd2a7b 48%, #8134af 74%, #515bd4 100%); color: var(--cream) !important;">Instagram</a>
+            <?php endif; ?>
         </div>
     </div>
 </section>
