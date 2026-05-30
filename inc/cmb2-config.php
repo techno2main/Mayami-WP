@@ -650,6 +650,12 @@ function mayami_register_options() {
     ));
 
     $cmb->add_field(array(
+        'name' => 'Top CTA Link',
+        'id'   => 'hero_top_cta_href',
+        'type' => 'text_url',
+    ));
+
+    $cmb->add_field(array(
         'name'    => 'Badge Text',
         'id'      => 'hero_badge_text',
         'type'    => 'text',
@@ -661,6 +667,30 @@ function mayami_register_options() {
         'id'      => 'hero_subtitle',
         'type'    => 'text',
         'default' => 'Mayami, My Miami',
+    ));
+
+    $cmb->add_field(array(
+        'name' => 'Main Title (SEO)',
+        'id'   => 'hero_main_title',
+        'type' => 'text',
+    ));
+
+    $cmb->add_field(array(
+        'name' => 'Background Image',
+        'id'   => 'hero_background_image',
+        'type' => 'file',
+    ));
+
+    $cmb->add_field(array(
+        'name' => 'Main Logo Image',
+        'id'   => 'hero_logo_image',
+        'type' => 'file',
+    ));
+
+    $cmb->add_field(array(
+        'name' => 'Main Logo Alt Text',
+        'id'   => 'hero_logo_alt',
+        'type' => 'text',
     ));
 
     $cmb->add_field(array(

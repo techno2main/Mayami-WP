@@ -55,6 +55,12 @@ function mayami_register_options_page() {
         'type'    => 'text',
         'default' => 'Out tomorrow',
     ]);
+
+    $cmb_options->add_field([
+        'name' => 'Top CTA Link',
+        'id'   => 'hero_top_cta_href',
+        'type' => 'text_url',
+    ]);
     
     $cmb_options->add_field([
         'name'    => 'Badge Text',
@@ -68,6 +74,30 @@ function mayami_register_options_page() {
         'id'      => 'hero_subtitle',
         'type'    => 'text',
         'default' => 'Mayami, My Miami',
+    ]);
+
+    $cmb_options->add_field([
+        'name' => 'Main Title (SEO)',
+        'id'   => 'hero_main_title',
+        'type' => 'text',
+    ]);
+
+    $cmb_options->add_field([
+        'name' => 'Background Image',
+        'id'   => 'hero_background_image',
+        'type' => 'file',
+    ]);
+
+    $cmb_options->add_field([
+        'name' => 'Main Logo Image',
+        'id'   => 'hero_logo_image',
+        'type' => 'file',
+    ]);
+
+    $cmb_options->add_field([
+        'name' => 'Main Logo Alt Text',
+        'id'   => 'hero_logo_alt',
+        'type' => 'text',
     ]);
     
     $cmb_options->add_field([
@@ -639,6 +669,11 @@ function mayami_register_meta_boxes($meta_boxes) {
                 'std'  => 'Out tomorrow',
             ],
             [
+                'name' => 'Top CTA Link',
+                'id'   => 'hero_top_cta_href',
+                'type' => 'url',
+            ],
+            [
                 'name' => 'Badge Text',
                 'id'   => 'hero_badge_text',
                 'type' => 'text',
@@ -649,6 +684,26 @@ function mayami_register_meta_boxes($meta_boxes) {
                 'id'   => 'hero_subtitle',
                 'type' => 'text',
                 'std'  => 'Mayami, My Miami',
+            ],
+            [
+                'name' => 'Main Title (SEO)',
+                'id'   => 'hero_main_title',
+                'type' => 'text',
+            ],
+            [
+                'name' => 'Background Image',
+                'id'   => 'hero_background_image',
+                'type' => 'image_advanced',
+            ],
+            [
+                'name' => 'Main Logo Image',
+                'id'   => 'hero_logo_image',
+                'type' => 'image_advanced',
+            ],
+            [
+                'name' => 'Main Logo Alt Text',
+                'id'   => 'hero_logo_alt',
+                'type' => 'text',
             ],
             [
                 'name' => 'Description',
