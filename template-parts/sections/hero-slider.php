@@ -1,73 +1,153 @@
 <?php
 /**
  * Template part - Hero Slider
- * 
+ *
  * @package Mayami
  */
 
-$hero_slider = cmb2_get_option('mayami_landing_options', 'hero_slider');
-if (empty($hero_slider)) {
-    $hero_slider = array(
-        array('slide_type' => 'image', 'slide_image' => get_template_directory_uri() . '/assets/mayami-artist.jpg', 'alt_text' => 'Ellene Leya Masri — portrait 1'),
-        array('slide_type' => 'image', 'slide_image' => get_template_directory_uri() . '/assets/mayami-cover.jpg', 'alt_text' => 'Ellene Leya Masri — portrait 2'),
-        array('slide_type' => 'video', 'video_url' => 'https://www.youtube.com/watch?v=WiB_UoexqVo&pp=0gcJCQoLAYcqIYzv', 'alt_text' => 'Mayami official video'),
+$hero_slider_raw = cmb2_get_option('mayami_landing_options', 'hero_slider');
+if (!is_array($hero_slider_raw)) {
+    $hero_slider_raw = array();
+}
+
+if (!function_exists('mayami_hero_extract_youtube_id')) {
+    function mayami_hero_extract_youtube_id($url) {
+        if (!is_string($url) || $url === '') {
+            return '';
+        }
+
+        if (preg_match('/youtu\.be\/([^?&#]+)/', $url, $matches)) {
+            return $matches[1];
+        }
+        if (preg_match('/[?&]v=([^&#]+)/', $url, $matches)) {
+            return $matches[1];
+        }
+        if (preg_match('/embed\/([^?&#]+)/', $url, $matches)) {
+            return $matches[1];
+        }
+
+        return '';
+    }
+}
+
+if (!function_exists('mayami_extract_tiktok_video_id')) {
+    function mayami_extract_tiktok_video_id($url) {
+        if (!is_string($url) || $url === '') {
+            return '';
+        }
+
+        if (preg_match('#/video/([0-9]+)#', $url, $matches)) {
+            return $matches[1];
+        }
+
+        return '';
+    }
+}
+
+$hero_slider = array();
+$has_tiktok_slide = false;
+
+foreach ($hero_slider_raw as $slide) {
+    if (!is_array($slide)) {
+        continue;
+    }
+
+    $slide_type = isset($slide['slide_type']) ? (string) $slide['slide_type'] : 'image';
+    $slide_duration_seconds = isset($slide['slide_duration']) ? max(1, intval($slide['slide_duration'])) : 5;
+    $slide_delay_ms = $slide_duration_seconds * 1000;
+
+    if ($slide_type === 'video') {
+        $video_url = isset($slide['video_url']) ? trim((string) $slide['video_url']) : '';
+        $video_id = mayami_hero_extract_youtube_id($video_url);
+        if ($video_id === '') {
+            continue;
+        }
+
+        $hero_slider[] = array(
+            'slide_type' => 'video',
+            'slide_delay_ms' => $slide_delay_ms,
+            'video_id' => $video_id,
+        );
+        continue;
+    }
+
+    if ($slide_type === 'tiktok') {
+        $tiktok_url = isset($slide['tiktok_url']) ? trim((string) $slide['tiktok_url']) : '';
+        $tiktok_video_url = isset($slide['tiktok_video_url']) ? trim((string) $slide['tiktok_video_url']) : '';
+        $slide_image = isset($slide['slide_image']) ? trim((string) $slide['slide_image']) : '';
+        $tiktok_video_id = mayami_extract_tiktok_video_id($tiktok_url);
+
+        if ($tiktok_url === '' && $tiktok_video_url === '') {
+            continue;
+        }
+
+        $hero_slider[] = array(
+            'slide_type' => 'tiktok',
+            'slide_delay_ms' => $slide_delay_ms,
+            'tiktok_url' => $tiktok_url,
+            'tiktok_video_url' => $tiktok_video_url,
+            'tiktok_video_id' => $tiktok_video_id,
+            'slide_image' => $slide_image,
+        );
+        $has_tiktok_slide = true;
+        continue;
+    }
+
+    $image_url = isset($slide['slide_image']) ? trim((string) $slide['slide_image']) : '';
+    if ($image_url === '') {
+        continue;
+    }
+
+    $alt_text = isset($slide['alt_text']) ? trim((string) $slide['alt_text']) : '';
+    $hero_slider[] = array(
+        'slide_type' => 'image',
+        'slide_delay_ms' => $slide_delay_ms,
+        'slide_image' => $image_url,
+        'alt_text' => $alt_text,
     );
 }
 
-$slide_count = is_array($hero_slider) ? count($hero_slider) : 0;
+$slide_count = count($hero_slider);
+if ($slide_count === 0) {
+    return;
+}
+
 $show_navigation = $slide_count > 1;
 $slider_uid = 'hero-slider-' . wp_unique_id();
-$has_tiktok_slide = false;
-
-function extract_youtube_id($url) {
-    if (preg_match('/youtu\.be\/([^?&#]+)/', $url, $matches)) {
-        return $matches[1];
-    }
-    if (preg_match('/[?&]v=([^&#]+)/', $url, $matches)) {
-        return $matches[1];
-    }
-    if (preg_match('/embed\/([^?&#]+)/', $url, $matches)) {
-        return $matches[1];
-    }
-    return 'WiB_UoexqVo';
-}
+$hero_slider_footer_text = trim((string) cmb2_get_option('mayami_landing_options', 'hero_main_title'));
 ?>
 <div id="<?php echo esc_attr($slider_uid); ?>" class="hero-slider-root">
     <div class="relative mx-auto w-full max-w-md">
-        <!-- Tape decorations -->
         <span class="tape -top-4 left-10 h-6 w-24"></span>
         <span class="tape -top-4 right-10 h-6 w-24 rotate-3!"></span>
-        
+
         <div class="relative overflow-hidden rounded-3xl border-2 border-ink bg-ink" style="box-shadow: 12px 12px 0 var(--ink)">
             <div class="relative aspect-11/16 w-full">
-                <!-- Slides -->
-                <?php foreach ($hero_slider as $index => $slide): 
+                <?php foreach ($hero_slider as $index => $slide):
                     $is_active = $index === 0;
-                    $slide_type = isset($slide['slide_type']) ? $slide['slide_type'] : 'image';
-                    $slide_duration_seconds = isset($slide['slide_duration']) ? max(1, intval($slide['slide_duration'])) : 5;
-                    $slide_delay_ms = $slide_duration_seconds * 1000;
-                    
+                    $slide_type = isset($slide['slide_type']) ? (string) $slide['slide_type'] : 'image';
+                    $slide_delay_ms = isset($slide['slide_delay_ms']) ? intval($slide['slide_delay_ms']) : 5000;
+
                     if ($slide_type === 'video'):
-                        $video_url = isset($slide['video_url']) ? $slide['video_url'] : '';
-                        $video_id = extract_youtube_id($video_url);
+                        $video_id = isset($slide['video_id']) ? (string) $slide['video_id'] : '';
                         $player_dom_id = $slider_uid . '-yt-' . $index;
                         ?>
-                        <div class="hero-slide <?php echo $is_active ? 'active' : ''; ?>" data-index="<?php echo $index; ?>" data-delay="<?php echo esc_attr($slide_delay_ms); ?>" data-type="video" data-video-id="<?php echo esc_attr($video_id); ?>">
+                        <div class="hero-slide <?php echo $is_active ? 'active' : ''; ?>" data-index="<?php echo esc_attr((string) $index); ?>" data-delay="<?php echo esc_attr((string) $slide_delay_ms); ?>" data-type="video" data-video-id="<?php echo esc_attr($video_id); ?>">
                             <div id="<?php echo esc_attr($player_dom_id); ?>" class="hero-youtube-player absolute inset-0 h-full w-full"></div>
                         </div>
                     <?php elseif ($slide_type === 'tiktok'):
-                        $tiktok_url = isset($slide['tiktok_url']) ? $slide['tiktok_url'] : '';
-                        $tiktok_cite = !empty($tiktok_url) ? $tiktok_url : 'https://www.tiktok.com/@ellenemasri/video/7645173351501008141';
-                        $tiktok_video_url = isset($slide['tiktok_video_url']) ? $slide['tiktok_video_url'] : '';
-                        $has_tiktok_slide = true;
+                        $tiktok_url = isset($slide['tiktok_url']) ? (string) $slide['tiktok_url'] : '';
+                        $tiktok_video_url = isset($slide['tiktok_video_url']) ? (string) $slide['tiktok_video_url'] : '';
+                        $tiktok_video_id = isset($slide['tiktok_video_id']) ? (string) $slide['tiktok_video_id'] : '';
+                        $slide_image = isset($slide['slide_image']) ? (string) $slide['slide_image'] : '';
                         ?>
-                        <div class="hero-slide <?php echo $is_active ? 'active' : ''; ?>" data-index="<?php echo $index; ?>" data-delay="<?php echo esc_attr($slide_delay_ms); ?>" data-type="tiktok">
+                        <div class="hero-slide <?php echo $is_active ? 'active' : ''; ?>" data-index="<?php echo esc_attr((string) $index); ?>" data-delay="<?php echo esc_attr((string) $slide_delay_ms); ?>" data-type="tiktok">
                             <div class="absolute inset-0 overflow-hidden bg-black">
-                                <?php if (!empty($tiktok_video_url)): ?>
+                                <?php if ($tiktok_video_url !== ''): ?>
                                     <video
                                         class="hero-tiktok-video"
                                         src="<?php echo esc_url($tiktok_video_url); ?>"
-                                        poster="<?php echo esc_url(isset($slide['slide_image']) ? $slide['slide_image'] : ''); ?>"
+                                        poster="<?php echo esc_url($slide_image); ?>"
                                         playsinline
                                         preload="metadata"
                                         controlslist="nodownload noplaybackrate noremoteplayback"
@@ -82,42 +162,37 @@ function extract_youtube_id($url) {
                                         🔇
                                     </button>
                                 <?php else: ?>
-                                    <blockquote class="tiktok-embed hero-tiktok-embed m-0" cite="<?php echo esc_url($tiktok_cite); ?>" data-video-id="7645173351501008141" data-embed-from="oembed">
+                                    <blockquote class="tiktok-embed hero-tiktok-embed m-0" <?php if ($tiktok_url !== ''): ?>cite="<?php echo esc_url($tiktok_url); ?>"<?php endif; ?> <?php if ($tiktok_video_id !== ''): ?>data-video-id="<?php echo esc_attr($tiktok_video_id); ?>"<?php endif; ?> data-embed-from="oembed">
                                         <section class="h-full w-full">
-                                            <a target="_blank" rel="noreferrer" title="@ellenemasri" href="https://www.tiktok.com/@ellenemasri?refer=embed">@ellenemasri</a>
-                                            IT’S OUT!!! 🌴🔥 “Mayami, My Miami” with legendary @richardbona is officially available everywhere! ❤️ Dreams do come true! If you love the song, use it in your Reels and Stories and tag me!!! I’ll be reposting my favorites! 🎶✨ Stream it now and let me know what you think!
-                                            <a title="MayamiMyMiami" target="_blank" rel="noreferrer" href="https://www.tiktok.com/tag/MayamiMyMiami?refer=embed">#MayamiMyMiami</a>
-                                            <a title="RichardBona" target="_blank" rel="noreferrer" href="https://www.tiktok.com/tag/RichardBona?refer=embed">#RichardBona</a>
-                                            <a title="ElleneMasri" target="_blank" rel="noreferrer" href="https://www.tiktok.com/tag/ElleneMasri?refer=embed">#ElleneMasri</a>
-                                            <a title="OutNow" target="_blank" rel="noreferrer" href="https://www.tiktok.com/tag/OutNow?refer=embed">#OutNow</a>
-                                            <a title="Miami" target="_blank" rel="noreferrer" href="https://www.tiktok.com/tag/Miami?refer=embed">#Miami</a>
-                                            <a target="_blank" rel="noreferrer" title="♬ Mayami, My Miami - Richard Bona &amp; Ellene Masri" href="https://www.tiktok.com/music/Mayami-My-Miami-7642043888069052432?refer=embed">♬ Mayami, My Miami - Richard Bona &amp; Ellene Masri</a>
+                                            <?php if ($tiktok_url !== ''): ?>
+                                                <a target="_blank" rel="noreferrer" href="<?php echo esc_url($tiktok_url); ?>">Voir sur TikTok</a>
+                                            <?php endif; ?>
                                         </section>
                                     </blockquote>
                                 <?php endif; ?>
                             </div>
                         </div>
-                    <?php else: 
-                        $image_url = isset($slide['slide_image']) ? $slide['slide_image'] : '';
-                        $alt_text = isset($slide['alt_text']) ? $slide['alt_text'] : 'Image';
+                    <?php else:
+                        $image_url = isset($slide['slide_image']) ? (string) $slide['slide_image'] : '';
+                        $alt_text = isset($slide['alt_text']) ? (string) $slide['alt_text'] : '';
                         ?>
-                        <div class="hero-slide <?php echo $is_active ? 'active' : ''; ?>" data-index="<?php echo $index; ?>" data-delay="<?php echo esc_attr($slide_delay_ms); ?>">
-                            <img 
-                                src="<?php echo esc_url($image_url); ?>" 
-                                alt="<?php echo esc_attr($alt_text); ?>" 
-                                width="1320" 
-                                height="1920" 
+                        <div class="hero-slide <?php echo $is_active ? 'active' : ''; ?>" data-index="<?php echo esc_attr((string) $index); ?>" data-delay="<?php echo esc_attr((string) $slide_delay_ms); ?>">
+                            <img
+                                src="<?php echo esc_url($image_url); ?>"
+                                alt="<?php echo esc_attr($alt_text); ?>"
+                                width="1320"
+                                height="1920"
                                 class="block h-full w-full object-cover"
                             />
                         </div>
-                    <?php endif; 
+                    <?php endif;
                 endforeach; ?>
 
                 <?php if ($show_navigation): ?>
                 <button
                     type="button"
                     class="slider-arrow slider-arrow-prev"
-                    aria-label="Slide précédent">
+                    aria-label="Slide precedent">
                     <span aria-hidden="true">&#x2039;</span>
                 </button>
                 <button
@@ -133,7 +208,6 @@ function extract_youtube_id($url) {
                 <script async src="https://www.tiktok.com/embed.js"></script>
             <?php endif; ?>
 
-            <!-- Bottom bar -->
             <div class="flex items-center justify-between gap-3 border-t-2 border-ink bg-cream px-4 py-3">
                 <a
                     href="#stream"
@@ -141,19 +215,20 @@ function extract_youtube_id($url) {
                     aria-label="Aller a la section Stream">
                     <span aria-hidden="true">&#9654;</span>
                 </a>
-                <span class="whitespace-nowrap font-poster text-[10px] uppercase tracking-[0.25em] text-ink">Mayami, My Miami - 2026</span>
+                <?php if ($hero_slider_footer_text !== ''): ?>
+                    <span class="whitespace-nowrap font-poster text-[10px] uppercase tracking-[0.25em] text-ink"><?php echo esc_html($hero_slider_footer_text); ?></span>
+                <?php endif; ?>
             </div>
         </div>
 
         <?php if ($show_navigation): ?>
-        <!-- Pagination dots -->
         <div class="mt-4 flex justify-center gap-2">
             <?php foreach ($hero_slider as $index => $slide): ?>
-                <button 
-                    type="button" 
-                    class="slider-dot h-2.5 w-2.5 rounded-full border border-ink transition <?php echo $index === 0 ? 'bg-ink' : 'bg-cream'; ?>" 
-                    data-index="<?php echo $index; ?>" 
-                    aria-label="Aller au slide <?php echo $index + 1; ?>">
+                <button
+                    type="button"
+                    class="slider-dot h-2.5 w-2.5 rounded-full border border-ink transition <?php echo $index === 0 ? 'bg-ink' : 'bg-cream'; ?>"
+                    data-index="<?php echo esc_attr((string) $index); ?>"
+                    aria-label="Aller au slide <?php echo esc_attr((string) ($index + 1)); ?>">
                 </button>
             <?php endforeach; ?>
         </div>
@@ -346,12 +421,10 @@ function extract_youtube_id($url) {
     }
 
     function goToSlide(index) {
-        // Update slides
         slides.forEach((slide, i) => {
             slide.classList.toggle('active', i === index);
         });
 
-        // Update dots
         dots.forEach((dot, i) => {
             if (i === index) {
                 dot.classList.remove('bg-cream');
@@ -599,7 +672,6 @@ function extract_youtube_id($url) {
         return true;
     }
 
-    // Dots
     if (dots.length > 0 && slides.length > 1) {
         dots.forEach((dot, index) => {
             dot.addEventListener('click', () => {
@@ -618,7 +690,6 @@ function extract_youtube_id($url) {
         });
     }
 
-    // Arrows
     if (slides.length > 1) {
         if (prevButton) {
             prevButton.addEventListener('click', () => {
