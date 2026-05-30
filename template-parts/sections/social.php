@@ -19,7 +19,6 @@ $social_cards = array(
         'href' => $link_tiktok,
         'label' => 'TikTok',
         'badge' => 'Follow',
-        'desc' => 'Catch the snippet trending right now.',
         'icon' => 'fa-tiktok',
         'style' => 'background: linear-gradient(135deg, #0f0f13 0%, #1a1a22 62%, #22152d 100%); box-shadow: 8px 8px 0 #25f4ee;',
     ),
@@ -27,7 +26,6 @@ $social_cards = array(
         'href' => $link_instagram,
         'label' => 'Instagram',
         'badge' => 'Follow',
-        'desc' => 'Daily updates and behind-the-scenes content.',
         'icon' => 'fa-instagram',
         'style' => 'background: #c13584; box-shadow: 8px 8px 0 #833ab4;',
     ),
@@ -35,7 +33,6 @@ $social_cards = array(
         'href' => $link_youtube_video,
         'label' => 'YouTube',
         'badge' => 'Watch',
-        'desc' => 'Official video and visual releases.',
         'icon' => 'fa-youtube',
         'style' => 'background: #ff0033; box-shadow: 8px 8px 0 #78000d;',
     ),
@@ -69,7 +66,6 @@ $active_social_cards = array_values(array_filter($social_cards, static function 
                 <a href="<?php echo esc_url($card['href']); ?>" target="_blank" rel="noreferrer" class="group relative overflow-hidden rounded-2xl border-2 border-cream p-5 text-cream transition hover:-translate-y-1" style="<?php echo esc_attr($card['style']); ?>">
                     <p class="font-poster text-[11px] uppercase tracking-[0.3em] opacity-85"><?php echo esc_html($card['badge']); ?></p>
                     <p class="flex items-center gap-3 font-display text-3xl sm:text-4xl"><i class="fa-brands <?php echo esc_attr($card['icon']); ?> text-2xl sm:text-3xl" aria-hidden="true"></i><span><?php echo esc_html($card['label']); ?></span></p>
-                    <p class="mt-2 text-sm opacity-95"><?php echo esc_html($card['desc']); ?></p>
                 </a>
             <?php endforeach; ?>
         </div>

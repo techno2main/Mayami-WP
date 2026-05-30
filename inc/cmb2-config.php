@@ -7,11 +7,11 @@ if (!defined('ABSPATH')) exit;
 
 add_action('cmb2_admin_init', 'mayami_register_options');
 add_action('admin_init', 'mayami_initialize_default_content');
-add_action('admin_init', 'mayami_sync_platform_links_once', 20);
-add_action('admin_init', 'mayami_sync_hero_top_artist_once', 21);
+// Platform link sync disabled to keep links fully admin-driven.
+// Hero top-artist sync disabled to keep hero values fully admin-driven.
 add_action('admin_init', 'mayami_sync_marquee_play_link_once', 22);
 // Stream sync disabled to keep stream URLs fully admin-driven and avoid re-injection.
-add_action('admin_init', 'mayami_sync_follow_youtube_link_once', 24);
+// Follow YouTube sync disabled to avoid hardcoded profile URL writes.
 add_action('admin_init', 'mayami_sync_marquee_items_once', 25);
 add_action('admin_init', 'mayami_sync_social_links_once', 26);
 add_action('admin_init', 'mayami_sync_sticky_links_once', 27);
@@ -107,31 +107,31 @@ function mayami_initialize_default_content() {
             'slide_admin_title' => 'Slide 1',
             'slide_type' => 'image',
             'slide_image' => $theme_url . '/assets/mayami-artist.jpg',
-            'alt_text' => 'Ellene Leya Masri — portrait 1',
+            'alt_text' => 'Artist portrait 1',
             'slide_duration' => '5',
         ),
         array(
             'slide_admin_title' => 'Slide 2',
             'slide_type' => 'image',
             'slide_image' => $theme_url . '/assets/mayami-cover.jpg',
-            'alt_text' => 'Ellene Leya Masri — portrait 2',
+            'alt_text' => 'Artist cover image',
             'slide_duration' => '5',
         ),
         array(
             'slide_admin_title' => 'Slide 3',
-            'slide_type' => 'video',
-            'video_url' => 'https://www.youtube.com/watch?v=WiB_UoexqVo&pp=0gcJCQoLAYcqIYzv',
-            'alt_text' => 'Mayami official video',
+            'slide_type' => 'image',
+            'slide_image' => $theme_url . '/assets/mayami-artist.jpg',
+            'alt_text' => 'Artist portrait 2',
             'slide_duration' => '5',
         ),
     );
     
     // Default release rows
     $default_release_rows = array(
-        array('key' => 'Artists', 'value' => 'Richard Bona & Ellene Masri'),
-        array('key' => 'Title', 'value' => 'Mayami, My Miami'),
-        array('key' => 'Release date', 'value' => 'May 29th'),
-        array('key' => 'Location', 'value' => 'Miami, USA'),
+        array('key' => 'Artists', 'value' => 'Artist Name'),
+        array('key' => 'Title', 'value' => 'Release Title'),
+        array('key' => 'Release date', 'value' => 'TBD'),
+        array('key' => 'Location', 'value' => 'City, Country'),
         array('key' => 'Video', 'value' => 'Coming soon'),
     );
     
@@ -785,14 +785,14 @@ function mayami_register_options() {
         'name'    => 'Top Artist',
         'id'      => 'hero_top_artist',
         'type'    => 'text',
-        'default' => 'Richard Bona & Ellen Masri',
+        'default' => 'Artist Name',
     ));
 
     $cmb->add_field(array(
         'name'    => 'Top CTA Label',
         'id'      => 'hero_top_cta_label',
         'type'    => 'text',
-        'default' => 'Out tomorrow',
+        'default' => 'Out now',
     ));
 
     $cmb->add_field(array(
@@ -805,14 +805,14 @@ function mayami_register_options() {
         'name'    => 'Badge Text',
         'id'      => 'hero_badge_text',
         'type'    => 'text',
-        'default' => 'New Single · Out Tomorrow',
+        'default' => 'New Release',
     ));
 
     $cmb->add_field(array(
         'name'    => 'Subtitle',
         'id'      => 'hero_subtitle',
         'type'    => 'text',
-        'default' => 'Mayami, My Miami',
+        'default' => 'Release Subtitle',
     ));
 
     $cmb->add_field(array(
@@ -843,7 +843,7 @@ function mayami_register_options() {
         'name'    => 'Description',
         'id'      => 'hero_description',
         'type'    => 'textarea_small',
-        'default' => 'A sunset-soaked love letter to the city. Stream it, watch it, share it — and follow the journey from the painted walls of Miami.',
+        'default' => 'Present the release and invite visitors to stream, watch, and share.',
     ));
 
     $cmb->add_field(array(
@@ -857,7 +857,7 @@ function mayami_register_options() {
         'name'    => 'Stream Button - Link',
         'id'      => 'hero_stream_href',
         'type'    => 'text_url',
-        'default' => 'https://ffm.to/mayami',
+        'default' => '#stream',
     ));
 
     $cmb->add_field(array(
@@ -924,7 +924,7 @@ function mayami_register_options() {
         'name'    => 'URL TikTok',
         'id'      => 'tiktok_url',
         'type'    => 'text_url',
-        'desc'    => 'Colle l’URL du post TikTok, par exemple https://www.tiktok.com/@ellenemasri/video/7645173351501008141',
+        'desc'    => 'Colle l URL du post TikTok, par exemple https://www.tiktok.com/@artist/video/1234567890123456789',
         'visible' => array('slide_type', '=', 'tiktok'),
     ));
 
@@ -1059,7 +1059,7 @@ function mayami_register_options() {
         'name'    => 'Description',
         'id'      => 'social_description',
         'type'    => 'textarea_small',
-        'default' => 'Snippets, behind-the-scenes, dance challenges — drop into the Miami diary.',
+        'default' => 'Share clips, updates, and behind-the-scenes moments.',
     ));
 
     $cmb->add_field(array(
