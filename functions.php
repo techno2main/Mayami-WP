@@ -33,7 +33,6 @@ function mayami_theme_setup() {
     // Add theme support
     add_theme_support('title-tag');
     add_theme_support('post-thumbnails');
-    add_theme_support('site-icon');
     
     // Disable Gutenberg editor (not needed for this landing page)
     add_filter('use_block_editor_for_post', '__return_false');
@@ -45,33 +44,36 @@ function mayami_theme_setup() {
 add_action('after_setup_theme', 'mayami_theme_setup');
 
 /**
- * Output a fallback favicon when WordPress Site Icon is not configured.
+ * Output the theme favicon on all contexts.
  */
-function mayami_output_favicon_fallback() {
-    if (function_exists('has_site_icon') && has_site_icon()) {
-        return;
-    }
-
+function mayami_output_theme_favicon() {
     $favicon_svg_path = get_template_directory() . '/assets/favicon.svg';
-    $favicon_png_path = get_template_directory() . '/assets/mayami-logo.png';
+    $favicon_png_32_path = get_template_directory() . '/assets/favicon-32.png';
+    $favicon_png_180_path = get_template_directory() . '/assets/favicon-180.png';
     $favicon_svg_url = get_template_directory_uri() . '/assets/favicon.svg';
-    $favicon_png_url = get_template_directory_uri() . '/assets/mayami-logo.png';
+    $favicon_png_32_url = get_template_directory_uri() . '/assets/favicon-32.png';
+    $favicon_png_180_url = get_template_directory_uri() . '/assets/favicon-180.png';
 
     if (file_exists($favicon_svg_path)) {
         $favicon_svg_url .= '?v=' . filemtime($favicon_svg_path);
     }
 
-    if (file_exists($favicon_png_path)) {
-        $favicon_png_url .= '?v=' . filemtime($favicon_png_path);
+    if (file_exists($favicon_png_32_path)) {
+        $favicon_png_32_url .= '?v=' . filemtime($favicon_png_32_path);
+    }
+
+    if (file_exists($favicon_png_180_path)) {
+        $favicon_png_180_url .= '?v=' . filemtime($favicon_png_180_path);
     }
 
     echo '<link rel="icon" type="image/svg+xml" href="' . esc_url($favicon_svg_url) . '" />' . "\n";
-    echo '<link rel="icon" type="image/png" href="' . esc_url($favicon_png_url) . '" sizes="32x32" />' . "\n";
-    echo '<link rel="apple-touch-icon" href="' . esc_url($favicon_png_url) . '" />' . "\n";
+    echo '<link rel="icon" type="image/png" sizes="32x32" href="' . esc_url($favicon_png_32_url) . '" />' . "\n";
+    echo '<link rel="shortcut icon" href="' . esc_url($favicon_png_32_url) . '" />' . "\n";
+    echo '<link rel="apple-touch-icon" sizes="180x180" href="' . esc_url($favicon_png_180_url) . '" />' . "\n";
 }
-add_action('wp_head', 'mayami_output_favicon_fallback', 1);
-add_action('admin_head', 'mayami_output_favicon_fallback', 1);
-add_action('login_head', 'mayami_output_favicon_fallback', 1);
+add_action('wp_head', 'mayami_output_theme_favicon', 1);
+add_action('admin_head', 'mayami_output_theme_favicon', 1);
+add_action('login_head', 'mayami_output_theme_favicon', 1);
 
 /**
  * Enqueue scripts and styles
