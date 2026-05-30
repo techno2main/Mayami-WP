@@ -44,12 +44,12 @@ if (!is_array($stream_platforms)) {
 }
 
 $platform_icon_map = array(
-    'spotify' => array('icon' => 'fa-spotify', 'label' => 'Spotify'),
-    'apple-music' => array('icon' => 'fa-apple', 'label' => 'Apple Music'),
-    'youtube-music' => array('icon' => 'fa-youtube', 'label' => 'YouTube Music'),
-    'deezer' => array('icon' => 'fa-deezer', 'label' => 'Deezer'),
-    'amazon-music' => array('icon' => 'fa-amazon', 'label' => 'Amazon Music'),
-    'soundcloud' => array('icon' => 'fa-soundcloud', 'label' => 'SoundCloud'),
+    'spotify' => 'fa-spotify',
+    'apple-music' => 'fa-apple',
+    'youtube-music' => 'fa-youtube',
+    'deezer' => 'fa-deezer',
+    'amazon-music' => 'fa-amazon',
+    'soundcloud' => 'fa-soundcloud',
 );
 
 $marquee_platform_links = array();
@@ -71,8 +71,8 @@ if ($show_platform_icons) {
         $marquee_platform_links[] = array(
             'href' => $open_platform_icons_in_new_tab ? $href : '#stream',
             'platform' => $key,
-            'icon' => $platform_icon_map[$key]['icon'],
-            'label' => $platform_icon_map[$key]['label'],
+            'icon' => $platform_icon_map[$key],
+            'label' => $label,
             'external' => $open_platform_icons_in_new_tab,
         );
     }

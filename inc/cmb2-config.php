@@ -169,6 +169,39 @@ function mayami_initialize_default_content() {
     if (empty($options['cta_texture_image'])) {
         $options['cta_texture_image'] = $theme_url . '/assets/mayami-texture.jpg';
     }
+
+    // Set text defaults to keep front labels admin-driven.
+    if (empty($options['social_tiktok_label'])) {
+        $options['social_tiktok_label'] = 'TikTok';
+    }
+    if (empty($options['social_tiktok_badge'])) {
+        $options['social_tiktok_badge'] = 'Follow';
+    }
+    if (empty($options['social_instagram_label'])) {
+        $options['social_instagram_label'] = 'Instagram';
+    }
+    if (empty($options['social_instagram_badge'])) {
+        $options['social_instagram_badge'] = 'Follow';
+    }
+    if (empty($options['social_youtube_label'])) {
+        $options['social_youtube_label'] = 'YouTube';
+    }
+    if (empty($options['social_youtube_badge'])) {
+        $options['social_youtube_badge'] = 'Watch';
+    }
+
+    if (empty($options['cta_stream_label'])) {
+        $options['cta_stream_label'] = 'Stream';
+    }
+    if (empty($options['cta_video_label'])) {
+        $options['cta_video_label'] = 'Watch';
+    }
+    if (empty($options['cta_tiktok_label'])) {
+        $options['cta_tiktok_label'] = 'TikTok';
+    }
+    if (empty($options['cta_instagram_label'])) {
+        $options['cta_instagram_label'] = 'Instagram';
+    }
     
     // Save options
     update_option($option_key, $options);
@@ -583,15 +616,57 @@ function mayami_register_options() {
     ));
 
     $cmb->add_field(array(
+        'name'    => 'TikTok Label',
+        'id'      => 'social_tiktok_label',
+        'type'    => 'text',
+        'default' => 'TikTok',
+    ));
+
+    $cmb->add_field(array(
+        'name'    => 'TikTok Badge',
+        'id'      => 'social_tiktok_badge',
+        'type'    => 'text',
+        'default' => 'Follow',
+    ));
+
+    $cmb->add_field(array(
         'name' => 'Instagram Link',
         'id'   => 'social_instagram_link',
         'type' => 'text_url',
     ));
 
     $cmb->add_field(array(
+        'name'    => 'Instagram Label',
+        'id'      => 'social_instagram_label',
+        'type'    => 'text',
+        'default' => 'Instagram',
+    ));
+
+    $cmb->add_field(array(
+        'name'    => 'Instagram Badge',
+        'id'      => 'social_instagram_badge',
+        'type'    => 'text',
+        'default' => 'Follow',
+    ));
+
+    $cmb->add_field(array(
         'name' => 'YouTube Link',
         'id'   => 'social_youtube_link',
         'type' => 'text_url',
+    ));
+
+    $cmb->add_field(array(
+        'name'    => 'YouTube Label',
+        'id'      => 'social_youtube_label',
+        'type'    => 'text',
+        'default' => 'YouTube',
+    ));
+
+    $cmb->add_field(array(
+        'name'    => 'YouTube Badge',
+        'id'      => 'social_youtube_badge',
+        'type'    => 'text',
+        'default' => 'Watch',
     ));
 
     // ========== SECTION: VIDEO ==========
@@ -756,10 +831,24 @@ function mayami_register_options() {
     ));
 
     $cmb->add_field(array(
+        'name'    => 'Stream Button Label',
+        'id'      => 'cta_stream_label',
+        'type'    => 'text',
+        'default' => 'Stream',
+    ));
+
+    $cmb->add_field(array(
         'name'    => 'Stream Button Link',
         'id'      => 'cta_stream_link',
         'type'    => 'text',
         'default' => '#stream',
+    ));
+
+    $cmb->add_field(array(
+        'name'    => 'Video Button Label',
+        'id'      => 'cta_video_label',
+        'type'    => 'text',
+        'default' => 'Watch',
     ));
 
     $cmb->add_field(array(
@@ -770,10 +859,24 @@ function mayami_register_options() {
     ));
 
     $cmb->add_field(array(
+        'name'    => 'TikTok Button Label',
+        'id'      => 'cta_tiktok_label',
+        'type'    => 'text',
+        'default' => 'TikTok',
+    ));
+
+    $cmb->add_field(array(
         'name'    => 'TikTok Button Link',
         'id'      => 'cta_tiktok_link',
         'type'    => 'text_url',
         'default' => '',
+    ));
+
+    $cmb->add_field(array(
+        'name'    => 'Instagram Button Label',
+        'id'      => 'cta_instagram_label',
+        'type'    => 'text',
+        'default' => 'Instagram',
     ));
 
     $cmb->add_field(array(

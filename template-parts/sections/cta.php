@@ -12,9 +12,13 @@ $cta_description = trim((string) cmb2_get_option('mayami_landing_options', 'cta_
 $cta_hashtag = trim((string) cmb2_get_option('mayami_landing_options', 'cta_hashtag'));
 
 $cta_stream_link = trim((string) cmb2_get_option('mayami_landing_options', 'cta_stream_link'));
+$cta_stream_label = trim((string) cmb2_get_option('mayami_landing_options', 'cta_stream_label'));
 $cta_video_link = trim((string) cmb2_get_option('mayami_landing_options', 'cta_video_link'));
+$cta_video_label = trim((string) cmb2_get_option('mayami_landing_options', 'cta_video_label'));
 $cta_tiktok_link = trim((string) cmb2_get_option('mayami_landing_options', 'cta_tiktok_link'));
+$cta_tiktok_label = trim((string) cmb2_get_option('mayami_landing_options', 'cta_tiktok_label'));
 $cta_instagram_link = trim((string) cmb2_get_option('mayami_landing_options', 'cta_instagram_link'));
+$cta_instagram_label = trim((string) cmb2_get_option('mayami_landing_options', 'cta_instagram_label'));
 $texture_image = trim((string) cmb2_get_option('mayami_landing_options', 'cta_texture_image'));
 ?>
 <section id="cta" class="relative overflow-hidden bg-[oklch(0.68_0.17_182)] py-24 text-ink sm:py-32">
@@ -53,17 +57,17 @@ $texture_image = trim((string) cmb2_get_option('mayami_landing_options', 'cta_te
             </p>
         <?php endif; ?>
         <div class="mt-10 flex flex-wrap gap-3">
-            <?php if ($cta_stream_link !== ''): ?>
-                <a href="<?php echo esc_url($cta_stream_link); ?>" class="btn-pop btn-magenta">Stream</a>
+            <?php if ($cta_stream_link !== '' && $cta_stream_label !== ''): ?>
+                <a href="<?php echo esc_url($cta_stream_link); ?>" class="btn-pop btn-magenta"><?php echo esc_html($cta_stream_label); ?></a>
             <?php endif; ?>
-            <?php if ($cta_video_link !== ''): ?>
-                <a href="<?php echo esc_url($cta_video_link); ?>" class="btn-pop btn-aqua">Watch</a>
+            <?php if ($cta_video_link !== '' && $cta_video_label !== ''): ?>
+                <a href="<?php echo esc_url($cta_video_link); ?>" class="btn-pop btn-aqua"><?php echo esc_html($cta_video_label); ?></a>
             <?php endif; ?>
-            <?php if ($cta_tiktok_link !== ''): ?>
-                <a href="<?php echo esc_url($cta_tiktok_link); ?>" target="_blank" rel="noreferrer" class="btn-pop" style="background: linear-gradient(135deg, #111318 0%, #1f2230 65%, #2b1430 100%); color: var(--cream) !important;">TikTok</a>
+            <?php if ($cta_tiktok_link !== '' && $cta_tiktok_label !== ''): ?>
+                <a href="<?php echo esc_url($cta_tiktok_link); ?>" target="_blank" rel="noreferrer" class="btn-pop" style="background: linear-gradient(135deg, #111318 0%, #1f2230 65%, #2b1430 100%); color: var(--cream) !important;"><?php echo esc_html($cta_tiktok_label); ?></a>
             <?php endif; ?>
-            <?php if ($cta_instagram_link !== ''): ?>
-                <a href="<?php echo esc_url($cta_instagram_link); ?>" target="_blank" rel="noreferrer" class="btn-pop" style="background: linear-gradient(135deg, #f58529 0%, #dd2a7b 48%, #8134af 74%, #515bd4 100%); color: var(--cream) !important;">Instagram</a>
+            <?php if ($cta_instagram_link !== '' && $cta_instagram_label !== ''): ?>
+                <a href="<?php echo esc_url($cta_instagram_link); ?>" target="_blank" rel="noreferrer" class="btn-pop" style="background: linear-gradient(135deg, #f58529 0%, #dd2a7b 48%, #8134af 74%, #515bd4 100%); color: var(--cream) !important;"><?php echo esc_html($cta_instagram_label); ?></a>
             <?php endif; ?>
         </div>
     </div>

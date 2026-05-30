@@ -14,32 +14,39 @@ $link_tiktok = trim((string) cmb2_get_option('mayami_landing_options', 'social_t
 $link_instagram = trim((string) cmb2_get_option('mayami_landing_options', 'social_instagram_link'));
 $link_youtube_video = trim((string) cmb2_get_option('mayami_landing_options', 'social_youtube_link'));
 
+$social_tiktok_label = trim((string) cmb2_get_option('mayami_landing_options', 'social_tiktok_label'));
+$social_tiktok_badge = trim((string) cmb2_get_option('mayami_landing_options', 'social_tiktok_badge'));
+$social_instagram_label = trim((string) cmb2_get_option('mayami_landing_options', 'social_instagram_label'));
+$social_instagram_badge = trim((string) cmb2_get_option('mayami_landing_options', 'social_instagram_badge'));
+$social_youtube_label = trim((string) cmb2_get_option('mayami_landing_options', 'social_youtube_label'));
+$social_youtube_badge = trim((string) cmb2_get_option('mayami_landing_options', 'social_youtube_badge'));
+
 $social_cards = array(
     array(
         'href' => $link_tiktok,
-        'label' => 'TikTok',
-        'badge' => 'Follow',
+        'label' => $social_tiktok_label,
+        'badge' => $social_tiktok_badge,
         'icon' => 'fa-tiktok',
         'style' => 'background: linear-gradient(135deg, #0f0f13 0%, #1a1a22 62%, #22152d 100%); box-shadow: 8px 8px 0 #25f4ee;',
     ),
     array(
         'href' => $link_instagram,
-        'label' => 'Instagram',
-        'badge' => 'Follow',
+        'label' => $social_instagram_label,
+        'badge' => $social_instagram_badge,
         'icon' => 'fa-instagram',
         'style' => 'background: #c13584; box-shadow: 8px 8px 0 #833ab4;',
     ),
     array(
         'href' => $link_youtube_video,
-        'label' => 'YouTube',
-        'badge' => 'Watch',
+        'label' => $social_youtube_label,
+        'badge' => $social_youtube_badge,
         'icon' => 'fa-youtube',
         'style' => 'background: #ff0033; box-shadow: 8px 8px 0 #78000d;',
     ),
 );
 
 $active_social_cards = array_values(array_filter($social_cards, static function ($card) {
-    return !empty($card['href']);
+    return !empty($card['href']) && !empty($card['label']);
 }));
 ?>
 <section id="social" class="relative overflow-hidden bg-magenta py-20 text-ink sm:py-28">
@@ -64,7 +71,9 @@ $active_social_cards = array_values(array_filter($social_cards, static function 
         <div class="mt-10 grid grid-cols-1 gap-5 md:grid-cols-3">
             <?php foreach ($active_social_cards as $card): ?>
                 <a href="<?php echo esc_url($card['href']); ?>" target="_blank" rel="noreferrer" class="group relative overflow-hidden rounded-2xl border-2 border-cream p-5 text-cream transition hover:-translate-y-1" style="<?php echo esc_attr($card['style']); ?>">
-                    <p class="font-poster text-[11px] uppercase tracking-[0.3em] opacity-85"><?php echo esc_html($card['badge']); ?></p>
+                    <?php if (!empty($card['badge'])): ?>
+                        <p class="font-poster text-[11px] uppercase tracking-[0.3em] opacity-85"><?php echo esc_html($card['badge']); ?></p>
+                    <?php endif; ?>
                     <p class="flex items-center gap-3 font-display text-3xl sm:text-4xl"><i class="fa-brands <?php echo esc_attr($card['icon']); ?> text-2xl sm:text-3xl" aria-hidden="true"></i><span><?php echo esc_html($card['label']); ?></span></p>
                 </a>
             <?php endforeach; ?>
