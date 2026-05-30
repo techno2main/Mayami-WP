@@ -14,6 +14,30 @@ if (!defined('ABSPATH')) {
 require_once get_template_directory() . '/inc/cmb2-config.php';
 
 /**
+ * Get a landing option value from the active key, with legacy key compatibility.
+ *
+ * This avoids admin/front mismatches when some environments still store data
+ * under the previous CMB2 option key.
+ *
+ * @param string $field_id Option field id.
+ * @param mixed  $default  Default value if field is not found.
+ * @return mixed
+ */
+function mayami_get_landing_option($field_id, $default = '') {
+    $primary_options = get_option('mayami_landing_options', array());
+    if (is_array($primary_options) && array_key_exists($field_id, $primary_options)) {
+        return $primary_options[$field_id];
+    }
+
+    $legacy_options = get_option('mayami_options', array());
+    if (is_array($legacy_options) && array_key_exists($field_id, $legacy_options)) {
+        return $legacy_options[$field_id];
+    }
+
+    return $default;
+}
+
+/**
  * Raise the upload limit reported by WordPress media screens.
  *
  * This affects the limit shown in the admin UI and the size WordPress
