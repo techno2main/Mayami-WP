@@ -109,6 +109,11 @@ document.addEventListener('DOMContentLoaded', function() {
     const anchor = e.target.closest('a[href^="#"]');
     if (!anchor) return;
 
+    // Respect explicit new-tab links configured in admin (target="_blank").
+    if (anchor.getAttribute('target') === '_blank') {
+      return;
+    }
+
     const href = anchor.getAttribute('href');
     if (!href || href === '#') return;
 

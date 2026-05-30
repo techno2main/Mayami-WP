@@ -372,7 +372,7 @@ $mobile_stream_link = $desktop_center_item;
             <?php
                 $right_href = !empty($desktop_right_item['href']) ? $desktop_right_item['href'] : '#social';
                 $right_label = !empty($desktop_right_item['label']) ? $desktop_right_item['label'] : 'Ellene Leya Masri';
-                $right_is_external = !empty($desktop_right_item['external']);
+                $right_is_external = false;
                 $right_target = $right_is_external ? '_blank' : '_self';
                 $right_rel = $right_is_external ? 'noreferrer' : '';
             ?>
@@ -399,7 +399,7 @@ $mobile_stream_link = $desktop_center_item;
             <?php
                 $mobile_stream_href = !empty($mobile_stream_link['href']) ? $mobile_stream_link['href'] : '#stream';
                 $mobile_stream_label = !empty($mobile_stream_link['label']) ? $mobile_stream_link['label'] : 'Stream · Watch · Share';
-                $mobile_stream_external = !empty($mobile_stream_link['external']);
+                $mobile_stream_external = false;
                 $mobile_stream_target = $mobile_stream_external ? '_blank' : '_self';
                 $mobile_stream_rel = $mobile_stream_external ? 'noreferrer' : '';
             ?>
@@ -414,7 +414,7 @@ $mobile_stream_link = $desktop_center_item;
                     <?php
                         $left_href = !empty($desktop_left_item['href']) ? $desktop_left_item['href'] : '#page-top';
                         $left_label = !empty($desktop_left_item['label']) ? $desktop_left_item['label'] : $mobile_title;
-                        $left_is_external = !empty($desktop_left_item['external']);
+                        $left_is_external = false;
                         if (strtolower(trim((string) $left_label)) === strtolower(trim((string) $mobile_title))) {
                             $left_href = '#page-top';
                             $left_is_external = false;
@@ -431,7 +431,7 @@ $mobile_stream_link = $desktop_center_item;
                     <?php
                         $center_href = !empty($desktop_center_item['href']) ? $desktop_center_item['href'] : '#stream';
                         $center_label = !empty($desktop_center_item['label']) ? $desktop_center_item['label'] : 'Stream · Watch · Share';
-                        $center_is_external = !empty($desktop_center_item['external']);
+                        $center_is_external = false;
                         $center_target = $center_is_external ? '_blank' : '_self';
                         $center_rel = $center_is_external ? 'noreferrer' : '';
                     ?>

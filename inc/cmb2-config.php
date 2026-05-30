@@ -506,12 +506,15 @@ function mayami_sync_marquee_items_once() {
             $has_ellene = true;
 
             $current_href = trim((string) ($item['href'] ?? ''));
-            $current_external = !empty($item['external']);
-            if ($current_href === '' || strpos($current_href, '#') !== 0 || $current_external) {
+            if ($current_href === '' || strpos($current_href, '#') !== 0) {
                 $item['href'] = '#social';
-                $item['external'] = '';
                 $changed = true;
             }
+        }
+
+        if (!empty($item['external'])) {
+            $item['external'] = '';
+            $changed = true;
         }
 
         $clean_items[] = $item;
@@ -1150,12 +1153,6 @@ function mayami_register_options() {
         'name' => 'Lien',
         'id'   => 'href',
         'type' => 'text_url',
-    ));
-
-    $cmb->add_group_field($marquee_group, array(
-        'name' => 'Nouvel onglet',
-        'id'   => 'external',
-        'type' => 'checkbox',
     ));
 
     $cmb->add_group_field($marquee_group, array(
