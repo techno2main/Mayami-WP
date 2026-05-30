@@ -1,7 +1,7 @@
 <?php
 /**
  * Template part - Stream Section
- * 
+ *
  * @package Mayami
  */
 
@@ -99,7 +99,6 @@ function mayami_resolve_stream_final_url($url) {
 
     $head_response = wp_safe_remote_head($url, $args);
     if (!is_wp_error($head_response)) {
-        $resolved = wp_remote_retrieve_header($head_response, 'x-redirect-by');
         $response_url = wp_remote_retrieve_header($head_response, 'location');
         if (is_string($response_url) && $response_url !== '') {
             $final_url = $response_url;
@@ -108,9 +107,6 @@ function mayami_resolve_stream_final_url($url) {
             if (is_string($effective_url) && $effective_url !== '') {
                 $final_url = $effective_url;
             }
-        }
-        if (!empty($resolved)) {
-            // Keep response consumed while relying on the final URL resolved by WP HTTP API.
         }
     }
 
@@ -135,6 +131,52 @@ function mayami_resolve_stream_final_url($url) {
     $cache_ttl = ($final_url === $url) ? (10 * MINUTE_IN_SECONDS) : DAY_IN_SECONDS;
     set_transient($cache_key, $final_url, $cache_ttl);
     return $final_url;
+}
+
+function mayami_detect_stream_platform_key($platform_key, $href) {
+    $platform_key = sanitize_title((string) $platform_key);
+    $href = trim((string) $href);
+
+    $known_keys = array(
+        'spotify',
+        'apple-music',
+        'youtube-music',
+        'deezer',
+        'amazon-music',
+        'soundcloud',
+    );
+
+    if (in_array($platform_key, $known_keys, true)) {
+        return $platform_key;
+    }
+
+    if ($href === '') {
+        return $platform_key;
+    }
+
+    $host = (string) wp_parse_url($href, PHP_URL_HOST);
+    $host = strtolower($host);
+
+    if (strpos($host, 'spotify.') !== false) {
+        return 'spotify';
+    }
+    if (strpos($host, 'apple.com') !== false) {
+        return 'apple-music';
+    }
+    if (strpos($host, 'youtube.com') !== false || strpos($host, 'youtu.be') !== false) {
+        return 'youtube-music';
+    }
+    if (strpos($host, 'deezer.com') !== false || strpos($host, 'link.deezer.com') !== false) {
+        return 'deezer';
+    }
+    if (strpos($host, 'amazon.') !== false) {
+        return 'amazon-music';
+    }
+    if (strpos($host, 'soundcloud.com') !== false) {
+        return 'soundcloud';
+    }
+
+    return $platform_key;
 }
 
 function mayami_build_stream_embed_src($platform_key, $href) {
@@ -180,25 +222,27 @@ function mayami_build_stream_embed_src($platform_key, $href) {
                 return 'https://www.youtube.com/embed?listType=user_uploads&list=' . rawurlencode($matches[1]);
             }
 
+            if (preg_match('#youtube\.com/@([^/?#]+)#i', $resolved_href, $matches)) {
+                return 'https://www.youtube.com/embed?listType=user_uploads&list=' . rawurlencode($matches[1]);
+            }
+
             $youtube_oembed_src = mayami_get_oembed_iframe_src($resolved_href);
             if ($youtube_oembed_src !== '') {
                 return $youtube_oembed_src;
             }
-
-            // Ultimate fallback for current official release if legacy URLs are malformed.
-            return 'https://www.youtube-nocookie.com/embed/EH_QcQ92hSk?rel=0';
+            return '';
 
         case 'deezer':
-            if (preg_match('#deezer\.com/.*/track/([0-9]+)#i', $resolved_href, $matches)) {
+            if (preg_match('#deezer\.com/(?:[a-z]{2}/)?track/([0-9]+)#i', $resolved_href, $matches)) {
                 return 'https://widget.deezer.com/widget/dark/track/' . $matches[1];
             }
-            if (preg_match('#deezer\.com/.*/album/([0-9]+)#i', $resolved_href, $matches)) {
+            if (preg_match('#deezer\.com/(?:[a-z]{2}/)?album/([0-9]+)#i', $resolved_href, $matches)) {
                 return 'https://widget.deezer.com/widget/dark/album/' . $matches[1];
             }
-            if (preg_match('#deezer\.com/.*/playlist/([0-9]+)#i', $resolved_href, $matches)) {
+            if (preg_match('#deezer\.com/(?:[a-z]{2}/)?playlist/([0-9]+)#i', $resolved_href, $matches)) {
                 return 'https://widget.deezer.com/widget/dark/playlist/' . $matches[1];
             }
-            if (preg_match('#deezer\.com/.*/artist/([0-9]+)#i', $resolved_href, $matches)) {
+            if (preg_match('#deezer\.com/(?:[a-z]{2}/)?artist/([0-9]+)#i', $resolved_href, $matches)) {
                 return 'https://widget.deezer.com/widget/dark/artist/' . $matches[1];
             }
 
@@ -211,9 +255,7 @@ function mayami_build_stream_embed_src($platform_key, $href) {
             if ($deezer_oembed_src !== '') {
                 return $deezer_oembed_src;
             }
-
-            // Ultimate fallback for the official Deezer track when short-link resolution fails.
-            return 'https://widget.deezer.com/widget/dark/track/4034160411';
+            return '';
 
         case 'amazon-music':
             if (preg_match('#/tracks/([A-Z0-9]+)#i', $resolved_href, $matches)) {
@@ -311,6 +353,7 @@ $stream_platform_meta = array(
                 if ($platform_key === '') {
                     $platform_key = 'platform-' . $platform_index;
                 }
+                $platform_key = mayami_detect_stream_platform_key($platform_key, $platform_href);
 
                 $platform_meta = isset($stream_platform_meta[$platform_key]) ? $stream_platform_meta[$platform_key] : array(
                     'icon' => 'fa-link',
@@ -319,28 +362,7 @@ $stream_platform_meta = array(
                 );
                 $icon_style_class = (isset($platform_meta['icon_style']) && $platform_meta['icon_style'] === 'solid') ? 'fa-solid' : 'fa-brands';
                 $embed_src = mayami_build_stream_embed_src($platform_key, $platform_href);
-
-                if ($embed_src === '') {
-                    $canonical_option_map = array(
-                        'spotify' => 'link_spotify',
-                        'apple-music' => 'link_apple_music',
-                        'youtube-music' => 'link_youtube_music',
-                        'deezer' => 'link_deezer',
-                        'amazon-music' => 'link_amazon_music',
-                        'soundcloud' => 'link_soundcloud',
-                    );
-
-                    if (isset($canonical_option_map[$platform_key])) {
-                        $canonical_href = trim((string) cmb2_get_option('mayami_landing_options', $canonical_option_map[$platform_key]));
-                        if ($canonical_href !== '') {
-                            $embed_src = mayami_build_stream_embed_src($platform_key, $canonical_href);
-                        }
-                    }
-                }
-
-                $player_src = $embed_src !== '' ? $embed_src : $platform_href;
-
-                $has_player = true;
+                $has_player = $embed_src !== '';
                 $player_height = mayami_stream_player_height($platform_key);
 
                 $active_stream_platforms_count++;
@@ -348,12 +370,12 @@ $stream_platform_meta = array(
                     'key' => $platform_key,
                     'label' => $platform_label,
                     'href' => $platform_href,
-                    'embed_src' => $player_src,
+                    'embed_src' => $embed_src,
                     'has_player' => $has_player,
                     'player_height' => $player_height,
                 );
                 ?>
-                <a href="<?php echo esc_url($platform_href); ?>" data-platform="<?php echo esc_attr($platform_key); ?>" data-has-player="1" aria-expanded="false" class="platform-card group relative flex items-center justify-between rounded-2xl border-2 border-ink bg-cream px-6 py-5 text-ink transition hover:-translate-y-1 hover:-translate-x-0.5" style="box-shadow: 6px 6px 0 var(--ink)">
+                <a href="<?php echo esc_url($platform_href); ?>" <?php if (!$has_player): ?>target="_blank" rel="noreferrer"<?php endif; ?> data-platform="<?php echo esc_attr($platform_key); ?>" data-has-player="<?php echo $has_player ? '1' : '0'; ?>" aria-expanded="false" class="platform-card group relative flex items-center justify-between rounded-2xl border-2 border-ink bg-cream px-6 py-5 text-ink transition hover:-translate-y-1 hover:-translate-x-0.5" style="box-shadow: 6px 6px 0 var(--ink)">
                     <div>
                         <p class="font-poster text-[10px] uppercase tracking-[0.25em] opacity-70"><?php echo esc_html($stream_card_label); ?></p>
                         <p class="flex items-center gap-2 font-display text-2xl leading-none">
@@ -377,10 +399,13 @@ $stream_platform_meta = array(
             $platform_key = $platform_data['key'];
             $platform_label = $platform_data['label'];
             $embed_src = $platform_data['embed_src'];
+            $has_player = !empty($platform_data['has_player']);
             $player_height = isset($platform_data['player_height']) ? (int) $platform_data['player_height'] : 352;
             ?>
             <div id="player-mobile-<?php echo esc_attr($platform_key); ?>" class="platform-player-mobile mt-6 overflow-hidden rounded-2xl border-2 border-ink bg-cream p-2" style="box-shadow: 6px 6px 0 var(--ink);">
-                <iframe title="<?php echo esc_attr($platform_label); ?> player" src="<?php echo esc_url($embed_src); ?>" width="100%" height="<?php echo esc_attr((string) $player_height); ?>" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" loading="lazy"></iframe>
+                <?php if ($has_player): ?>
+                    <iframe title="<?php echo esc_attr($platform_label); ?> player" src="<?php echo esc_url($embed_src); ?>" width="100%" height="<?php echo esc_attr((string) $player_height); ?>" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" loading="lazy"></iframe>
+                <?php endif; ?>
             </div>
         <?php endforeach; ?>
 
@@ -388,10 +413,13 @@ $stream_platform_meta = array(
             $platform_key = $platform_data['key'];
             $platform_label = $platform_data['label'];
             $embed_src = $platform_data['embed_src'];
+            $has_player = !empty($platform_data['has_player']);
             $player_height = isset($platform_data['player_height']) ? (int) $platform_data['player_height'] : 352;
             ?>
             <div id="player-desktop-<?php echo esc_attr($platform_key); ?>" class="platform-player-desktop mt-6 overflow-hidden rounded-2xl border-2 border-ink bg-cream p-2" style="box-shadow: 6px 6px 0 var(--ink);">
-                <iframe title="<?php echo esc_attr($platform_label); ?> player" src="<?php echo esc_url($embed_src); ?>" width="100%" height="<?php echo esc_attr((string) $player_height); ?>" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" loading="lazy"></iframe>
+                <?php if ($has_player): ?>
+                    <iframe title="<?php echo esc_attr($platform_label); ?> player" src="<?php echo esc_url($embed_src); ?>" width="100%" height="<?php echo esc_attr((string) $player_height); ?>" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" loading="lazy"></iframe>
+                <?php endif; ?>
             </div>
         <?php endforeach; ?>
     </div>
