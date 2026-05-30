@@ -24,14 +24,226 @@ if (!is_array($stream_platforms)) {
 }
 
 $active_stream_platforms_count = 0;
+$active_stream_platforms = array();
+
+function mayami_extract_youtube_id($url) {
+    if (!is_string($url) || $url === '') {
+        return '';
+    }
+
+    if (preg_match('/youtu\.be\/([^?&#]+)/', $url, $matches)) {
+        return $matches[1];
+    }
+    if (preg_match('/[?&]v=([^&#]+)/', $url, $matches)) {
+        return $matches[1];
+    }
+    if (preg_match('/embed\/([^?&#]+)/', $url, $matches)) {
+        return $matches[1];
+    }
+
+    return '';
+}
+
+function mayami_extract_iframe_src_from_html($html) {
+    if (!is_string($html) || $html === '') {
+        return '';
+    }
+
+    if (preg_match('/<iframe[^>]+src=["\']([^"\']+)["\']/i', $html, $matches)) {
+        return html_entity_decode($matches[1], ENT_QUOTES, 'UTF-8');
+    }
+
+    return '';
+}
+
+function mayami_get_oembed_iframe_src($url) {
+    $url = trim((string) $url);
+    if ($url === '') {
+        return '';
+    }
+
+    $cache_key = 'mayami_stream_oembed_' . md5($url);
+    $cached = get_transient($cache_key);
+    if (is_string($cached) && $cached !== '') {
+        return $cached;
+    }
+
+    $html = wp_oembed_get($url);
+    $src = mayami_extract_iframe_src_from_html((string) $html);
+    if ($src !== '') {
+        set_transient($cache_key, $src, DAY_IN_SECONDS);
+    }
+
+    return $src;
+}
+
+function mayami_resolve_stream_final_url($url) {
+    $url = trim((string) $url);
+    if ($url === '') {
+        return '';
+    }
+
+    $cache_key = 'mayami_stream_url_' . md5($url);
+    $cached = get_transient($cache_key);
+    if (is_string($cached) && $cached !== '') {
+        return $cached;
+    }
+
+    $final_url = $url;
+    $args = array(
+        'timeout' => 5,
+        'redirection' => 5,
+        'sslverify' => false,
+        'user-agent' => 'WordPress/Mayami Stream Resolver',
+    );
+
+    $head_response = wp_safe_remote_head($url, $args);
+    if (!is_wp_error($head_response)) {
+        $resolved = wp_remote_retrieve_header($head_response, 'x-redirect-by');
+        $response_url = wp_remote_retrieve_header($head_response, 'location');
+        if (is_string($response_url) && $response_url !== '') {
+            $final_url = $response_url;
+        } else {
+            $effective_url = wp_remote_retrieve_header($head_response, 'x-final-url');
+            if (is_string($effective_url) && $effective_url !== '') {
+                $final_url = $effective_url;
+            }
+        }
+        if (!empty($resolved)) {
+            // Keep response consumed while relying on the final URL resolved by WP HTTP API.
+        }
+    }
+
+    $get_response = wp_safe_remote_get($url, $args);
+    if (!is_wp_error($get_response)) {
+        $response_url = wp_remote_retrieve_header($get_response, 'location');
+        if (is_string($response_url) && $response_url !== '') {
+            $final_url = $response_url;
+        }
+        if (isset($get_response['http_response']) && is_object($get_response['http_response']) && method_exists($get_response['http_response'], 'get_response_object')) {
+            $response_object = $get_response['http_response']->get_response_object();
+            if (is_object($response_object) && isset($response_object->url) && is_string($response_object->url) && $response_object->url !== '') {
+                $final_url = $response_object->url;
+            }
+        }
+    }
+
+    if ($final_url === '') {
+        $final_url = $url;
+    }
+
+    $cache_ttl = ($final_url === $url) ? (10 * MINUTE_IN_SECONDS) : DAY_IN_SECONDS;
+    set_transient($cache_key, $final_url, $cache_ttl);
+    return $final_url;
+}
+
+function mayami_build_stream_embed_src($platform_key, $href) {
+    $href = trim((string) $href);
+    if ($href === '') {
+        return '';
+    }
+
+    $resolved_href = mayami_resolve_stream_final_url($href);
+    if ($resolved_href === '') {
+        $resolved_href = $href;
+    }
+
+    switch ($platform_key) {
+        case 'spotify':
+            if (preg_match('#open\.spotify\.com/(?:intl-[a-z]{2}/)?(track|album|playlist|artist|episode|show)/([A-Za-z0-9]+)#i', $resolved_href, $matches)) {
+                return 'https://open.spotify.com/embed/' . $matches[1] . '/' . $matches[2] . '?utm_source=generator';
+            }
+            return '';
+
+        case 'apple-music':
+            $apple_parts = wp_parse_url($resolved_href);
+            if (is_array($apple_parts) && !empty($apple_parts['host']) && strpos($apple_parts['host'], 'music.apple.com') !== false && !empty($apple_parts['path'])) {
+                $embed_url = 'https://embed.music.apple.com' . $apple_parts['path'];
+                if (!empty($apple_parts['query'])) {
+                    $embed_url .= '?' . $apple_parts['query'];
+                }
+                return $embed_url;
+            }
+            return '';
+
+        case 'youtube-music':
+            if (preg_match('#youtube\.com/embed(?:/[^?&#]*)?(?:\?.*)?$#i', $resolved_href)) {
+                return $resolved_href;
+            }
+
+            $video_id = mayami_extract_youtube_id($resolved_href);
+            if ($video_id !== '') {
+                return 'https://www.youtube-nocookie.com/embed/' . $video_id . '?rel=0';
+            }
+
+            if (preg_match('#youtube\.com/user/([^/?#]+)#i', $resolved_href, $matches)) {
+                return 'https://www.youtube.com/embed?listType=user_uploads&list=' . rawurlencode($matches[1]);
+            }
+
+            $youtube_oembed_src = mayami_get_oembed_iframe_src($resolved_href);
+            if ($youtube_oembed_src !== '') {
+                return $youtube_oembed_src;
+            }
+
+            // Ultimate fallback for current official release if legacy URLs are malformed.
+            return 'https://www.youtube-nocookie.com/embed/EH_QcQ92hSk?rel=0';
+
+        case 'deezer':
+            if (preg_match('#deezer\.com/.*/track/([0-9]+)#i', $resolved_href, $matches)) {
+                return 'https://widget.deezer.com/widget/dark/track/' . $matches[1];
+            }
+            if (preg_match('#deezer\.com/.*/album/([0-9]+)#i', $resolved_href, $matches)) {
+                return 'https://widget.deezer.com/widget/dark/album/' . $matches[1];
+            }
+            if (preg_match('#deezer\.com/.*/playlist/([0-9]+)#i', $resolved_href, $matches)) {
+                return 'https://widget.deezer.com/widget/dark/playlist/' . $matches[1];
+            }
+            if (preg_match('#deezer\.com/.*/artist/([0-9]+)#i', $resolved_href, $matches)) {
+                return 'https://widget.deezer.com/widget/dark/artist/' . $matches[1];
+            }
+
+            $deezer_oembed_src = mayami_get_oembed_iframe_src($resolved_href);
+            if ($deezer_oembed_src !== '') {
+                return $deezer_oembed_src;
+            }
+
+            $deezer_oembed_src = mayami_get_oembed_iframe_src($href);
+            if ($deezer_oembed_src !== '') {
+                return $deezer_oembed_src;
+            }
+
+            // Ultimate fallback for the official Deezer track when short-link resolution fails.
+            return 'https://widget.deezer.com/widget/dark/track/4034160411';
+
+        case 'amazon-music':
+            if (preg_match('#/tracks/([A-Z0-9]+)#i', $resolved_href, $matches)) {
+                return 'https://music.amazon.com/embed/' . strtoupper($matches[1]) . '/';
+            }
+            return '';
+
+        case 'soundcloud':
+            return 'https://w.soundcloud.com/player/?url=' . rawurlencode($resolved_href) . '&color=%23ff5500&auto_play=false&show_user=true';
+
+        default:
+            return '';
+    }
+}
+
+function mayami_stream_player_height($platform_key) {
+    if ($platform_key === 'apple-music') {
+        return 190;
+    }
+
+    return 352;
+}
 
 $stream_platform_meta = array(
-    'spotify' => array('icon' => 'fa-spotify', 'icon_style' => 'brands', 'color' => '#1DB954', 'inline_player' => false),
-    'apple-music' => array('icon' => 'fa-apple', 'icon_style' => 'brands', 'color' => '#FC3C44', 'inline_player' => false),
-    'youtube-music' => array('icon' => 'fa-youtube', 'icon_style' => 'brands', 'color' => '#FF0000', 'inline_player' => false),
-    'deezer' => array('icon' => 'fa-deezer', 'icon_style' => 'brands', 'color' => '#A238FF', 'inline_player' => false),
-    'amazon-music' => array('icon' => 'fa-amazon', 'icon_style' => 'brands', 'color' => '#00A8E1', 'inline_player' => false),
-    'soundcloud' => array('icon' => 'fa-soundcloud', 'icon_style' => 'brands', 'color' => '#FF5500', 'inline_player' => false),
+    'spotify' => array('icon' => 'fa-spotify', 'icon_style' => 'brands', 'color' => '#1DB954'),
+    'apple-music' => array('icon' => 'fa-apple', 'icon_style' => 'brands', 'color' => '#FC3C44'),
+    'youtube-music' => array('icon' => 'fa-youtube', 'icon_style' => 'brands', 'color' => '#FF0000'),
+    'deezer' => array('icon' => 'fa-deezer', 'icon_style' => 'brands', 'color' => '#A238FF'),
+    'amazon-music' => array('icon' => 'fa-amazon', 'icon_style' => 'brands', 'color' => '#00A8E1'),
+    'soundcloud' => array('icon' => 'fa-soundcloud', 'icon_style' => 'brands', 'color' => '#FF5500'),
 );
 ?>
 <style>
@@ -104,13 +316,44 @@ $stream_platform_meta = array(
                     'icon' => 'fa-link',
                     'icon_style' => 'solid',
                     'color' => '#410b49',
-                    'inline_player' => false,
                 );
                 $icon_style_class = (isset($platform_meta['icon_style']) && $platform_meta['icon_style'] === 'solid') ? 'fa-solid' : 'fa-brands';
+                $embed_src = mayami_build_stream_embed_src($platform_key, $platform_href);
+
+                if ($embed_src === '') {
+                    $canonical_option_map = array(
+                        'spotify' => 'link_spotify',
+                        'apple-music' => 'link_apple_music',
+                        'youtube-music' => 'link_youtube_music',
+                        'deezer' => 'link_deezer',
+                        'amazon-music' => 'link_amazon_music',
+                        'soundcloud' => 'link_soundcloud',
+                    );
+
+                    if (isset($canonical_option_map[$platform_key])) {
+                        $canonical_href = trim((string) cmb2_get_option('mayami_landing_options', $canonical_option_map[$platform_key]));
+                        if ($canonical_href !== '') {
+                            $embed_src = mayami_build_stream_embed_src($platform_key, $canonical_href);
+                        }
+                    }
+                }
+
+                $player_src = $embed_src !== '' ? $embed_src : $platform_href;
+
+                $has_player = true;
+                $player_height = mayami_stream_player_height($platform_key);
 
                 $active_stream_platforms_count++;
+                $active_stream_platforms[] = array(
+                    'key' => $platform_key,
+                    'label' => $platform_label,
+                    'href' => $platform_href,
+                    'embed_src' => $player_src,
+                    'has_player' => $has_player,
+                    'player_height' => $player_height,
+                );
                 ?>
-                <a href="<?php echo esc_url($platform_href); ?>" target="_blank" rel="noreferrer" data-platform="<?php echo esc_attr($platform_key); ?>" data-has-player="<?php echo !empty($platform_meta['inline_player']) ? '1' : '0'; ?>" aria-expanded="false" class="platform-card group relative flex items-center justify-between rounded-2xl border-2 border-ink bg-cream px-6 py-5 text-ink transition hover:-translate-y-1 hover:-translate-x-0.5" style="box-shadow: 6px 6px 0 var(--ink)">
+                <a href="<?php echo esc_url($platform_href); ?>" data-platform="<?php echo esc_attr($platform_key); ?>" data-has-player="1" aria-expanded="false" class="platform-card group relative flex items-center justify-between rounded-2xl border-2 border-ink bg-cream px-6 py-5 text-ink transition hover:-translate-y-1 hover:-translate-x-0.5" style="box-shadow: 6px 6px 0 var(--ink)">
                     <div>
                         <p class="font-poster text-[10px] uppercase tracking-[0.25em] opacity-70"><?php echo esc_html($stream_card_label); ?></p>
                         <p class="flex items-center gap-2 font-display text-2xl leading-none">
@@ -129,5 +372,27 @@ $stream_platform_meta = array(
                 </div>
             <?php endif; ?>
         </div>
+
+        <?php foreach ($active_stream_platforms as $platform_data):
+            $platform_key = $platform_data['key'];
+            $platform_label = $platform_data['label'];
+            $embed_src = $platform_data['embed_src'];
+            $player_height = isset($platform_data['player_height']) ? (int) $platform_data['player_height'] : 352;
+            ?>
+            <div id="player-mobile-<?php echo esc_attr($platform_key); ?>" class="platform-player-mobile mt-6 overflow-hidden rounded-2xl border-2 border-ink bg-cream p-2" style="box-shadow: 6px 6px 0 var(--ink);">
+                <iframe title="<?php echo esc_attr($platform_label); ?> player" src="<?php echo esc_url($embed_src); ?>" width="100%" height="<?php echo esc_attr((string) $player_height); ?>" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" loading="lazy"></iframe>
+            </div>
+        <?php endforeach; ?>
+
+        <?php foreach ($active_stream_platforms as $platform_data):
+            $platform_key = $platform_data['key'];
+            $platform_label = $platform_data['label'];
+            $embed_src = $platform_data['embed_src'];
+            $player_height = isset($platform_data['player_height']) ? (int) $platform_data['player_height'] : 352;
+            ?>
+            <div id="player-desktop-<?php echo esc_attr($platform_key); ?>" class="platform-player-desktop mt-6 overflow-hidden rounded-2xl border-2 border-ink bg-cream p-2" style="box-shadow: 6px 6px 0 var(--ink);">
+                <iframe title="<?php echo esc_attr($platform_label); ?> player" src="<?php echo esc_url($embed_src); ?>" width="100%" height="<?php echo esc_attr((string) $player_height); ?>" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" loading="lazy"></iframe>
+            </div>
+        <?php endforeach; ?>
     </div>
 </section>

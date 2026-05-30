@@ -125,28 +125,6 @@ function mayami_initialize_default_content() {
         ),
     );
     
-    // Default marquee items
-    $default_marquee = array(
-        array(
-            'label' => 'Mayami, My Miami',
-            'href' => '#hero',
-            'external' => '',
-            'is_hidden' => '',
-        ),
-        array(
-            'label' => 'Stream · Watch · Share',
-            'href' => '#stream',
-            'external' => '',
-            'is_hidden' => '',
-        ),
-        array(
-            'label' => 'Ellene Masri',
-            'href' => '#social',
-            'external' => '',
-            'is_hidden' => '',
-        ),
-    );
-    
     // Default release rows
     $default_release_rows = array(
         array('key' => 'Artists', 'value' => 'Richard Bona & Ellene Masri'),
@@ -164,10 +142,6 @@ function mayami_initialize_default_content() {
         $options['hero_slider'] = $default_slider;
     }
     
-    if (empty($options['marquee_items'])) {
-        $options['marquee_items'] = $default_marquee;
-    }
-    
     if (empty($options['release_rows'])) {
         $options['release_rows'] = $default_release_rows;
     }
@@ -178,10 +152,6 @@ function mayami_initialize_default_content() {
 
     if (!isset($options['marquee_show_music_icon'])) {
         $options['marquee_show_music_icon'] = 'on';
-    }
-
-    if (empty($options['marquee_logo_png'])) {
-        $options['marquee_logo_png'] = $theme_url . '/assets/mayami-logo.png';
     }
 
     if (!isset($options['marquee_logo_hidden'])) {
@@ -479,7 +449,6 @@ function mayami_sync_marquee_items_once() {
     $items = isset($options['marquee_items']) && is_array($options['marquee_items']) ? $options['marquee_items'] : array();
     $clean_items = array();
 
-    $has_ellene = false;
     $changed = false;
 
     if (array_key_exists('marquee_show_stream_icons', $options)) {
@@ -503,32 +472,12 @@ function mayami_sync_marquee_items_once() {
             continue;
         }
 
-        if ($label === 'ellene masri') {
-            $has_ellene = true;
-
-            $current_href = trim((string) ($item['href'] ?? ''));
-            if ($current_href === '' || strpos($current_href, '#') !== 0) {
-                $item['href'] = '#social';
-                $changed = true;
-            }
-        }
-
         if (!empty($item['external'])) {
             $item['external'] = '';
             $changed = true;
         }
 
         $clean_items[] = $item;
-    }
-
-    if (!$has_ellene) {
-        $clean_items[] = array(
-            'label'    => 'Ellene Masri',
-            'href'     => '#social',
-            'external' => '',
-            'is_hidden'=> '',
-        );
-        $changed = true;
     }
 
     if ($changed) {

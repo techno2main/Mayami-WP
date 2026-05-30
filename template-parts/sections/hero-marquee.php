@@ -6,14 +6,7 @@
  */
 
 $marquee_items = cmb2_get_option('mayami_landing_options', 'marquee_items');
-
-$link_spotify = cmb2_get_option('mayami_landing_options', 'link_spotify') ?: 'https://open.spotify.com/intl-fr/track/3rzrziofCOwRrI1r99IUbQ?si=a2cd3f4cbe364a94';
-$link_apple_music = cmb2_get_option('mayami_landing_options', 'link_apple_music') ?: 'https://music.apple.com/fr/song/mayami-my-miami/6771742499';
-$link_youtube_music = cmb2_get_option('mayami_landing_options', 'link_youtube_music') ?: 'https://youtu.be/EH_QcQ92hSk?si=gpybhKJbZrDN1Ew5';
-$link_deezer = cmb2_get_option('mayami_landing_options', 'link_deezer') ?: 'https://link.deezer.com/s/33p3MydevJFz4yqu2aEam';
-$link_amazon_music = cmb2_get_option('mayami_landing_options', 'link_amazon_music') ?: 'https://music.amazon.com/tracks/B0H2FR3WHQ?marketplaceId=ATVPDKIKX0DER&musicTerritory=US&ref=dm_sh_gPJPR79AtgfLS0EFarS9Xwi57';
-$link_soundcloud = cmb2_get_option('mayami_landing_options', 'link_soundcloud') ?: 'https://soundcloud.com/ellenemasri';
-$marquee_logo_png = cmb2_get_option('mayami_landing_options', 'marquee_logo_png') ?: (get_template_directory_uri() . '/assets/mayami-logo.png');
+$marquee_logo_png = trim((string) cmb2_get_option('mayami_landing_options', 'marquee_logo_png'));
 $hide_marquee_visual = !empty(cmb2_get_option('mayami_landing_options', 'marquee_logo_hidden'));
 
 $show_platform_icons = true;
@@ -40,45 +33,17 @@ if (is_array($marquee_items)) {
 
         return !empty($item['label']) && !empty($item['href']);
     }));
+} else {
+    $marquee_items = array();
 }
 
-if (empty($marquee_items)) {
-    $marquee_items = array(
-        array('label' => 'Mayami, My Miami', 'href' => '#hero', 'external' => false, 'is_hidden' => ''),
-        array('label' => 'Stream · Watch · Share', 'href' => '#stream', 'external' => false, 'is_hidden' => ''),
-    );
-}
-
-$desktop_left_item = $marquee_items[0] ?? array('label' => 'Mayami, My Miami', 'href' => '#page-top', 'external' => false);
-$desktop_center_item = null;
-$desktop_right_item = null;
-foreach ($marquee_items as $item) {
-    $label = strtolower(trim((string) ($item['label'] ?? '')));
-    if (strpos($label, 'stream') !== false && strpos($label, 'watch') !== false) {
-        $desktop_center_item = $item;
-    }
-
-    if (strpos($label, 'ellene') !== false) {
-        $desktop_right_item = $item;
-    }
-}
-if (!$desktop_center_item) {
-    $desktop_center_item = $marquee_items[1] ?? array('label' => 'Stream · Watch · Share', 'href' => '#stream', 'external' => false);
-}
-if (!$desktop_right_item) {
-    $desktop_right_item = array('label' => 'Ellene Leya Masri', 'href' => '#social', 'external' => false);
-}
+$desktop_left_item = $marquee_items[0] ?? null;
+$desktop_center_item = $marquee_items[1] ?? null;
+$desktop_right_item = $marquee_items[2] ?? null;
 
 $stream_platforms = cmb2_get_option('mayami_landing_options', 'stream_platforms');
-if (!is_array($stream_platforms) || empty($stream_platforms)) {
-    $stream_platforms = array(
-        array('is_active' => 'on', 'label' => 'Spotify', 'href' => $link_spotify),
-        array('is_active' => 'on', 'label' => 'Apple Music', 'href' => $link_apple_music),
-        array('is_active' => 'on', 'label' => 'YouTube Music', 'href' => $link_youtube_music),
-        array('is_active' => 'on', 'label' => 'Deezer', 'href' => $link_deezer),
-        array('is_active' => 'on', 'label' => 'Amazon Music', 'href' => $link_amazon_music),
-        array('is_active' => 'on', 'label' => 'SoundCloud', 'href' => $link_soundcloud),
-    );
+if (!is_array($stream_platforms)) {
+    $stream_platforms = array();
 }
 
 $platform_icon_map = array(
@@ -116,7 +81,7 @@ if ($show_platform_icons) {
     }
 }
 
-$mobile_title = !empty($desktop_left_item['label']) ? $desktop_left_item['label'] : 'Mayami, My Miami';
+$mobile_title = is_array($desktop_left_item) && !empty($desktop_left_item['label']) ? (string) $desktop_left_item['label'] : '';
 $mobile_stream_link = $desktop_center_item;
 ?>
 <style>
@@ -365,25 +330,29 @@ $mobile_stream_link = $desktop_center_item;
 </style>
 <div id="hero-marquee" class="relative z-20 overflow-hidden py-3">
     <div class="marquee-logo-row<?php echo $hide_marquee_visual ? ' no-visual' : ''; ?>">
-        <?php if (!$hide_marquee_visual): ?>
-            <img src="<?php echo esc_url($marquee_logo_png); ?>" alt="Mayami" class="marquee-logo-image" loading="lazy" decoding="async" />
+        <?php if (!$hide_marquee_visual && $marquee_logo_png !== ''): ?>
+            <img src="<?php echo esc_url($marquee_logo_png); ?>" alt="" class="marquee-logo-image" loading="lazy" decoding="async" />
         <?php endif; ?>
         <div class="marquee-logo-copy">
             <?php
-                $right_href = !empty($desktop_right_item['href']) ? $desktop_right_item['href'] : '#social';
-                $right_label = !empty($desktop_right_item['label']) ? $desktop_right_item['label'] : 'Ellene Leya Masri';
+                $right_href = is_array($desktop_right_item) && !empty($desktop_right_item['href']) ? (string) $desktop_right_item['href'] : '';
+                $right_label = is_array($desktop_right_item) && !empty($desktop_right_item['label']) ? (string) $desktop_right_item['label'] : '';
                 $right_is_external = false;
                 $right_target = $right_is_external ? '_blank' : '_self';
                 $right_rel = $right_is_external ? 'noreferrer' : '';
             ?>
-            <a href="<?php echo esc_url($right_href); ?>" <?php if ($right_is_external): ?>target="<?php echo esc_attr($right_target); ?>" rel="<?php echo esc_attr($right_rel); ?>"<?php endif; ?> class="marquee-logo-mark marquee-link">
-                <?php echo esc_html($right_label); ?>
-            </a>
+            <?php if ($right_href !== '' && $right_label !== ''): ?>
+                <a href="<?php echo esc_url($right_href); ?>" <?php if ($right_is_external): ?>target="<?php echo esc_attr($right_target); ?>" rel="<?php echo esc_attr($right_rel); ?>"<?php endif; ?> class="marquee-logo-mark marquee-link">
+                    <?php echo esc_html($right_label); ?>
+                </a>
+            <?php endif; ?>
         </div>
     </div>
     <div id="hero-marquee-mobile">
         <div class="marquee-mobile-row marquee-mobile-row-top">
-            <a href="#page-top" class="marquee-mobile-title font-poster uppercase"><?php echo esc_html($mobile_title); ?></a>
+            <?php if ($mobile_title !== ''): ?>
+                <a href="#page-top" class="marquee-mobile-title font-poster uppercase"><?php echo esc_html($mobile_title); ?></a>
+            <?php endif; ?>
             <?php if (!empty($marquee_platform_links)): ?>
                 <span class="marquee-platform-icons">
                     <?php foreach ($marquee_platform_links as $platform): ?>
@@ -397,13 +366,15 @@ $mobile_stream_link = $desktop_center_item;
 
         <div class="marquee-mobile-row marquee-mobile-row-bottom">
             <?php
-                $mobile_stream_href = !empty($mobile_stream_link['href']) ? $mobile_stream_link['href'] : '#stream';
-                $mobile_stream_label = !empty($mobile_stream_link['label']) ? $mobile_stream_link['label'] : 'Stream · Watch · Share';
+                $mobile_stream_href = is_array($mobile_stream_link) && !empty($mobile_stream_link['href']) ? (string) $mobile_stream_link['href'] : '';
+                $mobile_stream_label = is_array($mobile_stream_link) && !empty($mobile_stream_link['label']) ? (string) $mobile_stream_link['label'] : '';
                 $mobile_stream_external = false;
                 $mobile_stream_target = $mobile_stream_external ? '_blank' : '_self';
                 $mobile_stream_rel = $mobile_stream_external ? 'noreferrer' : '';
             ?>
-            <a href="<?php echo esc_url($mobile_stream_href); ?>" <?php if ($mobile_stream_external): ?>target="<?php echo esc_attr($mobile_stream_target); ?>" rel="<?php echo esc_attr($mobile_stream_rel); ?>"<?php endif; ?> class="marquee-mobile-stream-link font-poster uppercase"><?php echo esc_html($mobile_stream_label); ?></a>
+            <?php if ($mobile_stream_href !== '' && $mobile_stream_label !== ''): ?>
+                <a href="<?php echo esc_url($mobile_stream_href); ?>" <?php if ($mobile_stream_external): ?>target="<?php echo esc_attr($mobile_stream_target); ?>" rel="<?php echo esc_attr($mobile_stream_rel); ?>"<?php endif; ?> class="marquee-mobile-stream-link font-poster uppercase"><?php echo esc_html($mobile_stream_label); ?></a>
+            <?php endif; ?>
         </div>
     </div>
 
@@ -412,32 +383,32 @@ $mobile_stream_link = $desktop_center_item;
             <div class="marquee-line-desktop font-poster text-lg uppercase tracking-widest text-cream">
                 <div class="marquee-col-left">
                     <?php
-                        $left_href = !empty($desktop_left_item['href']) ? $desktop_left_item['href'] : '#page-top';
-                        $left_label = !empty($desktop_left_item['label']) ? $desktop_left_item['label'] : $mobile_title;
+                        $left_href = is_array($desktop_left_item) && !empty($desktop_left_item['href']) ? (string) $desktop_left_item['href'] : '';
+                        $left_label = is_array($desktop_left_item) && !empty($desktop_left_item['label']) ? (string) $desktop_left_item['label'] : '';
                         $left_is_external = false;
-                        if (strtolower(trim((string) $left_label)) === strtolower(trim((string) $mobile_title))) {
-                            $left_href = '#page-top';
-                            $left_is_external = false;
-                        }
                         $left_target = $left_is_external ? '_blank' : '_self';
                         $left_rel = $left_is_external ? 'noreferrer' : '';
                     ?>
-                    <a href="<?php echo esc_url($left_href); ?>" <?php if ($left_is_external): ?>target="<?php echo esc_attr($left_target); ?>" rel="<?php echo esc_attr($left_rel); ?>"<?php endif; ?> class="marquee-link">
-                        <?php echo esc_html($left_label); ?>
-                    </a>
+                    <?php if ($left_href !== '' && $left_label !== ''): ?>
+                        <a href="<?php echo esc_url($left_href); ?>" <?php if ($left_is_external): ?>target="<?php echo esc_attr($left_target); ?>" rel="<?php echo esc_attr($left_rel); ?>"<?php endif; ?> class="marquee-link">
+                            <?php echo esc_html($left_label); ?>
+                        </a>
+                    <?php endif; ?>
                 </div>
 
                 <div class="marquee-col-center">
                     <?php
-                        $center_href = !empty($desktop_center_item['href']) ? $desktop_center_item['href'] : '#stream';
-                        $center_label = !empty($desktop_center_item['label']) ? $desktop_center_item['label'] : 'Stream · Watch · Share';
+                        $center_href = is_array($desktop_center_item) && !empty($desktop_center_item['href']) ? (string) $desktop_center_item['href'] : '';
+                        $center_label = is_array($desktop_center_item) && !empty($desktop_center_item['label']) ? (string) $desktop_center_item['label'] : '';
                         $center_is_external = false;
                         $center_target = $center_is_external ? '_blank' : '_self';
                         $center_rel = $center_is_external ? 'noreferrer' : '';
                     ?>
-                    <a href="<?php echo esc_url($center_href); ?>" <?php if ($center_is_external): ?>target="<?php echo esc_attr($center_target); ?>" rel="<?php echo esc_attr($center_rel); ?>"<?php endif; ?> class="marquee-link">
-                        <?php echo esc_html($center_label); ?>
-                    </a>
+                    <?php if ($center_href !== '' && $center_label !== ''): ?>
+                        <a href="<?php echo esc_url($center_href); ?>" <?php if ($center_is_external): ?>target="<?php echo esc_attr($center_target); ?>" rel="<?php echo esc_attr($center_rel); ?>"<?php endif; ?> class="marquee-link">
+                            <?php echo esc_html($center_label); ?>
+                        </a>
+                    <?php endif; ?>
                 </div>
 
                 <div class="marquee-col-right">
