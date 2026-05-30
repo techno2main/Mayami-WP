@@ -14,6 +14,7 @@ add_action('admin_init', 'mayami_sync_stream_platforms_once', 23);
 add_action('admin_init', 'mayami_sync_follow_youtube_link_once', 24);
 add_action('admin_init', 'mayami_sync_marquee_items_once', 25);
 add_action('admin_init', 'mayami_sync_social_links_once', 26);
+add_action('admin_init', 'mayami_sync_sticky_links_once', 27);
 add_action('admin_head', 'mayami_sticky_save_button');
 
 /**
@@ -578,6 +579,39 @@ function mayami_sync_social_links_once() {
     update_option($sync_flag, true);
 }
 
+/**
+ * One-time migration of Sticky links from legacy keys.
+ */
+function mayami_sync_sticky_links_once() {
+    $sync_flag = 'mayami_sticky_links_synced_20260530';
+    if (get_option($sync_flag)) {
+        return;
+    }
+
+    $option_key = 'mayami_landing_options';
+    $options = get_option($option_key, array());
+    if (!is_array($options)) {
+        update_option($sync_flag, true);
+        return;
+    }
+
+    $sticky_tiktok = isset($options['sticky_tiktok_link']) ? trim((string) $options['sticky_tiktok_link']) : '';
+    if ($sticky_tiktok === '') {
+        $social_tiktok = isset($options['social_tiktok_link']) ? trim((string) $options['social_tiktok_link']) : '';
+        $legacy_tiktok = isset($options['link_tiktok']) ? trim((string) $options['link_tiktok']) : '';
+
+        if ($social_tiktok !== '') {
+            $options['sticky_tiktok_link'] = $social_tiktok;
+            update_option($option_key, $options);
+        } elseif ($legacy_tiktok !== '') {
+            $options['sticky_tiktok_link'] = $legacy_tiktok;
+            update_option($option_key, $options);
+        }
+    }
+
+    update_option($sync_flag, true);
+}
+
 
 function mayami_register_options() {
     
@@ -1105,6 +1139,12 @@ function mayami_register_options() {
         'id'      => 'sticky_tiktok_label',
         'type'    => 'text',
         'default' => 'TikTok',
+    ));
+
+    $cmb->add_field(array(
+        'name' => 'Sticky Bar (Mobile) - TikTok Link',
+        'id'   => 'sticky_tiktok_link',
+        'type' => 'text_url',
     ));
 
     // ========== SECTION: MARQUEE ==========

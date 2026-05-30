@@ -480,6 +480,12 @@ function mayami_register_options_page() {
         'default' => 'TikTok',
     ]);
 
+    $cmb_options->add_field([
+        'name' => 'Sticky Bar (Mobile) - TikTok Link',
+        'id'   => 'sticky_tiktok_link',
+        'type' => 'text_url',
+    ]);
+
     // ============================================
     // TAB: PLATFORM LINKS
     // ============================================
@@ -940,6 +946,11 @@ function mayami_register_meta_boxes($meta_boxes) {
                 'id'   => 'sticky_tiktok_label',
                 'type' => 'text',
                 'std'  => 'TikTok',
+            ],
+            [
+                'name' => 'Sticky Bar (Mobile) - TikTok Link',
+                'id'   => 'sticky_tiktok_link',
+                'type' => 'url',
             ],
         ],
     ];
