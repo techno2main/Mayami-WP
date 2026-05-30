@@ -9,12 +9,10 @@ add_action('cmb2_admin_init', 'mayami_register_options');
 add_action('admin_init', 'mayami_initialize_default_content');
 // Platform link sync disabled to keep links fully admin-driven.
 // Hero top-artist sync disabled to keep hero values fully admin-driven.
-add_action('admin_init', 'mayami_sync_marquee_play_link_once', 22);
+// Marquee play-link sync disabled to avoid automatic link rewrites.
 // Stream sync disabled to keep stream URLs fully admin-driven and avoid re-injection.
 // Follow YouTube sync disabled to avoid hardcoded profile URL writes.
-add_action('admin_init', 'mayami_sync_marquee_items_once', 25);
-add_action('admin_init', 'mayami_sync_social_links_once', 26);
-add_action('admin_init', 'mayami_sync_sticky_links_once', 27);
+// Marquee/social/sticky legacy migrations disabled to keep options fully admin-driven.
 // Stream force/sync hooks disabled to avoid hardcoded stream URL writes.
 add_action('admin_head', 'mayami_sticky_save_button');
 
@@ -274,80 +272,6 @@ function mayami_sync_marquee_items_once() {
 
     update_option($sync_flag, true);
 }
-
-/**
- * One-time migration of Social links from legacy link_* keys.
- */
-function mayami_sync_social_links_once() {
-    $sync_flag = 'mayami_social_links_synced_20260530';
-    if (get_option($sync_flag)) {
-        return;
-    }
-
-    $option_key = 'mayami_landing_options';
-    $options = get_option($option_key, array());
-    if (!is_array($options)) {
-        update_option($sync_flag, true);
-        return;
-    }
-
-    $map = array(
-        'social_tiktok_link' => 'link_tiktok',
-        'social_instagram_link' => 'link_instagram',
-        'social_youtube_link' => 'link_youtube_video',
-    );
-
-    $changed = false;
-    foreach ($map as $new_key => $legacy_key) {
-        $new_value = isset($options[$new_key]) ? trim((string) $options[$new_key]) : '';
-        $legacy_value = isset($options[$legacy_key]) ? trim((string) $options[$legacy_key]) : '';
-
-        if ($new_value === '' && $legacy_value !== '') {
-            $options[$new_key] = $legacy_value;
-            $changed = true;
-        }
-    }
-
-    if ($changed) {
-        update_option($option_key, $options);
-    }
-
-    update_option($sync_flag, true);
-}
-
-/**
- * One-time migration of Sticky links from legacy keys.
- */
-function mayami_sync_sticky_links_once() {
-    $sync_flag = 'mayami_sticky_links_synced_20260530';
-    if (get_option($sync_flag)) {
-        return;
-    }
-
-    $option_key = 'mayami_landing_options';
-    $options = get_option($option_key, array());
-    if (!is_array($options)) {
-        update_option($sync_flag, true);
-        return;
-    }
-
-    $sticky_tiktok = isset($options['sticky_tiktok_link']) ? trim((string) $options['sticky_tiktok_link']) : '';
-    if ($sticky_tiktok === '') {
-        $social_tiktok = isset($options['social_tiktok_link']) ? trim((string) $options['social_tiktok_link']) : '';
-        $legacy_tiktok = isset($options['link_tiktok']) ? trim((string) $options['link_tiktok']) : '';
-
-        if ($social_tiktok !== '') {
-            $options['sticky_tiktok_link'] = $social_tiktok;
-            update_option($option_key, $options);
-        } elseif ($legacy_tiktok !== '') {
-            $options['sticky_tiktok_link'] = $legacy_tiktok;
-            update_option($option_key, $options);
-        }
-    }
-
-    update_option($sync_flag, true);
-}
-
 
 function mayami_register_options() {
     
