@@ -393,28 +393,29 @@ function mayami_statistics_page() {
     <?php
 }
 
-// Google Tag Manager - snippet <head>
-function mayami_gtm_head() {
-    ?>
-    <!-- Google Tag Manager -->
-    <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
-    new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
-    j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
-    'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
-    })(window,document,'script','dataLayer','GTM-ND9D6VCZ');</script>
-    <!-- End Google Tag Manager -->
-    <?php
-}
-add_action('wp_head', 'mayami_gtm_head', 1);
+/**
+ * Force noindex on the public landing while launch is pending.
+ *
+ * This keeps the site out of search results without relying on plugin settings.
+ */
+function mayami_force_landing_noindex($robots) {
+    if (is_admin()) {
+        return $robots;
+    }
 
-// Google Tag Manager - snippet <body>
-function mayami_gtm_body() {
-    ?>
-    <!-- Google Tag Manager (noscript) -->
-    <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-ND9D6VCZ"
-    height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
-    <!-- End Google Tag Manager (noscript) -->
-    <?php
+    if (is_front_page() || is_home()) {
+        return array(
+            'noindex' => true,
+            'nofollow' => true,
+            'noarchive' => true,
+            'nosnippet' => true,
+            'max-snippet' => 0,
+            'max-image-preview' => 'none',
+            'max-video-preview' => 0,
+        );
+    }
+
+    return $robots;
 }
-add_action('wp_body_open', 'mayami_gtm_body', 1);
+add_filter('wp_robots', 'mayami_force_landing_noindex');
 
