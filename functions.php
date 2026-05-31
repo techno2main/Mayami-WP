@@ -362,8 +362,13 @@ function mayami_redirect_admin_bar_edit_to_landing($wp_admin_bar) {
 }
 add_action('admin_bar_menu', 'mayami_redirect_admin_bar_edit_to_landing', 1001);
 
-// Statistics menu - GA4 shortcut for all admin users (including client)
+// Statistics menu - GA4 shortcut reserved for the owner account only.
 function mayami_add_statistics_menu() {
+    $current_user = wp_get_current_user();
+    if (!$current_user || $current_user->user_login !== 'admin-my') {
+        return;
+    }
+
     add_menu_page(
         'Statistics',
         'Statistics',
@@ -377,6 +382,11 @@ function mayami_add_statistics_menu() {
 add_action('admin_menu', 'mayami_add_statistics_menu');
 
 function mayami_statistics_page() {
+    $current_user = wp_get_current_user();
+    if (!$current_user || $current_user->user_login !== 'admin-my') {
+        wp_die(esc_html__('You are not allowed to access this page.', 'mayami'), 403);
+    }
+
     ?>
     <div class="wrap">
         <h1>📊 Statistics — ellenemasri.pro</h1>
