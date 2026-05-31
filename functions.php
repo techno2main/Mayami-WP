@@ -362,24 +362,23 @@ function mayami_redirect_admin_bar_edit_to_landing($wp_admin_bar) {
 }
 add_action('admin_bar_menu', 'mayami_redirect_admin_bar_edit_to_landing', 1001);
 
-// Statistics menu - GA4 shortcut reserved for the owner account only.
-function mayami_add_statistics_menu() {
+// Hidden Statistics page reserved for the owner account only.
+function mayami_register_statistics_page() {
     $current_user = wp_get_current_user();
     if (!$current_user || $current_user->user_login !== 'admin-my') {
         return;
     }
 
-    add_menu_page(
+    add_submenu_page(
+        null,
         'Statistics',
         'Statistics',
         'manage_options',
         'mayami_statistics',
-        'mayami_statistics_page',
-        'dashicons-chart-bar',
-        3
+        'mayami_statistics_page'
     );
 }
-add_action('admin_menu', 'mayami_add_statistics_menu');
+add_action('admin_menu', 'mayami_register_statistics_page');
 
 function mayami_statistics_page() {
     $current_user = wp_get_current_user();
