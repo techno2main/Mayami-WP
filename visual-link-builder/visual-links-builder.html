@@ -1561,10 +1561,36 @@
                 }
 
                 const currentDims = getCanvasDimensions();
-                const savedWidth = Number(payload.canvasWidth) || currentDims.width || 0;
-                const savedHeight = Number(payload.canvasHeight) || currentDims.height || 0;
-                const ratioX = savedWidth > 0 && currentDims.width > 0 ? (currentDims.width / savedWidth) : 1;
-                const ratioY = savedHeight > 0 && currentDims.height > 0 ? (currentDims.height / savedHeight) : 1;
+                const savedWidth = Number(payload.canvasWidth) || 0;
+                const savedHeight = Number(payload.canvasHeight) || 0;
+
+                // Sécurité anti-décalage: certains anciens drafts ont des canvasWidth/Height
+                // incohérents avec les coordonnées stockées. Dans ce cas, on évite de
+                // re-multiplier les coordonnées si elles sont déjà dans l'espace affiché.
+                const rawMaxX = rawZones.reduce((max, zone) => {
+                    const x = Number(zone.x) || 0;
+                    const w = Number(zone.width) || 0;
+                    return Math.max(max, x + w);
+                }, 0);
+                const rawMaxY = rawZones.reduce((max, zone) => {
+                    const y = Number(zone.y) || 0;
+                    const h = Number(zone.height) || 0;
+                    return Math.max(max, y + h);
+                }, 0);
+
+                const hasValidSavedDims = savedWidth > 0 && savedHeight > 0 && currentDims.width > 0 && currentDims.height > 0;
+                const savedMuchLargerThanCurrent = hasValidSavedDims
+                    && (savedWidth > currentDims.width * 1.8 || savedHeight > currentDims.height * 1.8);
+                const zonesAlreadyFitCurrentCanvas = currentDims.width > 0 && currentDims.height > 0
+                    && rawMaxX <= (currentDims.width * 1.05)
+                    && rawMaxY <= (currentDims.height * 1.05);
+
+                let ratioX = 1;
+                let ratioY = 1;
+                if (hasValidSavedDims && !(savedMuchLargerThanCurrent && zonesAlreadyFitCurrentCanvas)) {
+                    ratioX = currentDims.width / savedWidth;
+                    ratioY = currentDims.height / savedHeight;
+                }
 
                 zones = rawZones.map(zone => {
                     const x = Math.max(0, Math.round((Number(zone.x) || 0) * ratioX));
@@ -2175,6 +2201,7 @@
                 return `<section id="${escapeAttr(id)}" class="anchor-section"><h2>Section #${escapeHtml(id)}</h2><p>Ancre de démonstration ${index + 1}. Le clic sur la zone ancre vous amène ici.</p></section>`;
             }).join('');
 
+            const scriptCloseTag = '</scr' + 'ipt>';
             const htmlDocument = `<!DOCTYPE html>
 <html lang="fr">
 <head>
@@ -2265,7 +2292,7 @@
       if (img.complete) rescale(); else img.addEventListener('load', rescale);
       window.addEventListener('resize', rescale);
     })();
-  </script>
+    ${scriptCloseTag}
 </body>
 </html>`;
 
