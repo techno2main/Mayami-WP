@@ -956,6 +956,13 @@ function mayami_ajax_export_epk_html() {
         wp_send_json_error(array('message' => 'Échec de l\'écriture du fichier ' . $filename . ' (' . $last_error_message . ').'), 500);
     }
 
+    // Pour le bucket template-email, sauvegarder aussi un fichier .txt avec le code HTML
+    if ($export_bucket === 'template-email') {
+        $txt_filename = $safe_name . '.txt';
+        $txt_path = trailingslashit((string) $export_target['dir']) . $txt_filename;
+        file_put_contents($txt_path, $html);
+    }
+
     $export_url = trailingslashit((string) $export_target['url']) . rawurlencode($filename);
 
     // Persist export URL into the draft store so it survives page refreshes.
@@ -988,6 +995,100 @@ function mayami_ajax_export_epk_html() {
 }
 add_action('wp_ajax_mayami_export_epk_html', 'mayami_ajax_export_epk_html');
 add_action('wp_ajax_mayami_export_visual_links_html', 'mayami_ajax_export_epk_html');
+
+/**
+ * Supprime récursivement les enfants d'un dossier (fichiers + sous-dossiers),
+ * sans supprimer le dossier racine lui-même.
+ *
+ * @param string $dir Dossier cible.
+ * @return int|WP_Error Nombre d'éléments supprimés ou WP_Error.
+ */
+function mayami_purge_directory_children($dir) {
+    $dir = (string) $dir;
+    if ($dir === '' || !is_dir($dir)) {
+        return 0;
+    }
+
+    $deleted = 0;
+    $items = scandir($dir);
+    if (!is_array($items)) {
+        return new WP_Error('purge_scan_failed', 'Impossible de lire le contenu du dossier à purger.');
+    }
+
+    foreach ($items as $item) {
+        if ($item === '.' || $item === '..') {
+            continue;
+        }
+
+        $path = trailingslashit($dir) . $item;
+        if (is_dir($path)) {
+            $nested = mayami_purge_directory_children($path);
+            if (is_wp_error($nested)) {
+                return $nested;
+            }
+            if (!@rmdir($path)) {
+                return new WP_Error('purge_rmdir_failed', 'Impossible de supprimer le sous-dossier: ' . basename($path));
+            }
+            $deleted += (int) $nested + 1;
+            continue;
+        }
+
+        if (is_file($path)) {
+            wp_delete_file($path);
+            if (file_exists($path)) {
+                return new WP_Error('purge_delete_failed', 'Impossible de supprimer le fichier: ' . basename($path));
+            }
+            $deleted++;
+        }
+    }
+
+    return $deleted;
+}
+
+/**
+ * AJAX: purge tous les fichiers d'un bucket d'export (Template-Email ou Template-HTML).
+ * Appelé avant chaque nouvelle génération pour ne conserver que les fichiers à jour.
+ */
+function mayami_ajax_purge_visual_export_bucket() {
+    if (!current_user_can('manage_options')) {
+        wp_send_json_error(array('message' => 'Accès refusé.'), 403);
+    }
+
+    check_ajax_referer('mayami_epk_draft', 'nonce');
+
+    $draft_name   = isset($_POST['draft_name'])   ? sanitize_text_field(wp_unslash($_POST['draft_name']))   : '';
+    $export_bucket = isset($_POST['export_bucket']) ? sanitize_key(wp_unslash($_POST['export_bucket'])) : '';
+
+    if ($draft_name === '' || $export_bucket === '') {
+        wp_send_json_error(array('message' => 'Paramètres manquants.'), 400);
+    }
+
+    $subdir = mayami_build_visual_links_export_subdir($draft_name, $export_bucket);
+    $base_dir = mayami_get_visual_links_export_dir();
+    if (is_wp_error($base_dir)) {
+        wp_send_json_error(array('message' => $base_dir->get_error_message()), 500);
+    }
+
+    $safe_subdir = trim(str_replace('\\', '/', $subdir), '/');
+    if ($safe_subdir === '' || strpos($safe_subdir, '..') !== false) {
+        wp_send_json_error(array('message' => 'Sous-dossier invalide.'), 400);
+    }
+
+    $target_dir = trailingslashit($base_dir) . $safe_subdir;
+
+    if (!is_dir($target_dir)) {
+        wp_send_json_success(array('purged' => 0));
+        return;
+    }
+
+    $purged = mayami_purge_directory_children($target_dir);
+    if (is_wp_error($purged)) {
+        wp_send_json_error(array('message' => $purged->get_error_message()), 500);
+    }
+
+    wp_send_json_success(array('purged' => $purged));
+}
+add_action('wp_ajax_mayami_purge_visual_export_bucket', 'mayami_ajax_purge_visual_export_bucket');
 
 /**
  * Render the standalone HTML Visual Links Builder inside WP admin.

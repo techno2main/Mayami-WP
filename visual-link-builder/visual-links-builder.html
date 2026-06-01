@@ -728,6 +728,9 @@
                     <input type="url" id="pdfUrlInput" class="draft-name-input" placeholder="Lien PDF (https://votresite.com/fichier.pdf)">
                     <button class="btn btn-secondary" id="saveDraftBtn">Enregistrer le visuel</button>
                     <div class="draft-status" id="draftStatus">Visuel non sauvegardé en base.</div>
+                    <button class="btn btn-primary" id="previewBtn" disabled style="margin-top:8px;">
+                        👁️ Preview
+                    </button>
                     <div class="export-quick-actions" id="exportQuickActions">
                         <p class="export-quick-actions__title">Dernier export HTML</p>
                         <div class="export-quick-actions__row">
@@ -775,9 +778,6 @@
                 <div class="actions">
                     <button class="btn btn-secondary" id="clearAllBtn">
                         🗑️ Tout effacer
-                    </button>
-                    <button class="btn btn-primary" id="previewBtn" disabled>
-                        👁️ Preview
                     </button>
                 </div>
             </div>
@@ -2180,7 +2180,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Visual Links Builder</title>
+  <title>Visual Links Builder</title>
   <style>
     * { box-sizing: border-box; }
     body {
@@ -2188,18 +2188,28 @@
       background: #f3f4f6;
       font-family: 'Segoe UI', Tahoma, sans-serif;
       color: #0f172a;
-      padding: 24px;
-      overflow-x: auto;
+      padding: 24px 16px;
     }
     .wrapper {
-            width: ${editorWidth}px;
-            max-width: 100%;
-            margin: 0 auto;
+      max-width: ${editorWidth}px;
+      width: 100%;
+      margin: 0 auto;
       background: #fff;
       border-radius: 12px;
       border: 1px solid #d7dce8;
       box-shadow: 0 8px 20px rgba(15, 23, 42, 0.08);
       padding: 14px;
+    }
+    .img-wrap {
+      position: relative;
+      width: 100%;
+      line-height: 0;
+    }
+    .img-wrap img {
+      display: block;
+      width: 100%;
+      height: auto;
+      border-radius: 8px;
     }
     .anchor-section {
       max-width: 860px;
@@ -2209,27 +2219,53 @@
       border-radius: 10px;
       padding: 16px;
     }
-    .anchor-section h2 {
-      margin: 0 0 8px;
-      font-size: 20px;
-      color: #0f172a;
-    }
-    .anchor-section p {
-      margin: 0;
-      font-size: 14px;
-      color: #334155;
-      line-height: 1.5;
+    .anchor-section h2 { margin: 0 0 8px; font-size: 20px; color: #0f172a; }
+    .anchor-section p { margin: 0; font-size: 14px; color: #334155; line-height: 1.5; }
+    @media (max-width: 600px) {
+      body { padding: 12px 8px; }
+      .wrapper { padding: 8px; border-radius: 8px; }
+      .anchor-section { padding: 12px; }
     }
   </style>
 </head>
 <body>
   <main class="wrapper">
-        <img src="${escapeAttr(imageUrl)}" width="${editorWidth}" height="${editorHeight}" usemap="#${escapeAttr(mapName)}" alt="Visual link layout" style="display:block;width:${editorWidth}px;max-width:100%;height:auto;border-radius:8px;">
+    <div class="img-wrap">
+      <img id="mapImg" src="${escapeAttr(imageUrl)}" usemap="#${escapeAttr(mapName)}" alt="Visual link layout">
+    </div>
     <map name="${escapeAttr(mapName)}">
       ${areasMarkup}
     </map>
   </main>
   ${anchorsMarkup}
+  <script>
+    (function () {
+      var img = document.getElementById('mapImg');
+      var map = document.querySelector('map[name="${escapeAttr(mapName)}"]');
+      if (!img || !map) return;
+      var areas = Array.from(map.querySelectorAll('area'));
+      var origCoords = areas.map(function (a) { return (a.getAttribute('coords') || '').split(',').map(Number); });
+      var naturalW = ${editorWidth};
+      function rescale() {
+        var displayW = img.offsetWidth;
+        if (!displayW) return;
+        var ratio = displayW / naturalW;
+        areas.forEach(function (area, i) {
+          var c = origCoords[i];
+          if (c && c.length === 4) {
+            area.setAttribute('coords', [
+              Math.round(c[0] * ratio),
+              Math.round(c[1] * ratio),
+              Math.round(c[2] * ratio),
+              Math.round(c[3] * ratio)
+            ].join(','));
+          }
+        });
+      }
+      if (img.complete) rescale(); else img.addEventListener('load', rescale);
+      window.addEventListener('resize', rescale);
+    })();
+  </script>
 </body>
 </html>`;
 
@@ -2301,8 +2337,7 @@
       font-weight: 600;
       font-size: 13px;
     }
-    .preview-btn.export { background: #22c55e; color: #07210f; }
-        .preview-btn.email { background: #f59e0b; color: #1f2937; }
+    .preview-btn.export-template { background: #22c55e; color: #07210f; }
     .preview-btn.modify { background: #e2e8f0; color: #0f172a; }
     .status {
       padding: 8px 18px;
@@ -2348,8 +2383,7 @@
   <div class="topbar">
     <div class="topbar-title">Prévisualisation visuelle</div>
     <div class="topbar-actions">
-      <button class="preview-btn export" id="exportBtn">Exporter HTML</button>
-            <button class="preview-btn email" id="emailTemplateBtn">Template E-Mail</button>
+      <button class="preview-btn export-template" id="exportTemplateBtn">⬇ Exporter Template</button>
             <a class="preview-btn modify" id="modifyBtn" href="${builderUrlAttr}" style="text-decoration:none;display:inline-block;">Modifier</a>
     </div>
   </div>
@@ -2378,8 +2412,7 @@
             previewWindow.document.close();
 
             const statusBox = previewWindow.document.getElementById('statusBox');
-            const exportBtn = previewWindow.document.getElementById('exportBtn');
-            const emailTemplateBtn = previewWindow.document.getElementById('emailTemplateBtn');
+            const exportTemplateBtn = previewWindow.document.getElementById('exportTemplateBtn');
             const previewImage = previewWindow.document.getElementById('previewImage');
             const previewMap = previewWindow.document.getElementById('previewMap');
             const mapAreas = Array.from(previewMap ? previewMap.querySelectorAll('area') : []);
@@ -2421,61 +2454,80 @@
             }
 
             async function handlePreviewExport() {
-                if (!exportBtn) {
+                if (!exportTemplateBtn) {
                     return;
                 }
 
-                exportBtn.disabled = true;
-                showPreviewStatus('Export en cours...', false);
+                exportTemplateBtn.disabled = true;
+                showPreviewStatus('Purge des anciens exports en cours...', false);
+
+                const draftName = (draftNameInput.value || '').trim();
+                const draftId   = currentDraftId || '';
 
                 try {
-                    const result = await exportHtmlFromBuilder(
+                    // 1. Purger les deux buckets avant de regénérer
+                    const purgeHtml = await purgeExportBucket(draftName, 'template-html');
+                    if (!purgeHtml.success) {
+                        showPreviewStatus('Purge Template HTML impossible: ' + purgeHtml.message, true);
+                        exportTemplateBtn.disabled = false;
+                        return;
+                    }
+
+                    const purgeEmail = await purgeExportBucket(draftName, 'template-email');
+                    if (!purgeEmail.success) {
+                        showPreviewStatus('Purge Template E-Mail impossible: ' + purgeEmail.message, true);
+                        exportTemplateBtn.disabled = false;
+                        return;
+                    }
+
+                    // 2. Export Template-HTML (carte interactive responsive)
+                    showPreviewStatus('Export Template HTML en cours...', false);
+                    const htmlResult = await exportHtmlFromBuilder(
                         previewData.htmlDocument,
-                        (draftNameInput.value || '').trim(),
-                        currentDraftId || '',
+                        draftName,
+                        draftId,
                         '',
                         'template-html'
                     );
 
-                    if (!result || !result.success) {
-                        showPreviewStatus((result && result.message) ? result.message : 'Export impossible.', true);
+                    if (!htmlResult || !htmlResult.success) {
+                        showPreviewStatus((htmlResult && htmlResult.message) ? htmlResult.message : 'Export Template HTML impossible.', true);
+                        exportTemplateBtn.disabled = false;
                         return;
                     }
 
-                    const fileLabel = result.filename || (((draftNameInput.value || '').trim() || 'visual-links') + '.html');
-                    showPreviewStatus('Fichier exporté dans exports-html : ' + fileLabel, false);
-                    applyTemplateHtmlExportResult(result.url || '', fileLabel, previewData.htmlDocument);
-                    showExportResultModal(result.url || '', fileLabel, previewData.htmlDocument);
+                    applyTemplateHtmlExportResult(htmlResult.url || '', htmlResult.filename || '', previewData.htmlDocument);
+
+                    // 3. Export Template-Email (slices + HTML + txt auto-sauvegardé côté serveur)
+                    showPreviewStatus('Génération Template E-Mail en cours (découpe image)...', false);
+                    const emailResult = await generateEmailTemplateFromPreviewData(previewData);
+
+                    if (!emailResult || !emailResult.success) {
+                        showPreviewStatus((emailResult && emailResult.message) ? emailResult.message : 'Export Template E-Mail impossible.', true);
+                        exportTemplateBtn.disabled = false;
+                        return;
+                    }
+
+                    // 4. Fermer la preview et afficher la popup de résultat dans la fenêtre d'édition
+                    showPreviewStatus('Exports terminés avec succès !', false);
                     setTimeout(() => {
                         previewWindow.close();
-                    }, 250);
+                        // Afficher la popup dans l'éditeur avec les infos du template email (priorité)
+                        const finalUrl      = lastTemplateEmailPublicUrl  || htmlResult.url      || '';
+                        const finalFilename = lastTemplateEmailFilename   || htmlResult.filename || '';
+                        const finalDoc      = lastTemplateEmailHtmlDocument || previewData.htmlDocument;
+                        showExportResultModal(finalUrl, finalFilename, finalDoc);
+                    }, 400);
+
                 } catch (error) {
-                    showPreviewStatus('Erreur réseau pendant l\'export.', true);
-                } finally {
-                    exportBtn.disabled = false;
+                    showPreviewStatus((error && error.message) ? error.message : 'Erreur pendant l\'export.', true);
+                    exportTemplateBtn.disabled = false;
                 }
             }
 
             async function handlePreviewEmailTemplate() {
-                if (!emailTemplateBtn) {
-                    return;
-                }
-
-                emailTemplateBtn.disabled = true;
-                showPreviewStatus('Génération du template e-mail en cours...', false);
-
-                try {
-                    const result = await generateEmailTemplateFromPreviewData(previewData);
-                    if (!result || !result.success) {
-                        showPreviewStatus((result && result.message) ? result.message : 'Génération template e-mail impossible.', true);
-                        return;
-                    }
-                    showPreviewStatus('Template e-mail généré et exporté : ' + (result.filename || ''), false);
-                } catch (error) {
-                    showPreviewStatus(error && error.message ? error.message : 'Génération template e-mail impossible.', true);
-                } finally {
-                    emailTemplateBtn.disabled = false;
-                }
+                // Conservé pour compatibilité — redirige vers le flow unifié
+                return handlePreviewExport();
             }
 
             if (previewImage) {
@@ -2487,11 +2539,8 @@
             }
 
             previewWindow.addEventListener('resize', resizePreviewMap);
-            if (exportBtn) {
-                exportBtn.addEventListener('click', handlePreviewExport);
-            }
-            if (emailTemplateBtn) {
-                emailTemplateBtn.addEventListener('click', handlePreviewEmailTemplate);
+            if (exportTemplateBtn) {
+                exportTemplateBtn.addEventListener('click', handlePreviewExport);
             }
             previewWindow.focus();
         }
@@ -2502,6 +2551,43 @@
                 .replace(/"/g, '&quot;')
                 .replace(/</g, '&lt;')
                 .replace(/>/g, '&gt;');
+        }
+
+        /**
+         * Purge tous les fichiers d'un bucket d'export côté serveur avant régénération.
+         * @param {string} draftName
+         * @param {string} bucket - 'template-html' ou 'template-email'
+         * @returns {Promise<{success:boolean,message:string,purged?:number}>}
+         */
+        async function purgeExportBucket(draftName, bucket) {
+            if (!wpAjaxUrl || !wpNonce) {
+                return { success: false, message: 'Configuration AJAX manquante.' };
+            }
+            const formData = new FormData();
+            formData.append('action', 'mayami_purge_visual_export_bucket');
+            formData.append('nonce', wpNonce);
+            formData.append('draft_name', draftName);
+            formData.append('export_bucket', bucket);
+            try {
+                const response = await fetch(wpAjaxUrl, { method: 'POST', credentials: 'same-origin', body: formData });
+                const result = await response.json();
+                if (!response.ok || !result || !result.success) {
+                    return {
+                        success: false,
+                        message: (result && result.data && result.data.message)
+                            ? result.data.message
+                            : ('HTTP ' + response.status)
+                    };
+                }
+
+                return {
+                    success: true,
+                    message: 'OK',
+                    purged: Number(result.data && result.data.purged ? result.data.purged : 0)
+                };
+            } catch (e) {
+                return { success: false, message: 'Erreur réseau pendant la purge.' };
+            }
         }
 
         async function deleteZone(zoneId) {
@@ -2713,7 +2799,6 @@ ${tableHtml}
 
             const templateHtml = buildSlicedEmailTemplateHtmlDocument(previewData, uploadedSlices);
             const localFilename = (safeBaseName || 'template-email') + '-email-template.html';
-            downloadTextFile(templateHtml, localFilename, 'text/html;charset=utf-8');
 
             const exportName = (safeBaseName || 'template-email') + '-email-template';
             const exportResult = await exportHtmlFromBuilder(templateHtml, exportName, currentDraftId || '', '', 'template-email');
