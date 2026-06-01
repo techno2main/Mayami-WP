@@ -20,6 +20,12 @@ if (!defined('ABSPATH')) {
 <body id="page-top" <?php body_class(); ?>>
 <?php wp_body_open(); ?>
 
+<?php if (mayami_is_epk_preview_request()): ?>
+    <div class="mayami-preview-banner">
+        Prévisualisation privée EPK active. Seul votre compte admin voit ce brouillon.
+    </div>
+<?php endif; ?>
+
 <main class="relative overflow-x-clip">
     <!-- Sticky Marquee Top -->
     <div class="sticky top-0 z-60">
@@ -40,6 +46,9 @@ if (!defined('ABSPATH')) {
     
     <!-- Release Info Section -->
     <?php get_template_part('template-parts/sections/release-info'); ?>
+
+    <!-- EPK Section -->
+    <?php get_template_part('template-parts/sections/epk'); ?>
     
     <!-- CTA Section -->
     <?php get_template_part('template-parts/sections/cta'); ?>

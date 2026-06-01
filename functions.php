@@ -12,6 +12,7 @@ if (!defined('ABSPATH')) {
 
 // Include CMB2 Configuration
 require_once get_template_directory() . '/inc/cmb2-config.php';
+require_once get_template_directory() . '/inc/epk.php';
 
 /**
  * Get a landing option value from the active key, with legacy key compatibility.
@@ -119,6 +120,14 @@ function mayami_enqueue_assets() {
         '1.0.0'
     );
 
+    $epk_css_path = get_template_directory() . '/assets/epk.css';
+    wp_enqueue_style(
+        'mayami-epk',
+        get_template_directory_uri() . '/assets/epk.css',
+        array('mayami-tailwind'),
+        file_exists($epk_css_path) ? (string) filemtime($epk_css_path) : '1.0.0'
+    );
+
     wp_add_inline_style(
         'mayami-tailwind',
         'img, video, iframe { -webkit-user-drag: none; -webkit-touch-callout: none; user-select: none; }'
@@ -158,6 +167,10 @@ function mayami_enqueue_admin_assets($hook) {
     
     $admin_css_path = get_template_directory() . '/assets/admin-nav.css';
     $admin_js_path = get_template_directory() . '/assets/admin-nav.js';
+    $epk_admin_css_path = get_template_directory() . '/assets/admin-epk-builder.css';
+    $epk_admin_js_path = get_template_directory() . '/assets/admin-epk-builder.js';
+
+    wp_enqueue_media();
 
     // Admin navigation CSS
     wp_enqueue_style(
@@ -173,6 +186,21 @@ function mayami_enqueue_admin_assets($hook) {
         get_template_directory_uri() . '/assets/admin-nav.js',
         [],
         file_exists($admin_js_path) ? (string) filemtime($admin_js_path) : '1.0.0',
+        true
+    );
+
+    wp_enqueue_style(
+        'mayami-admin-epk-builder',
+        get_template_directory_uri() . '/assets/admin-epk-builder.css',
+        array('mayami-admin-nav'),
+        file_exists($epk_admin_css_path) ? (string) filemtime($epk_admin_css_path) : '1.0.0'
+    );
+
+    wp_enqueue_script(
+        'mayami-admin-epk-builder',
+        get_template_directory_uri() . '/assets/admin-epk-builder.js',
+        array('jquery'),
+        file_exists($epk_admin_js_path) ? (string) filemtime($epk_admin_js_path) : '1.0.0',
         true
     );
 }

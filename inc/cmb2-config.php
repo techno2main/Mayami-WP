@@ -1104,4 +1104,40 @@ function mayami_register_options() {
         'id'   => 'marquee_logo_hidden',
         'type' => 'checkbox',
     ));
+
+    // ========== SECTION: EPK ==========
+    $cmb->add_field(array(
+        'name' => 'EPK',
+        'type' => 'title',
+        'id'   => 'section_epk_title',
+    ));
+
+    $cmb->add_field(array(
+        'name' => 'Builder EPK',
+        'id'   => 'epk_builder',
+        'type' => 'mayami_epk_builder',
+    ));
+
+    $cmb->add_field(array(
+        'name' => 'Validation finale EPK',
+        'id'   => 'epk_validation_ready',
+        'type' => 'checkbox',
+        'desc' => 'À cocher uniquement après contrôle du brouillon dans la prévisualisation privée.',
+    ));
+
+    $cmb->add_field(array(
+        'name' => 'Stockage brouillon EPK',
+        'id'   => 'epk_draft_payload',
+        'type' => 'textarea_code',
+        'row_classes' => 'mayami-epk-storage-row',
+        'sanitization_cb' => 'mayami_sanitize_epk_payload',
+    ));
+
+    $cmb->add_field(array(
+        'name' => 'Stockage publication EPK',
+        'id'   => 'epk_published_payload',
+        'type' => 'textarea_code',
+        'row_classes' => 'mayami-epk-storage-row',
+        'sanitization_cb' => 'mayami_sanitize_epk_payload',
+    ));
 }
