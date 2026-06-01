@@ -720,33 +720,13 @@ function mayami_ajax_export_epk_html() {
     }
     $filename = $safe_name . '.html';
 
-    $theme_export_dir = trailingslashit(get_template_directory()) . 'visual-link-builder/html-exports';
-    $uploads = wp_upload_dir();
-    $candidate_dirs = array($theme_export_dir);
-
-    if (empty($uploads['error']) && !empty($uploads['basedir'])) {
-        $candidate_dirs[] = trailingslashit($uploads['basedir']) . 'visual-links-builder-exports';
+    $export_dir = trailingslashit(get_template_directory()) . 'visual-link-builder/exports-html';
+    if (!is_dir($export_dir) && !wp_mkdir_p($export_dir)) {
+        wp_send_json_error(array('message' => 'Impossible de créer le dossier d\'export requis: visual-link-builder/exports-html. Créez-le manuellement via FTP puis mettez les droits en écriture (755/775).'), 500);
     }
 
-    $export_dir = '';
-    $last_dir_error = '';
-    foreach ($candidate_dirs as $candidate_dir) {
-        if (!is_dir($candidate_dir) && !wp_mkdir_p($candidate_dir)) {
-            $last_dir_error = 'Impossible de créer le dossier d\'export: ' . $candidate_dir;
-            continue;
-        }
-
-        if (!is_writable($candidate_dir)) {
-            $last_dir_error = 'Dossier non accessible en écriture: ' . $candidate_dir;
-            continue;
-        }
-
-        $export_dir = $candidate_dir;
-        break;
-    }
-
-    if ($export_dir === '') {
-        wp_send_json_error(array('message' => $last_dir_error !== '' ? $last_dir_error : 'Impossible de préparer un dossier d\'export.'), 500);
+    if (!is_writable($export_dir)) {
+        wp_send_json_error(array('message' => 'Le dossier d\'export requis n\'est pas accessible en écriture: visual-link-builder/exports-html. Vérifiez les permissions (755/775) et le propriétaire.'), 500);
     }
 
     $export_path = trailingslashit($export_dir) . $filename;
@@ -757,24 +737,7 @@ function mayami_ajax_export_epk_html() {
         wp_send_json_error(array('message' => 'Échec de l\'écriture du fichier ' . $filename . ' (' . $last_error_message . ').'), 500);
     }
 
-    $export_url = '';
-    if (empty($uploads['error']) && !empty($uploads['basedir']) && !empty($uploads['baseurl'])) {
-        $normalized_export_dir = wp_normalize_path(trailingslashit($export_dir));
-        $normalized_uploads_dir = wp_normalize_path(trailingslashit((string) $uploads['basedir']));
-        if (strpos($normalized_export_dir, $normalized_uploads_dir) === 0) {
-            $relative = ltrim((string) substr($normalized_export_dir, strlen($normalized_uploads_dir)), '/');
-            $encoded_relative = $relative !== '' ? str_replace('%2F', '/', rawurlencode($relative)) . '/' : '';
-            $export_url = trailingslashit((string) $uploads['baseurl']) . $encoded_relative . rawurlencode($filename);
-        }
-    }
-
-    if ($export_url === '') {
-        $normalized_export_dir = wp_normalize_path(trailingslashit($export_dir));
-        $normalized_theme_export_dir = wp_normalize_path(trailingslashit($theme_export_dir));
-        if (strpos($normalized_export_dir, $normalized_theme_export_dir) === 0) {
-            $export_url = trailingslashit(get_template_directory_uri()) . 'visual-link-builder/html-exports/' . rawurlencode($filename);
-        }
-    }
+    $export_url = trailingslashit(get_template_directory_uri()) . 'visual-link-builder/exports-html/' . rawurlencode($filename);
 
     wp_send_json_success(array(
         'path' => $export_path,

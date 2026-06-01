@@ -253,6 +253,61 @@
             color: #475569;
             min-height: 16px;
         }
+
+        .export-quick-actions {
+            display: none;
+            margin-top: 10px;
+            padding-top: 10px;
+            border-top: 1px solid #d6dbe4;
+        }
+
+        .export-quick-actions.is-visible {
+            display: block;
+        }
+
+        .export-quick-actions__title {
+            margin: 0 0 8px;
+            font-size: 12px;
+            color: #334155;
+            font-weight: 600;
+        }
+
+        .export-quick-actions__row {
+            display: grid;
+            grid-template-columns: 1fr auto;
+            gap: 8px;
+            margin-bottom: 8px;
+        }
+
+        .export-quick-actions__url {
+            width: 100%;
+            border: 1px solid #cbd5e1;
+            border-radius: 6px;
+            padding: 8px 10px;
+            font-size: 12px;
+            color: #0f172a;
+            background: #f8fafc;
+        }
+
+        .export-quick-actions__btn {
+            border: 0;
+            border-radius: 6px;
+            padding: 8px 10px;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        .export-quick-actions__btn.copy {
+            background: #e2e8f0;
+            color: #0f172a;
+        }
+
+        .export-quick-actions__btn.download {
+            width: 100%;
+            background: #22c55e;
+            color: #07210f;
+        }
         
         .btn {
             width: 100%;
@@ -538,6 +593,91 @@
             background: #ef4444;
             color: #fff;
         }
+
+        .export-modal {
+            position: fixed;
+            inset: 0;
+            z-index: 10000;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            background: rgba(15, 23, 42, 0.5);
+        }
+
+        .export-modal.is-open {
+            display: flex;
+        }
+
+        .export-modal__card {
+            width: min(620px, 100%);
+            background: #fff;
+            border-radius: 12px;
+            border: 1px solid #d1d5db;
+            box-shadow: 0 16px 40px rgba(15, 23, 42, 0.25);
+            padding: 18px;
+        }
+
+        .export-modal__title {
+            margin: 0 0 8px;
+            font-size: 19px;
+            color: #0f172a;
+        }
+
+        .export-modal__message {
+            margin: 0 0 12px;
+            font-size: 14px;
+            color: #334155;
+            line-height: 1.45;
+        }
+
+        .export-modal__url-row {
+            display: grid;
+            grid-template-columns: 1fr auto;
+            gap: 8px;
+            margin-bottom: 12px;
+        }
+
+        .export-modal__url-input {
+            width: 100%;
+            border: 1px solid #cbd5e1;
+            border-radius: 8px;
+            padding: 10px 12px;
+            font-size: 13px;
+            color: #0f172a;
+            background: #f8fafc;
+        }
+
+        .export-modal__btn {
+            border: 0;
+            border-radius: 8px;
+            padding: 10px 12px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        .export-modal__btn.copy {
+            background: #e2e8f0;
+            color: #0f172a;
+        }
+
+        .export-modal__btn.download {
+            background: #22c55e;
+            color: #07210f;
+        }
+
+        .export-modal__actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 8px;
+            margin-top: 10px;
+        }
+
+        .export-modal__btn.close {
+            background: #0f172a;
+            color: #fff;
+        }
     </style>
 </head>
 <body>
@@ -561,7 +701,7 @@
                     1. Chargez votre image depuis l'ordinateur ou la bibliothèque média<br>
                     2. Cliquez et glissez pour dessiner des zones rectangulaires<br>
                     3. Ajoutez un lien ou une ancre pour chaque zone<br>
-                    4. Générez le code HTML
+                    4. Générez le template e-mail
                 </div>
             </div>
             
@@ -571,6 +711,14 @@
                     <input type="text" id="draftNameInput" class="draft-name-input" placeholder="Nom du visuel (obligatoire)">
                     <button class="btn btn-secondary" id="saveDraftBtn">Enregistrer le visuel</button>
                     <div class="draft-status" id="draftStatus">Visuel non sauvegardé en base.</div>
+                    <div class="export-quick-actions" id="exportQuickActions">
+                        <p class="export-quick-actions__title">Dernier export HTML</p>
+                        <div class="export-quick-actions__row">
+                            <input type="text" id="exportQuickUrl" class="export-quick-actions__url" readonly>
+                            <button type="button" id="copyExportQuickBtn" class="export-quick-actions__btn copy">Copier l'URL</button>
+                        </div>
+                        <button type="button" id="downloadExportQuickBtn" class="export-quick-actions__btn download">Enregistrer sous</button>
+                    </div>
                 </div>
 
                 <div class="image-source-box">
@@ -612,14 +760,9 @@
                         👁️ Preview
                     </button>
                     <button class="btn btn-primary" id="generateBtn" disabled>
-                        ⚡ Générer le code HTML
-                    </button>
-                    <button class="btn btn-success" id="copyBtn" style="display: none;">
-                        📋 Copier le code
+                        ⚡ Générer le template e-mail
                     </button>
                 </div>
-                
-                <div class="code-output" id="codeOutput"></div>
             </div>
         </div>
     </div>
@@ -631,6 +774,21 @@
             <div class="confirm-modal__actions">
                 <button type="button" class="confirm-modal__btn cancel" id="confirmModalCancel">Annuler</button>
                 <button type="button" class="confirm-modal__btn confirm" id="confirmModalConfirm">Supprimer</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="export-modal" id="exportResultModal" aria-hidden="true">
+        <div class="export-modal__card" role="dialog" aria-modal="true" aria-labelledby="exportResultTitle">
+            <h3 class="export-modal__title" id="exportResultTitle">Export HTML terminé</h3>
+            <p class="export-modal__message">Copiez l'URL publique ci-dessous et/ou enregistrez une copie HTML sur votre ordinateur.</p>
+            <div class="export-modal__url-row">
+                <input type="text" id="exportResultUrl" class="export-modal__url-input" readonly>
+                <button type="button" id="copyExportUrlBtn" class="export-modal__btn copy">Copier l'URL</button>
+            </div>
+            <div class="export-modal__actions">
+                <button type="button" id="downloadExportHtmlBtn" class="export-modal__btn download">Enregistrer sous</button>
+                <button type="button" id="closeExportResultModalBtn" class="export-modal__btn close">Fermer</button>
             </div>
         </div>
     </div>
@@ -647,12 +805,14 @@
         const zonesList = document.getElementById('zonesList');
         const previewBtn = document.getElementById('previewBtn');
         const generateBtn = document.getElementById('generateBtn');
-        const copyBtn = document.getElementById('copyBtn');
         const clearAllBtn = document.getElementById('clearAllBtn');
         const saveDraftBtn = document.getElementById('saveDraftBtn');
         const draftNameInput = document.getElementById('draftNameInput');
         const draftStatus = document.getElementById('draftStatus');
-        const codeOutput = document.getElementById('codeOutput');
+        const exportQuickActions = document.getElementById('exportQuickActions');
+        const exportQuickUrl = document.getElementById('exportQuickUrl');
+        const copyExportQuickBtn = document.getElementById('copyExportQuickBtn');
+        const downloadExportQuickBtn = document.getElementById('downloadExportQuickBtn');
         const zoneCount = document.getElementById('zoneCount');
         const linkedCount = document.getElementById('linkedCount');
         const addZoneBtn = document.getElementById('addZoneBtn');
@@ -661,6 +821,11 @@
         const confirmModalMessage = document.getElementById('confirmModalMessage');
         const confirmModalCancel = document.getElementById('confirmModalCancel');
         const confirmModalConfirm = document.getElementById('confirmModalConfirm');
+        const exportResultModal = document.getElementById('exportResultModal');
+        const exportResultUrl = document.getElementById('exportResultUrl');
+        const copyExportUrlBtn = document.getElementById('copyExportUrlBtn');
+        const downloadExportHtmlBtn = document.getElementById('downloadExportHtmlBtn');
+        const closeExportResultModalBtn = document.getElementById('closeExportResultModalBtn');
 
         const queryParams = new URLSearchParams(window.location.search);
         const wpAjaxUrl = queryParams.get('wp_ajax_url') || '';
@@ -681,6 +846,10 @@
         let suppressDragUntil = 0;
         let isAddZoneMode = false;
         let mediaFrame = null;
+        let lastExportedHtmlDocument = '';
+        let lastExportedFilename = 'visual-links.html';
+        let lastExportedPublicUrl = '';
+        let copyFeedbackTimer = null;
 
         const MIN_ZONE_SIZE = 12;
         const DRAG_START_THRESHOLD = 4;
@@ -742,6 +911,124 @@
                 window.addEventListener('keydown', onKeyDown);
                 confirmModalCancel.focus();
             });
+        }
+
+        function closeExportResultModal() {
+            exportResultModal.classList.remove('is-open');
+            exportResultModal.setAttribute('aria-hidden', 'true');
+        }
+
+        function setExportQuickActionsVisible(visible) {
+            exportQuickActions.classList.toggle('is-visible', !!visible);
+        }
+
+        function clearExportResultState() {
+            lastExportedPublicUrl = '';
+            lastExportedHtmlDocument = '';
+            lastExportedFilename = 'visual-links.html';
+            exportQuickUrl.value = '';
+            copyExportQuickBtn.disabled = true;
+            setExportQuickActionsVisible(false);
+        }
+
+        function applyExportResult(url, filename, htmlDocument) {
+            lastExportedPublicUrl = String(url || '').trim();
+            lastExportedFilename = String(filename || 'visual-links.html').trim() || 'visual-links.html';
+            lastExportedHtmlDocument = String(htmlDocument || '');
+
+            exportQuickUrl.value = lastExportedPublicUrl || 'URL non disponible';
+            copyExportQuickBtn.disabled = !lastExportedPublicUrl;
+            setExportQuickActionsVisible(true);
+        }
+
+        function showExportResultModal(url, filename, htmlDocument) {
+            const cleanUrl = String(url || '').trim();
+            applyExportResult(cleanUrl, filename, htmlDocument);
+
+            exportResultUrl.value = cleanUrl || 'URL non disponible';
+            copyExportUrlBtn.disabled = !cleanUrl;
+
+            exportResultModal.classList.add('is-open');
+            exportResultModal.setAttribute('aria-hidden', 'false');
+            closeExportResultModalBtn.focus();
+        }
+
+        async function copyExportUrlToClipboard() {
+            const urlValue = String(exportResultUrl.value || '').trim();
+            if (!urlValue || urlValue === 'URL non disponible') {
+                return;
+            }
+
+            try {
+                if (navigator.clipboard && navigator.clipboard.writeText) {
+                    await navigator.clipboard.writeText(urlValue);
+                } else {
+                    exportResultUrl.focus();
+                    exportResultUrl.select();
+                    document.execCommand('copy');
+                }
+                if (copyFeedbackTimer) {
+                    window.clearTimeout(copyFeedbackTimer);
+                }
+                copyExportUrlBtn.textContent = 'Copié';
+                copyExportUrlBtn.disabled = true;
+                copyFeedbackTimer = window.setTimeout(() => {
+                    copyExportUrlBtn.textContent = 'Copier l\'URL';
+                    copyExportUrlBtn.disabled = false;
+                    copyFeedbackTimer = null;
+                }, 1500);
+                setDraftStatus('URL export copiée dans le presse-papiers.');
+            } catch (error) {
+                setDraftStatus('Impossible de copier automatiquement l\'URL. Copiez-la manuellement.', true);
+            }
+        }
+
+        async function copyQuickExportUrlToClipboard() {
+            const urlValue = String(exportQuickUrl.value || '').trim();
+            if (!urlValue || urlValue === 'URL non disponible') {
+                return;
+            }
+
+            try {
+                if (navigator.clipboard && navigator.clipboard.writeText) {
+                    await navigator.clipboard.writeText(urlValue);
+                } else {
+                    exportQuickUrl.focus();
+                    exportQuickUrl.select();
+                    document.execCommand('copy');
+                }
+                if (copyFeedbackTimer) {
+                    window.clearTimeout(copyFeedbackTimer);
+                }
+                copyExportQuickBtn.textContent = 'Copié';
+                copyExportQuickBtn.disabled = true;
+                copyFeedbackTimer = window.setTimeout(() => {
+                    copyExportQuickBtn.textContent = 'Copier l\'URL';
+                    copyExportQuickBtn.disabled = false;
+                    copyFeedbackTimer = null;
+                }, 1500);
+                setDraftStatus('URL export copiée dans le presse-papiers.');
+            } catch (error) {
+                setDraftStatus('Impossible de copier automatiquement l\'URL. Copiez-la manuellement.', true);
+            }
+        }
+
+        function downloadLastExportHtml() {
+            const html = String(lastExportedHtmlDocument || '');
+            if (!html) {
+                setDraftStatus('Aucun contenu HTML à télécharger.', true);
+                return;
+            }
+
+            const blob = new Blob([html], { type: 'text/html;charset=utf-8' });
+            const objectUrl = URL.createObjectURL(blob);
+            const downloadLink = document.createElement('a');
+            downloadLink.href = objectUrl;
+            downloadLink.download = lastExportedFilename || 'visual-links.html';
+            document.body.appendChild(downloadLink);
+            downloadLink.click();
+            document.body.removeChild(downloadLink);
+            URL.revokeObjectURL(objectUrl);
         }
 
         function getCanvasDimensions() {
@@ -964,6 +1251,7 @@
         }
 
         function markDraftDirty() {
+            clearExportResultState();
             if (!currentDraftId) {
                 setDraftStatus('Visuel non sauvegardé en base.');
             } else {
@@ -1957,7 +2245,8 @@
                     }
 
                     const fileLabel = result.filename || (((draftNameInput.value || '').trim() || 'visual-links') + '.html');
-                    showPreviewStatus('Fichier exporté dans html-exports : ' + fileLabel, false);
+                    showPreviewStatus('Fichier exporté dans exports-html : ' + fileLabel, false);
+                    showExportResultModal(result.url || '', fileLabel, previewData.htmlDocument);
                     setTimeout(() => {
                         previewWindow.close();
                     }, 250);
@@ -2018,60 +2307,77 @@
             zones.forEach(zone => zone.element.remove());
             zones = [];
             updateZonesList();
-            codeOutput.classList.remove('show');
-            copyBtn.style.display = 'none';
             markDraftDirty();
         });
 
-        function buildGeneratedCodeText(previewData) {
-            const slices = calculateImageSlices(previewData.scaleX, previewData.scaleY);
-            const hasAnchors = zones.some(zone => zone.hrefType === 'anchor' && getZoneHref(zone));
-            const emailAnchorNotice = hasAnchors
-                ? `\n⚠️ Note : les ancres internes (${String.fromCharCode(35)}section) sont peu fiables dans les emails.\n   Gardez-les pour la version WordPress/page web, pas pour Gmail/Outlook.\n`
-                : '';
+                function buildEmailTemplateHtmlDocument(previewData) {
+                        const title = escapeHtml((draftNameInput.value || '').trim() || 'Template e-mail');
+                        const contentWidth = Math.min(680, Math.max(320, Number(previewData.imgWidth) || 600));
+                        const heroSrc = String(imageUrl || '').trim();
+                        const uniqueLinks = Array.from(new Set(
+                                zones
+                                        .map((zone) => getZoneHref(zone))
+                                        .filter((href) => !!href)
+                        ));
 
-            return `╔════════════════════════════════════════════════════════════════╗
-║   VERSION 1 : POUR EMAIL (compatible Gmail, Outlook, etc.)     ║
-╚════════════════════════════════════════════════════════════════╝
+                        const linksHtml = uniqueLinks.length > 0
+                                ? uniqueLinks.map((href, index) => {
+                                        const safeHref = escapeAttr(href);
+                                        const safeLabel = escapeHtml('Lien ' + (index + 1));
+                                        return `
+                    <tr>
+                        <td style="padding:0 24px 10px 24px;">
+                            <a href="${safeHref}" target="_blank" style="display:block;background:#111827;color:#ffffff;text-decoration:none;font-family:Arial,Helvetica,sans-serif;font-size:14px;line-height:20px;font-weight:600;text-align:center;border-radius:8px;padding:10px 14px;">${safeLabel}</a>
+                        </td>
+                    </tr>`;
+                                }).join('')
+                                : `
+                    <tr>
+                        <td style="padding:0 24px 16px 24px;color:#64748b;font-family:Arial,Helvetica,sans-serif;font-size:13px;line-height:18px;">
+                            Aucun lien n'a été configuré sur ce visuel.
+                        </td>
+                    </tr>`;
 
-⚠️ IMPORTANT : Les image maps (<map>) ne fonctionnent PAS dans les emails !
-📧 Solution : Découper l'image en morceaux et utiliser un tableau HTML.
-${emailAnchorNotice}
+                        const dataUrlNotice = heroSrc.startsWith('data:image/')
+                                ? `
+                    <tr>
+                        <td style="padding:0 24px 16px 24px;color:#b45309;font-family:Arial,Helvetica,sans-serif;font-size:12px;line-height:17px;">
+                            Note: l'image est embarquée en data URL. Pour un envoi e-mail réel, remplacez-la par une URL publique HTTPS.
+                        </td>
+                    </tr>`
+                                : '';
 
-──────────────────────────────────────────────────────────────────
-ÉTAPE 1 : Découper votre image
-──────────────────────────────────────────────────────────────────
-Utilisez un outil de découpe d'image (Photoshop, GIMP, Canva, etc.)
-Découpez selon ces coordonnées (en pixels, image originale ${previewData.imgWidth}x${previewData.imgHeight}) :
-
-${slices.map((slice, i) => {
-    const link = slice.href ? `→ CIBLE: ${slice.href}` : '(pas de lien)';
-    return `Morceau ${i + 1}: 
-  Position X: ${slice.x}px
-  Position Y: ${slice.y}px
-  Largeur:    ${slice.width}px
-  Hauteur:    ${slice.height}px
-  ${link}`;
-}).join('\n\n')}
-
-──────────────────────────────────────────────────────────────────
-ÉTAPE 2 : Uploader les morceaux sur votre serveur
-──────────────────────────────────────────────────────────────────
-Nommez-les : slice-1.jpg, slice-2.jpg, slice-3.jpg, etc.
-URL exemple : https://votresite.com/images/mayami/slice-1.jpg
-
-──────────────────────────────────────────────────────────────────
-ÉTAPE 3 : Code HTML pour email
-──────────────────────────────────────────────────────────────────
-
-${generateEmailTableHTML(slices, previewData.imgWidth)}
-
-╔════════════════════════════════════════════════════════════════╗
-║   VERSION 2 : POUR WORDPRESS (plus simple, 1 seule image)      ║
-╚════════════════════════════════════════════════════════════════╝
-
-${previewData.htmlDocument}`;
-        }
+                        return `<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>${title}</title>
+</head>
+<body style="margin:0;padding:0;background:#f1f5f9;">
+    <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" style="border-collapse:collapse;background:#f1f5f9;">
+        <tr>
+            <td align="center" style="padding:18px 10px;">
+                <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="${contentWidth}" style="width:${contentWidth}px;max-width:${contentWidth}px;border-collapse:collapse;background:#ffffff;border:1px solid #e2e8f0;border-radius:10px;overflow:hidden;">
+                    <tr>
+                        <td style="padding:0;line-height:0;">
+                            <img src="${escapeAttr(heroSrc)}" alt="Visuel" width="${contentWidth}" style="display:block;width:100%;max-width:${contentWidth}px;height:auto;border:0;outline:none;text-decoration:none;">
+                        </td>
+                    </tr>
+                    <tr>
+                        <td style="padding:16px 24px 10px 24px;color:#0f172a;font-family:Arial,Helvetica,sans-serif;font-size:16px;line-height:22px;font-weight:700;">
+                            ${title}
+                        </td>
+                    </tr>
+                    ${linksHtml}
+                    ${dataUrlNotice}
+                </table>
+            </td>
+        </tr>
+    </table>
+</body>
+</html>`;
+                }
 
         previewBtn.addEventListener('click', () => {
             if (previewBtn.disabled) {
@@ -2087,20 +2393,67 @@ ${previewData.htmlDocument}`;
             }
         });
 
-        generateBtn.addEventListener('click', () => {
+        copyExportUrlBtn.addEventListener('click', () => {
+            copyExportUrlToClipboard();
+        });
+
+        copyExportQuickBtn.addEventListener('click', () => {
+            copyQuickExportUrlToClipboard();
+        });
+
+        downloadExportHtmlBtn.addEventListener('click', () => {
+            downloadLastExportHtml();
+        });
+
+        downloadExportQuickBtn.addEventListener('click', () => {
+            downloadLastExportHtml();
+        });
+
+        closeExportResultModalBtn.addEventListener('click', () => {
+            closeExportResultModal();
+        });
+
+        exportResultModal.addEventListener('click', (event) => {
+            if (event.target === exportResultModal) {
+                closeExportResultModal();
+            }
+        });
+
+        generateBtn.addEventListener('click', async () => {
             if (generateBtn.disabled) {
-                setDraftStatus('Enregistrez d\'abord le visuel en base avant de générer le code.');
+                setDraftStatus('Enregistrez d\'abord le visuel en base avant de générer le template e-mail.');
                 return;
             }
 
             try {
                 const previewData = buildMapPreviewData();
-                const html = buildGeneratedCodeText(previewData);
-                codeOutput.textContent = html;
-                codeOutput.classList.add('show');
-                copyBtn.style.display = 'flex';
+                const templateHtml = buildEmailTemplateHtmlDocument(previewData);
+                const draftBaseName = (draftNameInput.value || '').trim() || 'template-email';
+                const safeBaseName = draftBaseName
+                    .replace(/[\\\/:*?"<>|]+/g, '')
+                    .replace(/\s+/g, '-')
+                    .toLowerCase();
+                const localFilename = (safeBaseName || 'template-email') + '-email-template.html';
+                const blob = new Blob([templateHtml], { type: 'text/html;charset=utf-8' });
+                const downloadUrl = URL.createObjectURL(blob);
+                const link = document.createElement('a');
+                link.href = downloadUrl;
+                link.download = localFilename;
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                URL.revokeObjectURL(downloadUrl);
+
+                const exportName = (safeBaseName || 'template-email') + '-email-template';
+                const exportResult = await exportHtmlFromBuilder(templateHtml, exportName, currentDraftId || '');
+                if (exportResult && exportResult.success) {
+                    applyExportResult(exportResult.url || '', exportResult.filename || localFilename, templateHtml);
+                    setDraftStatus('Template e-mail généré, téléchargé et exporté dans exports-html.');
+                } else {
+                    setDraftStatus('Template téléchargé, mais export serveur impossible: ' + ((exportResult && exportResult.message) ? exportResult.message : 'erreur inconnue'), true);
+                }
             } catch (error) {
-                alert(error && error.message ? error.message : 'Impossible de générer le code.');
+                alert(error && error.message ? error.message : 'Impossible de générer le template e-mail.');
             }
         });
         
@@ -2201,17 +2554,6 @@ ${previewData.htmlDocument}`;
             
             return html;
         }
-
-        copyBtn.addEventListener('click', () => {
-            navigator.clipboard.writeText(codeOutput.textContent).then(() => {
-                copyBtn.textContent = '✅ Code copié !';
-                copyBtn.style.background = '#27ae60';
-                setTimeout(() => {
-                    copyBtn.innerHTML = '📋 Copier le code';
-                    copyBtn.style.background = '#2ecc71';
-                }, 2000);
-            });
-        });
 
         saveDraftBtn.addEventListener('click', () => {
             saveDraftToDatabase();
