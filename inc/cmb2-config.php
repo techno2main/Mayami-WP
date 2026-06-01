@@ -47,6 +47,41 @@ function mayami_sticky_save_button() {
                 transform: translateY(-1px) !important;
                 box-shadow: 0 3px 8px rgba(0,0,0,0.2) !important;
             }
+            
+            
+            /* Inline toggle checkboxes - forcer sur la même ligne */
+            .cmb-row.cmb-field-with-toggle,
+            .cmb-row.cmb-inline-toggle {
+                display: inline-block !important;
+                vertical-align: top !important;
+                margin-bottom: 20px !important;
+            }
+            .cmb-row.cmb-field-with-toggle {
+                width: 70% !important;
+            }
+            .cmb-row.cmb-inline-toggle {
+                width: 28% !important;
+                margin-left: 1% !important;
+                text-align: right !important;
+            }
+            .cmb-row.cmb-inline-toggle .cmb-th {
+                display: none !important;
+            }
+            .cmb-row.cmb-inline-toggle .cmb-td {
+                padding-top: 8px !important;
+                text-align: right !important;
+            }
+            .cmb-row.cmb-inline-toggle .cmb-td label {
+                display: inline-flex !important;
+                align-items: center !important;
+                gap: 8px !important;
+            }
+            .cmb-row.cmb-inline-toggle p.cmb2-metabox-description {
+                font-size: 10px !important;
+                margin: 2px 0 0 0 !important;
+                color: #888 !important;
+                text-align: right !important;
+            }
         </style>
         <script>
             jQuery(document).ready(function($) {
@@ -333,6 +368,14 @@ function mayami_register_options() {
         'id'      => 'hero_top_artist',
         'type'    => 'text',
         'default' => 'Artist Name',
+        'classes' => 'cmb-field-with-toggle',
+    ));
+
+    $cmb->add_field(array(
+        'name' => 'Masquer',
+        'id'   => 'hero_top_artist_hidden',
+        'type' => 'checkbox',
+        'row_classes' => 'cmb-inline-toggle',
     ));
 
     $cmb->add_field(array(
@@ -346,6 +389,14 @@ function mayami_register_options() {
         'name' => 'Top CTA Link',
         'id'   => 'hero_top_cta_href',
         'type' => 'text_url',
+        'classes' => 'cmb-field-with-toggle',
+    ));
+
+    $cmb->add_field(array(
+        'name' => 'Masquer',
+        'id'   => 'hero_top_cta_hidden',
+        'type' => 'checkbox',
+        'row_classes' => 'cmb-inline-toggle',
     ));
 
     $cmb->add_field(array(
@@ -353,6 +404,14 @@ function mayami_register_options() {
         'id'      => 'hero_badge_text',
         'type'    => 'text',
         'default' => 'New Release',
+        'classes' => 'cmb-field-with-toggle',
+    ));
+
+    $cmb->add_field(array(
+        'name' => 'Masquer',
+        'id'   => 'hero_badge_text_hidden',
+        'type' => 'checkbox',
+        'row_classes' => 'cmb-inline-toggle',
     ));
 
     $cmb->add_field(array(
@@ -360,18 +419,42 @@ function mayami_register_options() {
         'id'      => 'hero_subtitle',
         'type'    => 'text',
         'default' => 'Release Subtitle',
+        'classes' => 'cmb-field-with-toggle',
+    ));
+
+    $cmb->add_field(array(
+        'name' => 'Masquer',
+        'id'   => 'hero_subtitle_hidden',
+        'type' => 'checkbox',
+        'row_classes' => 'cmb-inline-toggle',
     ));
 
     $cmb->add_field(array(
         'name' => 'Main Title (SEO)',
         'id'   => 'hero_main_title',
         'type' => 'text',
+        'classes' => 'cmb-field-with-toggle',
+    ));
+
+    $cmb->add_field(array(
+        'name' => 'Masquer',
+        'id'   => 'hero_main_title_hidden',
+        'type' => 'checkbox',
+        'row_classes' => 'cmb-inline-toggle',
     ));
 
     $cmb->add_field(array(
         'name' => 'Background Image',
         'id'   => 'hero_background_image',
         'type' => 'file',
+        'classes' => 'cmb-field-with-toggle',
+    ));
+
+    $cmb->add_field(array(
+        'name' => 'Masquer',
+        'id'   => 'hero_background_image_hidden',
+        'type' => 'checkbox',
+        'row_classes' => 'cmb-inline-toggle',
     ));
 
     $cmb->add_field(array(
@@ -384,6 +467,14 @@ function mayami_register_options() {
         'name' => 'Main Logo Alt Text',
         'id'   => 'hero_logo_alt',
         'type' => 'text',
+        'classes' => 'cmb-field-with-toggle',
+    ));
+
+    $cmb->add_field(array(
+        'name' => 'Masquer',
+        'id'   => 'hero_logo_hidden',
+        'type' => 'checkbox',
+        'row_classes' => 'cmb-inline-toggle',
     ));
 
     $cmb->add_field(array(
@@ -391,6 +482,14 @@ function mayami_register_options() {
         'id'      => 'hero_description',
         'type'    => 'textarea_small',
         'default' => 'Present the release and invite visitors to stream, watch, and share.',
+        'classes' => 'cmb-field-with-toggle',
+    ));
+
+    $cmb->add_field(array(
+        'name' => 'Masquer',
+        'id'   => 'hero_description_hidden',
+        'type' => 'checkbox',
+        'row_classes' => 'cmb-inline-toggle',
     ));
 
     $cmb->add_field(array(
@@ -405,6 +504,14 @@ function mayami_register_options() {
         'id'      => 'hero_stream_href',
         'type'    => 'text_url',
         'default' => '#stream',
+        'classes' => 'cmb-field-with-toggle',
+    ));
+
+    $cmb->add_field(array(
+        'name' => 'Masquer',
+        'id'   => 'hero_stream_hidden',
+        'type' => 'checkbox',
+        'row_classes' => 'cmb-inline-toggle',
     ));
 
     $cmb->add_field(array(
@@ -419,6 +526,14 @@ function mayami_register_options() {
         'id'      => 'hero_watch_href',
         'type'    => 'text',
         'default' => '#video',
+        'classes' => 'cmb-field-with-toggle',
+    ));
+
+    $cmb->add_field(array(
+        'name' => 'Masquer',
+        'id'   => 'hero_watch_hidden',
+        'type' => 'checkbox',
+        'row_classes' => 'cmb-inline-toggle',
     ));
 
     // ========== SECTION: SLIDER ==========
