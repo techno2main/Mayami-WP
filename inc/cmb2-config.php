@@ -1073,6 +1073,16 @@ function mayami_register_options() {
     ));
 
     $cmb->add_field(array(
+        'name' => 'Source visuel EPK',
+        'id'   => 'epk_draft_image_source',
+        'type' => 'file',
+        'row_classes' => 'mayami-epk-media-row',
+        'text' => array(
+            'add_upload_file_text' => 'Choisir le visuel',
+        ),
+    ));
+
+    $cmb->add_field(array(
         'name' => 'Builder EPK',
         'id'   => 'epk_builder',
         'type' => 'mayami_epk_builder',

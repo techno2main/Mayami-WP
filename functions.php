@@ -199,7 +199,7 @@ function mayami_enqueue_admin_assets($hook) {
     wp_enqueue_script(
         'mayami-admin-epk-builder',
         get_template_directory_uri() . '/assets/admin-epk-builder.js',
-        array('jquery'),
+        array('jquery', 'media-editor', 'media-views', 'wp-util'),
         file_exists($epk_admin_js_path) ? (string) filemtime($epk_admin_js_path) : '1.0.0',
         true
     );
@@ -211,7 +211,10 @@ add_action('admin_enqueue_scripts', 'mayami_enqueue_admin_assets');
  */
 function mayami_hide_wp_footer_text_on_landing($text) {
     $screen = get_current_screen();
-    if ($screen && $screen->id === 'toplevel_page_mayami_landing_options') {
+    if ($screen && (
+        $screen->id === 'toplevel_page_mayami_landing_options' ||
+        strpos($screen->id, 'mayami_epk') !== false
+    )) {
         return '';
     }
 
@@ -389,6 +392,453 @@ function mayami_redirect_admin_bar_edit_to_landing($wp_admin_bar) {
     $wp_admin_bar->add_node($edit_node);
 }
 add_action('admin_bar_menu', 'mayami_redirect_admin_bar_edit_to_landing', 1001);
+
+/**
+ * Register an independent Visual Link Builder top-level menu.
+ */
+function mayami_register_epk_html_menu() {
+    add_menu_page(
+        'Visual Link Builder',
+        'Visual Link Builder',
+        'manage_options',
+        'mayami_epk_html_builder',
+        'mayami_render_epk_html_builder_page',
+        'dashicons-format-image',
+        31
+    );
+
+    add_submenu_page(
+        'mayami_epk_html_builder',
+        'Nouveau visuel',
+        'Nouveau visuel',
+        'manage_options',
+        'mayami_epk_html_builder_new',
+        'mayami_render_epk_new_submenu_page'
+    );
+
+    add_submenu_page(
+        'mayami_epk_html_builder',
+        'Liste des visuels',
+        'Liste des visuels',
+        'manage_options',
+        'mayami_epk_drafts',
+        'mayami_render_epk_drafts_page'
+    );
+}
+add_action('admin_menu', 'mayami_register_epk_html_menu', 20);
+
+/**
+ * Remove duplicate submenu generated automatically for top-level menu.
+ */
+function mayami_remove_epk_duplicate_submenu() {
+    remove_submenu_page('mayami_epk_html_builder', 'mayami_epk_html_builder');
+}
+add_action('admin_menu', 'mayami_remove_epk_duplicate_submenu', 999);
+
+/**
+ * Render the "Nouveau visuel" submenu.
+ */
+function mayami_render_epk_new_submenu_page() {
+    if (isset($_GET['draft_id'])) {
+        unset($_GET['draft_id']);
+    }
+
+    mayami_render_epk_html_builder_page();
+}
+
+/**
+ * Handle draft deletion from admin list.
+ */
+function mayami_handle_delete_epk_draft() {
+    if (!current_user_can('manage_options')) {
+        wp_die(esc_html__('You are not allowed to do this.', 'mayami'), 403);
+    }
+
+    check_admin_referer('mayami_delete_epk_draft');
+
+    $draft_id = isset($_POST['draft_id']) ? sanitize_text_field(wp_unslash($_POST['draft_id'])) : '';
+    if ($draft_id !== '') {
+        $store = mayami_get_epk_drafts_store();
+        if (isset($store[$draft_id])) {
+            unset($store[$draft_id]);
+            mayami_update_epk_drafts_store($store);
+        }
+    }
+
+    wp_safe_redirect(admin_url('admin.php?page=mayami_epk_drafts'));
+    exit;
+}
+add_action('admin_post_mayami_delete_epk_draft', 'mayami_handle_delete_epk_draft');
+
+/**
+ * Return the full EPK drafts store from options.
+ *
+ * @return array<string, array<string, mixed>>
+ */
+function mayami_get_epk_drafts_store() {
+    $store = get_option('mayami_epk_drafts_store', array());
+    return is_array($store) ? $store : array();
+}
+
+/**
+ * Persist the EPK drafts store in options.
+ *
+ * @param array<string, array<string, mixed>> $store Draft store.
+ * @return bool
+ */
+function mayami_update_epk_drafts_store($store) {
+    if (!is_array($store)) {
+        $store = array();
+    }
+
+    return update_option('mayami_epk_drafts_store', $store, false);
+}
+
+/**
+ * Backward compatibility for legacy draft submenu slugs.
+ *
+ * Older links may still point to page=mayami_epk_draft_<hash>.
+ * We map them back to the real draft_id and redirect to the current builder URL.
+ */
+function mayami_epk_handle_legacy_draft_page_slugs() {
+    if (!is_admin() || !current_user_can('manage_options')) {
+        return;
+    }
+
+    $page = isset($_GET['page']) ? sanitize_text_field(wp_unslash($_GET['page'])) : '';
+    if ($page === '' || strpos($page, 'mayami_epk_draft_') !== 0) {
+        return;
+    }
+
+    $store = mayami_get_epk_drafts_store();
+    foreach ($store as $draft) {
+        $draft_id = isset($draft['id']) ? (string) $draft['id'] : '';
+        if ($draft_id === '') {
+            continue;
+        }
+
+        $legacy_slug = 'mayami_epk_draft_' . substr(md5($draft_id), 0, 12);
+        if ($legacy_slug === $page) {
+            wp_safe_redirect(admin_url('admin.php?page=mayami_epk_html_builder&draft_id=' . rawurlencode($draft_id)));
+            exit;
+        }
+    }
+
+    wp_safe_redirect(admin_url('admin.php?page=mayami_epk_drafts'));
+    exit;
+}
+add_action('admin_init', 'mayami_epk_handle_legacy_draft_page_slugs');
+
+/**
+ * Sanitize and normalize a payload coming from the HTML builder.
+ *
+ * @param array<string, mixed> $payload Raw payload.
+ * @return array<string, mixed>
+ */
+function mayami_sanitize_epk_html_payload($payload) {
+    if (!is_array($payload)) {
+        return array(
+            'imageUrl' => '',
+            'zones' => array(),
+        );
+    }
+
+    $image_url = '';
+    if (!empty($payload['imageUrl'])) {
+        $raw_image_url = trim((string) $payload['imageUrl']);
+
+        // Keep data URLs generated by the local HTML builder so draft reopening
+        // can restore the exact visual without relying on browser local storage.
+        if (stripos($raw_image_url, 'data:image/') === 0) {
+            $normalized_data_url = preg_replace('/\s+/', '', $raw_image_url);
+            if (is_string($normalized_data_url) && strlen($normalized_data_url) <= (10 * MB_IN_BYTES)) {
+                $image_url = $normalized_data_url;
+            }
+        } else {
+            $image_url = esc_url_raw($raw_image_url);
+        }
+    }
+
+    $zones = array();
+    if (!empty($payload['zones']) && is_array($payload['zones'])) {
+        foreach ($payload['zones'] as $zone) {
+            if (!is_array($zone)) {
+                continue;
+            }
+
+            $x = isset($zone['x']) ? (float) $zone['x'] : 0;
+            $y = isset($zone['y']) ? (float) $zone['y'] : 0;
+            $width = isset($zone['width']) ? (float) $zone['width'] : 0;
+            $height = isset($zone['height']) ? (float) $zone['height'] : 0;
+
+            if ($width <= 0 || $height <= 0) {
+                continue;
+            }
+
+            $href_type = (isset($zone['hrefType']) && $zone['hrefType'] === 'anchor') ? 'anchor' : 'url';
+            $href_value = isset($zone['hrefValue']) ? trim((string) $zone['hrefValue']) : '';
+            if ($href_type === 'url') {
+                $href_value = esc_url_raw($href_value);
+            } else {
+                $href_value = sanitize_text_field($href_value);
+            }
+
+            $zones[] = array(
+                'id' => sanitize_text_field((string) ($zone['id'] ?? wp_generate_uuid4())),
+                'x' => max(0, $x),
+                'y' => max(0, $y),
+                'width' => max(0, $width),
+                'height' => max(0, $height),
+                'hrefType' => $href_type,
+                'hrefValue' => $href_value,
+            );
+        }
+    }
+
+    $canvas_width = isset($payload['canvasWidth']) ? (float) $payload['canvasWidth'] : 0;
+    $canvas_height = isset($payload['canvasHeight']) ? (float) $payload['canvasHeight'] : 0;
+
+    return array(
+        'imageUrl' => $image_url,
+        'canvasWidth' => max(0, $canvas_width),
+        'canvasHeight' => max(0, $canvas_height),
+        'zones' => $zones,
+    );
+}
+
+/**
+ * AJAX: save a draft in DB.
+ */
+function mayami_ajax_save_epk_draft() {
+    if (!current_user_can('manage_options')) {
+        wp_send_json_error(array('message' => 'Accès refusé.'), 403);
+    }
+
+    check_ajax_referer('mayami_epk_draft', 'nonce');
+
+    $draft_name = isset($_POST['name']) ? sanitize_text_field(wp_unslash($_POST['name'])) : '';
+    if ($draft_name === '') {
+        wp_send_json_error(array('message' => 'Veuillez saisir un nom de visuel.'), 400);
+    }
+
+    $payload_raw = isset($_POST['payload']) ? wp_unslash($_POST['payload']) : '';
+    $payload = json_decode((string) $payload_raw, true);
+    if (!is_array($payload)) {
+        wp_send_json_error(array('message' => 'Payload visuel invalide.'), 400);
+    }
+
+    $payload = mayami_sanitize_epk_html_payload($payload);
+    $store = mayami_get_epk_drafts_store();
+
+    $draft_id = isset($_POST['draft_id']) ? sanitize_text_field(wp_unslash($_POST['draft_id'])) : '';
+    if ($draft_id === '') {
+        $draft_id = wp_generate_uuid4();
+    }
+
+    $store[$draft_id] = array(
+        'id' => $draft_id,
+        'name' => $draft_name,
+        'payload' => $payload,
+        'updated_at' => current_time('mysql'),
+    );
+
+    mayami_update_epk_drafts_store($store);
+
+    wp_send_json_success(array(
+        'id' => $draft_id,
+        'name' => $draft_name,
+        'updatedAt' => $store[$draft_id]['updated_at'],
+    ));
+}
+add_action('wp_ajax_mayami_save_epk_draft', 'mayami_ajax_save_epk_draft');
+
+/**
+ * AJAX: load one draft from DB.
+ */
+function mayami_ajax_get_epk_draft() {
+    if (!current_user_can('manage_options')) {
+        wp_send_json_error(array('message' => 'Accès refusé.'), 403);
+    }
+
+    check_ajax_referer('mayami_epk_draft', 'nonce');
+
+    $draft_id = isset($_GET['draft_id']) ? sanitize_text_field(wp_unslash($_GET['draft_id'])) : '';
+    if ($draft_id === '') {
+        wp_send_json_error(array('message' => 'Draft introuvable.'), 400);
+    }
+
+    $store = mayami_get_epk_drafts_store();
+    if (empty($store[$draft_id]) || !is_array($store[$draft_id])) {
+        wp_send_json_error(array('message' => 'Visuel non trouvé.'), 404);
+    }
+
+    $draft = $store[$draft_id];
+    wp_send_json_success(array(
+        'id' => $draft['id'],
+        'name' => $draft['name'],
+        'payload' => $draft['payload'],
+        'updatedAt' => $draft['updated_at'],
+    ));
+}
+add_action('wp_ajax_mayami_get_epk_draft', 'mayami_ajax_get_epk_draft');
+
+/**
+ * AJAX: export current preview to the dedicated HTML file used for communication.
+ */
+function mayami_ajax_export_epk_html() {
+    if (!current_user_can('manage_options')) {
+        wp_send_json_error(array('message' => 'Accès refusé.'), 403);
+    }
+
+    check_ajax_referer('mayami_epk_draft', 'nonce');
+
+    $html = isset($_POST['html']) ? (string) wp_unslash($_POST['html']) : '';
+    if (trim($html) === '') {
+        wp_send_json_error(array('message' => 'Contenu HTML vide.'), 400);
+    }
+
+    if (strlen($html) > (10 * MB_IN_BYTES)) {
+        wp_send_json_error(array('message' => 'Le fichier HTML est trop volumineux.'), 400);
+    }
+
+    $draft_name = isset($_POST['draft_name']) ? sanitize_text_field(wp_unslash($_POST['draft_name'])) : '';
+    if ($draft_name === '') {
+        $draft_name = 'epk';
+    }
+    $safe_name = remove_accents($draft_name);
+    $safe_name = preg_replace('/[\\\/:*?"<>|]+/', '', (string) $safe_name);
+    $safe_name = preg_replace('/\s+/', ' ', (string) $safe_name);
+    $safe_name = trim((string) $safe_name);
+    if ($safe_name === '') {
+        $safe_name = 'epk';
+    }
+    $filename = $safe_name . '.html';
+
+    $export_dir = trailingslashit(get_template_directory()) . 'visual-link-builder/html-exports';
+    if (!is_dir($export_dir) && !wp_mkdir_p($export_dir)) {
+        wp_send_json_error(array('message' => 'Impossible de créer le dossier html-exports.'), 500);
+    }
+
+    if (!is_writable($export_dir)) {
+        wp_send_json_error(array('message' => 'Le dossier html-exports n\'est pas accessible en écriture.'), 500);
+    }
+
+    $export_path = trailingslashit($export_dir) . $filename;
+    $written = file_put_contents($export_path, $html);
+    if ($written === false) {
+        wp_send_json_error(array('message' => 'Échec de l\'écriture du fichier ' . $filename . '.'), 500);
+    }
+
+    wp_send_json_success(array(
+        'path' => $export_path,
+        'filename' => $filename,
+        'bytes' => (int) $written,
+    ));
+}
+add_action('wp_ajax_mayami_export_epk_html', 'mayami_ajax_export_epk_html');
+
+/**
+ * Render the standalone HTML Visual Link Builder inside WP admin.
+ */
+function mayami_render_epk_html_builder_page() {
+    if (!current_user_can('manage_options')) {
+        wp_die(esc_html__('You are not allowed to access this page.', 'mayami'), 403);
+    }
+
+    $draft_id = isset($_GET['draft_id']) ? sanitize_text_field(wp_unslash($_GET['draft_id'])) : '';
+    $html_builder_url = add_query_arg(array(
+        'wp_ajax_url' => admin_url('admin-ajax.php'),
+        'wp_nonce' => wp_create_nonce('mayami_epk_draft'),
+        'epk_draft_id' => $draft_id,
+    ), trailingslashit(get_template_directory_uri()) . 'visual-link-builder/visual-link-map-creator.html');
+
+    $selected_name = '';
+    if ($draft_id !== '') {
+        $store = mayami_get_epk_drafts_store();
+        if (!empty($store[$draft_id]['name'])) {
+            $selected_name = (string) $store[$draft_id]['name'];
+        }
+    }
+    ?>
+    <div class="wrap mayami-epk-html-page">
+        <h1>Visual Link Builder</h1>
+        <p>Utilisez ce builder pour ajouter des zones cliquables sur n'importe quel visuel.</p>
+        <?php if ($selected_name !== '') : ?>
+            <p><strong>Visuel ouvert :</strong> <?php echo esc_html($selected_name); ?></p>
+        <?php endif; ?>
+        <div style="background:#fff;border:1px solid #dcdcde;border-radius:8px;overflow:hidden;">
+            <iframe
+                src="<?php echo esc_url($html_builder_url); ?>"
+                title="Visual Link Builder"
+                style="width:100%;height:calc(100vh - 210px);min-height:760px;border:0;display:block;"
+            ></iframe>
+        </div>
+    </div>
+    <?php
+}
+
+/**
+ * Render the visual drafts list page.
+ */
+function mayami_render_epk_drafts_page() {
+    if (!current_user_can('manage_options')) {
+        wp_die(esc_html__('You are not allowed to access this page.', 'mayami'), 403);
+    }
+
+    $store = mayami_get_epk_drafts_store();
+    uasort($store, function($a, $b) {
+        return strcmp((string) ($b['updated_at'] ?? ''), (string) ($a['updated_at'] ?? ''));
+    });
+    ?>
+    <div class="wrap mayami-epk-drafts-page">
+        <h1>Liste des visuels</h1>
+        <p>Ouvrez un visuel existant pour reprendre l'edition dans Visual Link Builder.</p>
+        <p>
+            <a href="<?php echo esc_url(admin_url('admin.php?page=mayami_epk_html_builder_new')); ?>" class="button button-primary">Nouveau visuel</a>
+        </p>
+        <table class="widefat fixed striped">
+            <thead>
+                <tr>
+                    <th>Nom du visuel</th>
+                    <th>Dernière mise à jour</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                <?php if (empty($store)) : ?>
+                    <tr>
+                        <td colspan="3">Aucun visuel enregistre pour le moment.</td>
+                    </tr>
+                <?php else : ?>
+                    <?php foreach ($store as $draft) : ?>
+                        <tr>
+                            <td><?php echo esc_html((string) ($draft['name'] ?? 'Sans nom')); ?></td>
+                            <td><?php echo esc_html((string) ($draft['updated_at'] ?? '')); ?></td>
+                            <td>
+                                <a class="button button-secondary" href="<?php echo esc_url(admin_url('admin.php?page=mayami_epk_html_builder&draft_id=' . rawurlencode((string) ($draft['id'] ?? '')))); ?>">
+                                    Ouvrir
+                                </a>
+                                <form method="post" action="<?php echo esc_url(admin_url('admin-post.php')); ?>" style="display:inline-block;margin-left:8px;">
+                                    <?php wp_nonce_field('mayami_delete_epk_draft'); ?>
+                                    <input type="hidden" name="action" value="mayami_delete_epk_draft">
+                                    <input type="hidden" name="draft_id" value="<?php echo esc_attr((string) ($draft['id'] ?? '')); ?>">
+                                    <button
+                                        type="submit"
+                                        class="button button-link-delete"
+                                        onclick="return window.confirm('Supprimer definitivement ce visuel ?');"
+                                    >
+                                        Supprimer
+                                    </button>
+                                </form>
+                            </td>
+                        </tr>
+                    <?php endforeach; ?>
+                <?php endif; ?>
+            </tbody>
+        </table>
+    </div>
+    <?php
+}
 
 // Hidden Statistics page reserved for the owner account only.
 function mayami_register_statistics_page() {

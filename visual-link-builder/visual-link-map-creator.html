@@ -1,0 +1,2008 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Visual Link Builder</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            background: #f5f5f5;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 2px 20px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+        
+        .header h1 {
+            font-size: 28px;
+            margin-bottom: 10px;
+        }
+        
+        .header p {
+            opacity: 0.9;
+            font-size: 14px;
+        }
+        
+        .main-content {
+            display: grid;
+            grid-template-columns: 1fr 400px;
+            gap: 0;
+            min-height: calc(100vh - 200px);
+        }
+        
+        .canvas-area {
+            padding: 30px;
+            background: #fafafa;
+            position: relative;
+            overflow: auto;
+        }
+        
+        .canvas-wrapper {
+            position: relative;
+            display: inline-block;
+            margin: 0 auto;
+        }
+        
+        #imageCanvas {
+            display: block;
+            max-width: 100%;
+            height: auto;
+            cursor: default;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            border-radius: 8px;
+        }
+
+        .canvas-wrapper.is-add-zone-mode #imageCanvas {
+            cursor: crosshair;
+        }
+
+        #overlayContainer {
+            position: absolute;
+            inset: 0;
+            pointer-events: none;
+        }
+        
+        .sidebar {
+            background: white;
+            border-left: 1px solid #e0e0e0;
+            padding: 30px;
+            overflow-y: auto;
+        }
+        
+        .sidebar h2 {
+            font-size: 18px;
+            margin-bottom: 0;
+            color: #333;
+            padding-bottom: 0;
+            border-bottom: 0;
+        }
+
+        .zones-heading {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #667eea;
+            margin-bottom: 20px;
+        }
+
+        .zone-add-btn {
+            width: 30px;
+            height: 30px;
+            border-radius: 999px;
+            border: 0;
+            background: #667eea;
+            color: #fff;
+            font-size: 20px;
+            line-height: 1;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 3px 8px rgba(102, 126, 234, 0.35);
+        }
+
+        .zone-add-btn.is-active {
+            background: #16a34a;
+            box-shadow: 0 3px 8px rgba(22, 163, 74, 0.35);
+        }
+        
+        .zone-item {
+            background: #f8f9fa;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 15px;
+            position: relative;
+            transition: all 0.2s;
+        }
+        
+        .zone-item:hover {
+            border-color: #667eea;
+            box-shadow: 0 2px 8px rgba(102, 126, 234, 0.15);
+        }
+        
+        .zone-item.active {
+            border-color: #667eea;
+            background: #f0f3ff;
+        }
+        
+        .zone-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        
+        .zone-title {
+            font-weight: 600;
+            color: #667eea;
+            font-size: 13px;
+        }
+        
+        .zone-delete {
+            background: #ff4757;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            padding: 4px 10px;
+            font-size: 11px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .zone-delete:hover {
+            background: #ee5a6f;
+            transform: scale(1.05);
+        }
+        
+        .zone-coords {
+            font-size: 11px;
+            color: #666;
+            margin-bottom: 8px;
+            font-family: 'Courier New', monospace;
+        }
+        
+        .zone-input {
+            width: 100%;
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 13px;
+            transition: border 0.2s;
+        }
+        
+        .zone-input:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+        
+        .zone-input::placeholder {
+            color: #aaa;
+        }
+
+        .zone-controls {
+            display: grid;
+            grid-template-columns: 110px 1fr;
+            gap: 8px;
+        }
+
+        .zone-select {
+            width: 100%;
+            padding: 8px 10px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 13px;
+            background: white;
+        }
+        
+        .actions {
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 2px solid #e0e0e0;
+        }
+
+        .draft-box {
+            margin-bottom: 20px;
+            padding: 14px;
+            border: 1px solid #d6dbe4;
+            border-radius: 8px;
+            background: #f8f9fb;
+        }
+
+        .draft-box h3 {
+            margin: 0 0 8px;
+            font-size: 14px;
+            color: #333;
+        }
+
+        .draft-name-input {
+            width: 100%;
+            padding: 8px 10px;
+            border: 1px solid #d1d5db;
+            border-radius: 6px;
+            margin-bottom: 10px;
+            font-size: 13px;
+        }
+
+        .draft-status {
+            margin-top: 6px;
+            font-size: 12px;
+            color: #475569;
+            min-height: 16px;
+        }
+        
+        .btn {
+            width: 100%;
+            padding: 14px 20px;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn:disabled,
+        .btn.disabled {
+            opacity: 0.55;
+            cursor: not-allowed;
+            transform: none !important;
+            box-shadow: none !important;
+        }
+        
+        .btn-secondary {
+            background: #f8f9fa;
+            color: #333;
+            border: 2px solid #e0e0e0;
+        }
+        
+        .btn-secondary:hover {
+            background: #e9ecef;
+            border-color: #667eea;
+        }
+        
+        .btn-success {
+            background: #2ecc71;
+            color: white;
+        }
+        
+        .btn-success:hover {
+            background: #27ae60;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(46, 204, 113, 0.4);
+        }
+        
+        .code-output {
+            background: #1e1e1e;
+            color: #d4d4d4;
+            padding: 20px;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            max-height: 300px;
+            overflow-y: auto;
+            margin-top: 20px;
+            line-height: 1.6;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            display: none;
+        }
+        
+        .code-output.show {
+            display: block;
+        }
+        
+        .info-box {
+            background: #e3f2fd;
+            border-left: 4px solid #2196f3;
+            padding: 15px;
+            border-radius: 6px;
+            font-size: 13px;
+            line-height: 1.6;
+            color: #1565c0;
+            margin-bottom: 20px;
+        }
+        
+        .info-box strong {
+            display: block;
+            margin-bottom: 5px;
+        }
+        
+        .stats {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        
+        .stat-box {
+            flex: 1;
+            background: #f8f9fa;
+            padding: 12px;
+            border-radius: 6px;
+            text-align: center;
+            border: 1px solid #e0e0e0;
+        }
+        
+        .stat-number {
+            font-size: 24px;
+            font-weight: bold;
+            color: #667eea;
+        }
+        
+        .stat-label {
+            font-size: 11px;
+            color: #666;
+            margin-top: 4px;
+            text-transform: uppercase;
+        }
+        
+        .upload-zone {
+            border: 2px dashed #ccc;
+            border-radius: 8px;
+            padding: 30px;
+            text-align: center;
+            margin-bottom: 20px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .upload-zone:hover {
+            border-color: #667eea;
+            background: #f8f9ff;
+        }
+        
+        .upload-zone input {
+            display: none;
+        }
+        
+        .rectangle-overlay {
+            position: absolute;
+            border: 3px solid #667eea;
+            background: rgba(102, 126, 234, 0.2);
+            cursor: move;
+            transition: border-color 0.2s;
+            pointer-events: auto;
+        }
+        
+        .rectangle-overlay:hover {
+            border-color: #764ba2;
+            background: rgba(118, 75, 162, 0.3);
+        }
+        
+        .rectangle-overlay.active {
+            border-color: #ff4757;
+            background: rgba(255, 71, 87, 0.2);
+            box-shadow: 0 0 0 2px rgba(255, 71, 87, 0.35);
+        }
+
+        .zone-resize-handle {
+            position: absolute;
+            right: -7px;
+            bottom: -7px;
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
+            border: 2px solid #fff;
+            background: #ff4757;
+            box-shadow: 0 0 0 1px rgba(15, 23, 42, 0.25);
+            cursor: nwse-resize;
+            display: none;
+        }
+
+        .rectangle-overlay.active .zone-resize-handle {
+            display: block;
+        }
+
+        .confirm-modal {
+            position: fixed;
+            inset: 0;
+            z-index: 9999;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            background: rgba(15, 23, 42, 0.45);
+        }
+
+        .confirm-modal.is-open {
+            display: flex;
+        }
+
+        .confirm-modal__card {
+            width: min(460px, 100%);
+            background: #fff;
+            border-radius: 12px;
+            border: 1px solid #d1d5db;
+            box-shadow: 0 16px 40px rgba(15, 23, 42, 0.25);
+            padding: 18px;
+        }
+
+        .confirm-modal__title {
+            margin: 0 0 8px;
+            font-size: 18px;
+            color: #0f172a;
+        }
+
+        .confirm-modal__message {
+            margin: 0;
+            font-size: 14px;
+            line-height: 1.5;
+            color: #334155;
+        }
+
+        .confirm-modal__actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+            margin-top: 16px;
+        }
+
+        .confirm-modal__btn {
+            border: 0;
+            border-radius: 8px;
+            padding: 9px 12px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        .confirm-modal__btn.cancel {
+            background: #e2e8f0;
+            color: #0f172a;
+        }
+
+        .confirm-modal__btn.confirm {
+            background: #ef4444;
+            color: #fff;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="main-content">
+            <div class="canvas-area">
+                <div class="upload-zone" id="uploadZone">
+                    <p style="margin-bottom: 10px; font-size: 14px;">📁 Cliquez ou glissez votre image ici</p>
+                    <p style="font-size: 12px; color: #666;">Formats acceptés : JPG, PNG, GIF</p>
+                    <input type="file" id="imageUpload" accept="image/*">
+                </div>
+                
+                <div class="canvas-wrapper" id="canvasWrapper" style="display: none;">
+                    <img id="imageCanvas" src="" alt="Image cliquable">
+                    <div id="overlayContainer"></div>
+                </div>
+                
+                <div class="info-box">
+                    <strong>Mode d'emploi :</strong>
+                    1. Uploadez votre image ou utilisez l'image par défaut<br>
+                    2. Cliquez et glissez pour dessiner des zones rectangulaires<br>
+                    3. Ajoutez un lien ou une ancre pour chaque zone<br>
+                    4. Générez le code HTML
+                </div>
+            </div>
+            
+            <div class="sidebar">
+                <div class="draft-box">
+                    <h3>💾 Visuel</h3>
+                    <input type="text" id="draftNameInput" class="draft-name-input" placeholder="Nom du visuel (obligatoire)">
+                    <button class="btn btn-secondary" id="saveDraftBtn">Enregistrer le visuel</button>
+                    <div class="draft-status" id="draftStatus">Visuel non sauvegardé en base.</div>
+                </div>
+
+                <div class="stats">
+                    <div class="stat-box">
+                        <div class="stat-number" id="zoneCount">0</div>
+                        <div class="stat-label">Zones</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-number" id="linkedCount">0</div>
+                        <div class="stat-label">Liées</div>
+                    </div>
+                </div>
+                
+                <div class="zones-heading">
+                    <h2>📍 Zones cliquables</h2>
+                    <button type="button" id="addZoneBtn" class="zone-add-btn" aria-pressed="false" title="Ajouter une zone">+</button>
+                </div>
+                
+                <div id="zonesList">
+                    <p style="color: #999; text-align: center; padding: 20px; font-size: 13px;">
+                        Aucune zone créée.<br>Dessinez sur l'image pour commencer.
+                    </p>
+                </div>
+                
+                <div class="actions">
+                    <button class="btn btn-secondary" id="clearAllBtn">
+                        🗑️ Tout effacer
+                    </button>
+                    <button class="btn btn-primary" id="previewBtn" disabled>
+                        👁️ Preview
+                    </button>
+                    <button class="btn btn-primary" id="generateBtn" disabled>
+                        ⚡ Générer le code HTML
+                    </button>
+                    <button class="btn btn-success" id="copyBtn" style="display: none;">
+                        📋 Copier le code
+                    </button>
+                </div>
+                
+                <div class="code-output" id="codeOutput"></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="confirm-modal" id="confirmModal" aria-hidden="true">
+        <div class="confirm-modal__card" role="dialog" aria-modal="true" aria-labelledby="confirmModalTitle">
+            <h3 class="confirm-modal__title" id="confirmModalTitle">Confirmation</h3>
+            <p class="confirm-modal__message" id="confirmModalMessage">Confirmez cette action.</p>
+            <div class="confirm-modal__actions">
+                <button type="button" class="confirm-modal__btn cancel" id="confirmModalCancel">Annuler</button>
+                <button type="button" class="confirm-modal__btn confirm" id="confirmModalConfirm">Supprimer</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const imageUpload = document.getElementById('imageUpload');
+        const uploadZone = document.getElementById('uploadZone');
+        const canvasWrapper = document.getElementById('canvasWrapper');
+        const imageCanvas = document.getElementById('imageCanvas');
+        const overlayContainer = document.getElementById('overlayContainer');
+        const zonesList = document.getElementById('zonesList');
+        const previewBtn = document.getElementById('previewBtn');
+        const generateBtn = document.getElementById('generateBtn');
+        const copyBtn = document.getElementById('copyBtn');
+        const clearAllBtn = document.getElementById('clearAllBtn');
+        const saveDraftBtn = document.getElementById('saveDraftBtn');
+        const draftNameInput = document.getElementById('draftNameInput');
+        const draftStatus = document.getElementById('draftStatus');
+        const codeOutput = document.getElementById('codeOutput');
+        const zoneCount = document.getElementById('zoneCount');
+        const linkedCount = document.getElementById('linkedCount');
+        const addZoneBtn = document.getElementById('addZoneBtn');
+        const confirmModal = document.getElementById('confirmModal');
+        const confirmModalTitle = document.getElementById('confirmModalTitle');
+        const confirmModalMessage = document.getElementById('confirmModalMessage');
+        const confirmModalCancel = document.getElementById('confirmModalCancel');
+        const confirmModalConfirm = document.getElementById('confirmModalConfirm');
+
+        const queryParams = new URLSearchParams(window.location.search);
+        const wpAjaxUrl = queryParams.get('wp_ajax_url') || '';
+        const wpNonce = queryParams.get('wp_nonce') || '';
+
+        let zones = [];
+        let isDrawing = false;
+        let startX, startY;
+        let currentRect = null;
+        let imageUrl = '';
+        let activeZoneId = null;
+        let currentDraftId = queryParams.get('epk_draft_id') || '';
+        let lastSavedSignature = '';
+        let isResizing = false;
+        let resizeState = null;
+        let isDragging = false;
+        let dragState = null;
+        let suppressDragUntil = 0;
+        let isAddZoneMode = false;
+
+        const MIN_ZONE_SIZE = 12;
+        const DRAG_START_THRESHOLD = 4;
+
+        function getZoneById(zoneId) {
+            return zones.find(z => String(z.id) === String(zoneId));
+        }
+
+        function setAddZoneMode(enabled) {
+            isAddZoneMode = !!enabled;
+            addZoneBtn.classList.toggle('is-active', isAddZoneMode);
+            addZoneBtn.setAttribute('aria-pressed', isAddZoneMode ? 'true' : 'false');
+            canvasWrapper.classList.toggle('is-add-zone-mode', isAddZoneMode);
+        }
+
+        function askDeleteConfirmation(message) {
+            return new Promise((resolve) => {
+                confirmModalTitle.textContent = 'Confirmation';
+                confirmModalMessage.textContent = message;
+                confirmModal.classList.add('is-open');
+                confirmModal.setAttribute('aria-hidden', 'false');
+
+                const onCancel = () => {
+                    cleanup();
+                    resolve(false);
+                };
+
+                const onConfirm = () => {
+                    cleanup();
+                    resolve(true);
+                };
+
+                const onBackdrop = (event) => {
+                    if (event.target === confirmModal) {
+                        cleanup();
+                        resolve(false);
+                    }
+                };
+
+                const onKeyDown = (event) => {
+                    if (event.key === 'Escape') {
+                        cleanup();
+                        resolve(false);
+                    }
+                };
+
+                function cleanup() {
+                    confirmModal.classList.remove('is-open');
+                    confirmModal.setAttribute('aria-hidden', 'true');
+                    confirmModalCancel.removeEventListener('click', onCancel);
+                    confirmModalConfirm.removeEventListener('click', onConfirm);
+                    confirmModal.removeEventListener('click', onBackdrop);
+                    window.removeEventListener('keydown', onKeyDown);
+                }
+
+                confirmModalCancel.addEventListener('click', onCancel);
+                confirmModalConfirm.addEventListener('click', onConfirm);
+                confirmModal.addEventListener('click', onBackdrop);
+                window.addEventListener('keydown', onKeyDown);
+                confirmModalCancel.focus();
+            });
+        }
+
+        function getCanvasDimensions() {
+            const rect = imageCanvas.getBoundingClientRect();
+            const width = Math.round(rect.width || imageCanvas.clientWidth || imageCanvas.width || 0);
+            const height = Math.round(rect.height || imageCanvas.clientHeight || imageCanvas.height || 0);
+            return { width, height };
+        }
+
+        function waitForImageReady() {
+            return new Promise((resolve) => {
+                if (imageCanvas.complete && imageCanvas.naturalWidth > 0) {
+                    resolve();
+                    return;
+                }
+
+                const onLoad = () => {
+                    imageCanvas.removeEventListener('load', onLoad);
+                    imageCanvas.removeEventListener('error', onError);
+                    resolve();
+                };
+
+                const onError = () => {
+                    imageCanvas.removeEventListener('load', onLoad);
+                    imageCanvas.removeEventListener('error', onError);
+                    resolve();
+                };
+
+                imageCanvas.addEventListener('load', onLoad);
+                imageCanvas.addEventListener('error', onError);
+            });
+        }
+
+        function serializeDraftPayload() {
+            const dims = getCanvasDimensions();
+            return {
+                imageUrl: imageUrl || '',
+                canvasWidth: dims.width,
+                canvasHeight: dims.height,
+                zones: zones.map(zone => ({
+                    id: zone.id,
+                    x: Number(zone.x) || 0,
+                    y: Number(zone.y) || 0,
+                    width: Number(zone.width) || 0,
+                    height: Number(zone.height) || 0,
+                    hrefType: zone.hrefType === 'anchor' ? 'anchor' : 'url',
+                    hrefValue: zone.hrefValue || ''
+                }))
+            };
+        }
+
+        function getCurrentSignature() {
+            return JSON.stringify(serializeDraftPayload());
+        }
+
+        function setDraftStatus(text, isError = false) {
+            draftStatus.textContent = text;
+            draftStatus.style.color = isError ? '#b91c1c' : '#475569';
+        }
+
+        function updateGenerateButtonState() {
+            const hasSavedServerState = !!currentDraftId && !!lastSavedSignature && getCurrentSignature() === lastSavedSignature;
+            const hasZones = zones.length > 0;
+            const canRun = hasSavedServerState && hasZones;
+            generateBtn.disabled = !canRun;
+            previewBtn.disabled = !canRun;
+        }
+
+        function markDraftDirty() {
+            if (!currentDraftId) {
+                setDraftStatus('Visuel non sauvegardé en base.');
+            } else {
+                setDraftStatus('Modifications non sauvegardées. Enregistrez le visuel.');
+            }
+            updateGenerateButtonState();
+        }
+
+        function renderZoneOverlays() {
+            overlayContainer.innerHTML = '';
+            zones.forEach(zone => {
+                const rect = document.createElement('div');
+                rect.className = 'rectangle-overlay';
+                rect.style.left = zone.x + 'px';
+                rect.style.top = zone.y + 'px';
+                rect.style.width = zone.width + 'px';
+                rect.style.height = zone.height + 'px';
+                rect.dataset.zoneId = zone.id;
+
+                rect.addEventListener('mousedown', (event) => {
+                    event.stopPropagation();
+                    if (event.button !== 0) {
+                        return;
+                    }
+                    event.preventDefault();
+                    setActiveZone(zone.id);
+                    startDragZone(zone.id, event.clientX, event.clientY);
+                });
+
+                rect.addEventListener('click', (event) => {
+                    event.stopPropagation();
+                    setActiveZone(zone.id);
+                });
+
+                const handle = document.createElement('div');
+                handle.className = 'zone-resize-handle';
+                handle.dataset.zoneId = zone.id;
+                handle.addEventListener('mousedown', (event) => {
+                    if (event.button !== 0) {
+                        return;
+                    }
+                    event.preventDefault();
+                    event.stopPropagation();
+                    startResizeZone(zone.id, event.clientX, event.clientY);
+                });
+
+                rect.appendChild(handle);
+                zone.element = rect;
+                overlayContainer.appendChild(rect);
+            });
+
+            if (activeZoneId) {
+                setActiveZone(activeZoneId);
+            }
+        }
+
+        async function saveDraftToDatabase() {
+            if (!wpAjaxUrl || !wpNonce) {
+                setDraftStatus('Configuration AJAX manquante. Impossible d\'enregistrer.', true);
+                return;
+            }
+
+            const draftName = (draftNameInput.value || '').trim();
+            if (!draftName) {
+                setDraftStatus('Veuillez renseigner un nom de visuel.', true);
+                draftNameInput.focus();
+                return;
+            }
+
+            const payload = serializeDraftPayload();
+            const formData = new FormData();
+            formData.append('action', 'mayami_save_epk_draft');
+            formData.append('nonce', wpNonce);
+            formData.append('name', draftName);
+            formData.append('draft_id', currentDraftId || '');
+            formData.append('payload', JSON.stringify(payload));
+
+            saveDraftBtn.disabled = true;
+            setDraftStatus('Enregistrement en base...');
+
+            try {
+                const response = await fetch(wpAjaxUrl, {
+                    method: 'POST',
+                    credentials: 'same-origin',
+                    body: formData
+                });
+                const result = await response.json();
+
+                if (!result || !result.success) {
+                    const message = result && result.data && result.data.message ? result.data.message : 'Erreur de sauvegarde du visuel.';
+                    setDraftStatus(message, true);
+                    return;
+                }
+
+                currentDraftId = result.data.id;
+                lastSavedSignature = getCurrentSignature();
+                setDraftStatus('Visuel enregistré en base.');
+                updateGenerateButtonState();
+            } catch (error) {
+                setDraftStatus('Impossible d\'enregistrer le visuel (erreur réseau).', true);
+            } finally {
+                saveDraftBtn.disabled = false;
+            }
+        }
+
+        async function loadDraftFromDatabase() {
+            if (!currentDraftId || !wpAjaxUrl || !wpNonce) {
+                updateGenerateButtonState();
+                return;
+            }
+
+            setDraftStatus('Chargement du visuel...');
+
+            try {
+                const url = new URL(wpAjaxUrl, window.location.href);
+                url.searchParams.set('action', 'mayami_get_epk_draft');
+                url.searchParams.set('nonce', wpNonce);
+                url.searchParams.set('draft_id', currentDraftId);
+
+                const response = await fetch(url.toString(), {
+                    method: 'GET',
+                    credentials: 'same-origin'
+                });
+                const result = await response.json();
+
+                if (!result || !result.success || !result.data) {
+                    setDraftStatus('Visuel introuvable ou inaccessible.', true);
+                    return;
+                }
+
+                const payload = result.data.payload || {};
+                imageUrl = payload.imageUrl || '';
+                const rawZones = Array.isArray(payload.zones) ? payload.zones : [];
+
+                if (imageUrl) {
+                    imageCanvas.src = imageUrl;
+                    uploadZone.style.display = 'none';
+                    canvasWrapper.style.display = 'inline-block';
+                    await waitForImageReady();
+                } else {
+                    uploadZone.style.display = '';
+                    canvasWrapper.style.display = 'none';
+                }
+
+                const currentDims = getCanvasDimensions();
+                const savedWidth = Number(payload.canvasWidth) || currentDims.width || 0;
+                const savedHeight = Number(payload.canvasHeight) || currentDims.height || 0;
+                const ratioX = savedWidth > 0 && currentDims.width > 0 ? (currentDims.width / savedWidth) : 1;
+                const ratioY = savedHeight > 0 && currentDims.height > 0 ? (currentDims.height / savedHeight) : 1;
+
+                zones = rawZones.map(zone => {
+                    const x = Math.max(0, Math.round((Number(zone.x) || 0) * ratioX));
+                    const y = Math.max(0, Math.round((Number(zone.y) || 0) * ratioY));
+                    const width = Math.max(0, Math.round((Number(zone.width) || 0) * ratioX));
+                    const height = Math.max(0, Math.round((Number(zone.height) || 0) * ratioY));
+
+                    return {
+                        id: zone.id || Date.now() + Math.random(),
+                        x,
+                        y,
+                        width,
+                        height,
+                        hrefType: zone.hrefType === 'anchor' ? 'anchor' : 'url',
+                        hrefValue: zone.hrefValue || ''
+                    };
+                }).filter(zone => zone.width > 0 && zone.height > 0);
+
+                draftNameInput.value = result.data.name || '';
+                renderZoneOverlays();
+                updateZonesList();
+                setAddZoneMode(false);
+                lastSavedSignature = getCurrentSignature();
+                setDraftStatus('Visuel chargé depuis la base.');
+                updateGenerateButtonState();
+            } catch (error) {
+                setDraftStatus('Impossible de charger le visuel.', true);
+            }
+        }
+
+        // Upload handlers
+        uploadZone.addEventListener('click', () => imageUpload.click());
+        
+        uploadZone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadZone.style.borderColor = '#667eea';
+        });
+        
+        uploadZone.addEventListener('dragleave', () => {
+            uploadZone.style.borderColor = '#ccc';
+        });
+        
+        uploadZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadZone.style.borderColor = '#ccc';
+            const file = e.dataTransfer.files[0];
+            if (file && file.type.startsWith('image/')) {
+                loadImage(file);
+            }
+        });
+
+        imageUpload.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                loadImage(file);
+            }
+        });
+
+        function loadImage(file) {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                imageUrl = e.target.result;
+                imageCanvas.src = imageUrl;
+                uploadZone.style.display = 'none';
+                canvasWrapper.style.display = 'inline-block';
+                zones = [];
+                setAddZoneMode(false);
+                updateZonesList();
+                markDraftDirty();
+            };
+            reader.readAsDataURL(file);
+        }
+
+        // Drawing zones
+        function getCanvasPoint(clientX, clientY) {
+            const rect = imageCanvas.getBoundingClientRect();
+            return {
+                x: Math.max(0, Math.min(rect.width, clientX - rect.left)),
+                y: Math.max(0, Math.min(rect.height, clientY - rect.top)),
+                rect
+            };
+        }
+
+        function stopDrawing(clientX, clientY) {
+            if (!isDrawing) {
+                return;
+            }
+
+            isDrawing = false;
+
+            if (!currentRect) {
+                return;
+            }
+
+            const point = getCanvasPoint(clientX, clientY);
+            const currentX = point.x;
+            const currentY = point.y;
+            const width = Math.abs(currentX - startX);
+            const height = Math.abs(currentY - startY);
+
+            if (width > 10 && height > 10) {
+                const left = Math.min(startX, currentX);
+                const top = Math.min(startY, currentY);
+
+                const zone = {
+                    id: Date.now(),
+                    x: Math.round(left),
+                    y: Math.round(top),
+                    width: Math.round(width),
+                    height: Math.round(height),
+                    hrefType: 'url',
+                    hrefValue: '',
+                    element: currentRect
+                };
+
+                zones.push(zone);
+                currentRect.dataset.zoneId = zone.id;
+
+                currentRect.addEventListener('click', () => {
+                    setActiveZone(zone.id);
+                });
+
+                updateZonesList();
+                markDraftDirty();
+                setAddZoneMode(false);
+            } else {
+                currentRect.remove();
+            }
+
+            currentRect = null;
+        }
+
+        function startResizeZone(zoneId, clientX, clientY) {
+            const zone = getZoneById(zoneId);
+            if (!zone) {
+                return;
+            }
+
+            const point = getCanvasPoint(clientX, clientY);
+            isResizing = true;
+            resizeState = {
+                zoneId: zone.id,
+                startX: point.x,
+                startY: point.y,
+                originX: Number(zone.x) || 0,
+                originY: Number(zone.y) || 0,
+                originWidth: Number(zone.width) || 0,
+                originHeight: Number(zone.height) || 0,
+            };
+
+            setActiveZone(zone.id);
+            document.body.style.userSelect = 'none';
+        }
+
+        function startDragZone(zoneId, clientX, clientY) {
+            if (isResizing) {
+                return;
+            }
+
+            if (Date.now() < suppressDragUntil) {
+                return;
+            }
+
+            const zone = getZoneById(zoneId);
+            if (!zone) {
+                return;
+            }
+
+            const point = getCanvasPoint(clientX, clientY);
+            isDragging = true;
+            dragState = {
+                zoneId: zone.id,
+                startPointerX: point.x,
+                startPointerY: point.y,
+                pointerOffsetX: point.x - (Number(zone.x) || 0),
+                pointerOffsetY: point.y - (Number(zone.y) || 0),
+                hasMoved: false,
+            };
+
+            setActiveZone(zone.id);
+            document.body.style.userSelect = 'none';
+        }
+
+        function stopResize() {
+            if (!isResizing) {
+                return;
+            }
+
+            isResizing = false;
+            resizeState = null;
+            document.body.style.userSelect = '';
+            updateZonesList();
+            markDraftDirty();
+        }
+
+        function stopDrag() {
+            if (!isDragging) {
+                return;
+            }
+
+            const hasMoved = !!(dragState && dragState.hasMoved);
+
+            isDragging = false;
+            dragState = null;
+            document.body.style.userSelect = '';
+
+            if (hasMoved) {
+                updateZonesList();
+                markDraftDirty();
+            }
+        }
+
+        zonesList.addEventListener('mousedown', (event) => {
+            const interactive = event.target.closest('.zone-item, .zone-select, .zone-input, .zone-delete');
+            if (interactive) {
+                suppressDragUntil = Date.now() + 250;
+            }
+        });
+
+        addZoneBtn.addEventListener('click', () => {
+            setAddZoneMode(!isAddZoneMode);
+        });
+
+        imageCanvas.addEventListener('mousedown', (e) => {
+            if (e.button !== 0) {
+                return;
+            }
+
+            if (!isAddZoneMode) {
+                return;
+            }
+
+            if (isResizing) {
+                return;
+            }
+
+            if (isDragging) {
+                return;
+            }
+
+            const point = getCanvasPoint(e.clientX, e.clientY);
+            startX = point.x;
+            startY = point.y;
+            isDrawing = true;
+
+            currentRect = document.createElement('div');
+            currentRect.className = 'rectangle-overlay';
+            currentRect.style.left = startX + 'px';
+            currentRect.style.top = startY + 'px';
+            currentRect.style.width = '0px';
+            currentRect.style.height = '0px';
+            overlayContainer.appendChild(currentRect);
+        });
+
+        window.addEventListener('mousemove', (e) => {
+            if (isDragging && dragState) {
+                const zone = getZoneById(dragState.zoneId);
+                if (!zone) {
+                    return;
+                }
+
+                const point = getCanvasPoint(e.clientX, e.clientY);
+                const pointerDx = Math.abs(point.x - dragState.startPointerX);
+                const pointerDy = Math.abs(point.y - dragState.startPointerY);
+                if (!dragState.hasMoved && pointerDx < DRAG_START_THRESHOLD && pointerDy < DRAG_START_THRESHOLD) {
+                    return;
+                }
+                dragState.hasMoved = true;
+
+                const maxX = Math.max(0, imageCanvas.clientWidth - (Number(zone.width) || 0));
+                const maxY = Math.max(0, imageCanvas.clientHeight - (Number(zone.height) || 0));
+
+                zone.x = Math.max(0, Math.min(maxX, Math.round(point.x - dragState.pointerOffsetX)));
+                zone.y = Math.max(0, Math.min(maxY, Math.round(point.y - dragState.pointerOffsetY)));
+
+                if (zone.element) {
+                    zone.element.style.left = zone.x + 'px';
+                    zone.element.style.top = zone.y + 'px';
+                }
+                return;
+            }
+
+            if (isResizing && resizeState) {
+                const zone = getZoneById(resizeState.zoneId);
+                if (!zone) {
+                    return;
+                }
+
+                const point = getCanvasPoint(e.clientX, e.clientY);
+                const dx = point.x - resizeState.startX;
+                const dy = point.y - resizeState.startY;
+                const maxWidth = Math.max(MIN_ZONE_SIZE, imageCanvas.clientWidth - resizeState.originX);
+                const maxHeight = Math.max(MIN_ZONE_SIZE, imageCanvas.clientHeight - resizeState.originY);
+
+                zone.width = Math.min(maxWidth, Math.max(MIN_ZONE_SIZE, Math.round(resizeState.originWidth + dx)));
+                zone.height = Math.min(maxHeight, Math.max(MIN_ZONE_SIZE, Math.round(resizeState.originHeight + dy)));
+
+                if (zone.element) {
+                    zone.element.style.width = zone.width + 'px';
+                    zone.element.style.height = zone.height + 'px';
+                }
+                return;
+            }
+
+            if (!isDrawing || !currentRect) {
+                return;
+            }
+
+            const point = getCanvasPoint(e.clientX, e.clientY);
+            const currentX = point.x;
+            const currentY = point.y;
+
+            const width = Math.abs(currentX - startX);
+            const height = Math.abs(currentY - startY);
+            const left = Math.min(startX, currentX);
+            const top = Math.min(startY, currentY);
+
+            currentRect.style.left = left + 'px';
+            currentRect.style.top = top + 'px';
+            currentRect.style.width = width + 'px';
+            currentRect.style.height = height + 'px';
+        });
+
+        window.addEventListener('mouseup', (e) => {
+            if (isDragging) {
+                stopDrag();
+                return;
+            }
+
+            if (isResizing) {
+                stopResize();
+                return;
+            }
+            stopDrawing(e.clientX, e.clientY);
+        });
+
+        window.addEventListener('blur', () => {
+            if (currentRect) {
+                currentRect.remove();
+                currentRect = null;
+            }
+            isDrawing = false;
+            stopDrag();
+            stopResize();
+        });
+
+        function setActiveZone(zoneId) {
+            activeZoneId = zoneId;
+            document.querySelectorAll('.rectangle-overlay').forEach(el => {
+                el.classList.remove('active');
+            });
+            document.querySelectorAll('.zone-item').forEach(el => {
+                el.classList.remove('active');
+            });
+            
+            const zone = getZoneById(zoneId);
+            if (zone) {
+                if (zone.element) {
+                    zone.element.classList.add('active');
+                }
+                const zoneItem = Array.from(document.querySelectorAll('.zone-item')).find((el) => {
+                    return String(el.dataset.zoneId) === String(zone.id);
+                });
+                if (zoneItem) {
+                    zoneItem.classList.add('active');
+                }
+            }
+        }
+
+        function updateZonesList() {
+            if (zones.length === 0) {
+                zonesList.innerHTML = '<p style="color: #999; text-align: center; padding: 20px; font-size: 13px;">Aucune zone créée.<br>Dessinez sur l\'image pour commencer.</p>';
+            } else {
+                zonesList.innerHTML = zones.map((zone, index) => `
+                    <div class="zone-item" data-zone-id="${zone.id}">
+                        <div class="zone-header">
+                            <span class="zone-title">Zone ${index + 1}</span>
+                            <button class="zone-delete" onclick="deleteZone(${zone.id})">✕</button>
+                        </div>
+                        <div class="zone-coords">
+                            📐 x:${zone.x}, y:${zone.y}, w:${zone.width}, h:${zone.height}
+                        </div>
+                        <div class="zone-controls">
+                            <select 
+                                class="zone-select"
+                                onchange="updateZoneType(${zone.id}, this.value)"
+                                onclick="setActiveZone(${zone.id})"
+                            >
+                                <option value="url" ${zone.hrefType === 'url' ? 'selected' : ''}>Lien</option>
+                                <option value="anchor" ${zone.hrefType === 'anchor' ? 'selected' : ''}>Ancre</option>
+                            </select>
+                            <input 
+                                type="text"
+                                class="zone-input" 
+                                placeholder="${zone.hrefType === 'anchor' ? '#section' : 'https://exemple.com'}" 
+                                value="${escapeHtml(zone.hrefValue)}"
+                                onchange="updateZoneHref(${zone.id}, this.value)"
+                                onclick="setActiveZone(${zone.id})"
+                            >
+                        </div>
+                    </div>
+                `).join('');
+
+                Array.from(zonesList.querySelectorAll('.zone-item')).forEach((item) => {
+                    item.addEventListener('click', (event) => {
+                        const interactive = event.target.closest('.zone-delete, .zone-select, .zone-input');
+                        if (interactive) {
+                            return;
+                        }
+                        setActiveZone(item.dataset.zoneId || '');
+                    });
+                });
+            }
+            
+            updateStats();
+
+            if (activeZoneId !== null) {
+                setActiveZone(activeZoneId);
+            }
+        }
+
+        function updateStats() {
+            zoneCount.textContent = zones.length;
+            linkedCount.textContent = zones.filter(z => getZoneHref(z)).length;
+        }
+
+        function updateZoneType(zoneId, hrefType) {
+            const zone = getZoneById(zoneId);
+            if (zone) {
+                zone.hrefType = hrefType;
+                updateZonesList();
+                setActiveZone(zoneId);
+                markDraftDirty();
+            }
+        }
+
+        function updateZoneHref(zoneId, hrefValue) {
+            const zone = getZoneById(zoneId);
+            if (zone) {
+                zone.hrefValue = hrefValue;
+                updateStats();
+                markDraftDirty();
+            }
+        }
+
+        function getZoneHref(zone) {
+            const value = (zone.hrefValue || '').trim();
+            if (!value) {
+                return '';
+            }
+
+            if (zone.hrefType === 'anchor') {
+                return value.startsWith('#') ? value : `#${value}`;
+            }
+
+            return value;
+        }
+
+        function escapeAttr(value) {
+            return String(value)
+                .replace(/&/g, '&amp;')
+                .replace(/"/g, '&quot;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;');
+        }
+
+        function getAnchorIdFromHref(href) {
+            const cleanHref = String(href || '').trim();
+            if (!cleanHref.startsWith('#')) {
+                return '';
+            }
+            return cleanHref.substring(1).replace(/[^a-zA-Z0-9_-]/g, '');
+        }
+
+        async function exportHtmlFromBuilder(htmlDocument, draftName, draftId) {
+            if (!wpAjaxUrl || !wpNonce) {
+                return { success: false, message: 'Configuration AJAX manquante.' };
+            }
+
+            const formData = new FormData();
+            formData.append('action', 'mayami_export_epk_html');
+            formData.append('nonce', wpNonce);
+            formData.append('draft_id', draftId || '');
+            formData.append('draft_name', draftName || 'epk');
+            formData.append('html', htmlDocument || '');
+
+            try {
+                const response = await fetch(wpAjaxUrl, {
+                    method: 'POST',
+                    credentials: 'same-origin',
+                    body: formData
+                });
+
+                const result = await response.json();
+                if (!result || !result.success) {
+                    return {
+                        success: false,
+                        message: (result && result.data && result.data.message) ? result.data.message : 'Export impossible.'
+                    };
+                }
+
+                return {
+                    success: true,
+                    filename: (result.data && result.data.filename) ? result.data.filename : ((draftName || 'epk') + '.html')
+                };
+            } catch (error) {
+                return { success: false, message: 'Erreur réseau pendant l\'export.' };
+            }
+        }
+
+        window.mayamiExportEpkHtmlFromOpener = async function(payload) {
+            const data = payload || {};
+            return exportHtmlFromBuilder(data.htmlDocument || '', data.draftName || '', data.draftId || '');
+        };
+
+        function buildMapPreviewData() {
+            if (!imageUrl) {
+                throw new Error('Aucune image disponible pour la prévisualisation.');
+            }
+
+            if (zones.length === 0) {
+                throw new Error('Veuillez créer au moins une zone cliquable.');
+            }
+
+            const imgWidth = imageCanvas.naturalWidth;
+            const imgHeight = imageCanvas.naturalHeight;
+            const displayDims = getCanvasDimensions();
+            const editorWidth = Math.max(1, Number(displayDims.width) || imageCanvas.clientWidth || imageCanvas.width || imgWidth);
+            const editorHeight = Math.max(1, Number(displayDims.height) || imageCanvas.clientHeight || imageCanvas.height || imgHeight);
+            const scaleX = imgWidth / editorWidth;
+            const scaleY = imgHeight / editorHeight;
+            const mapName = 'imageMap' + Date.now();
+
+            const areasMarkup = zones.map(zone => {
+                const x1 = Math.round(zone.x);
+                const y1 = Math.round(zone.y);
+                const x2 = Math.round(zone.x + zone.width);
+                const y2 = Math.round(zone.y + zone.height);
+                const href = getZoneHref(zone) || '#';
+                const target = href.startsWith('#') ? '_self' : '_blank';
+                const rel = href.startsWith('#') ? '' : ' rel="noopener noreferrer"';
+
+                return `<area shape="rect" coords="${x1},${y1},${x2},${y2}" href="${escapeAttr(href)}" target="${target}"${rel} alt="">`;
+            }).join('\n        ');
+
+            const anchorIds = zones
+                .map(zone => getAnchorIdFromHref(getZoneHref(zone)))
+                .filter(Boolean)
+                .filter((id, index, arr) => arr.indexOf(id) === index);
+
+            const anchorsMarkup = anchorIds.map((id, index) => {
+                return `<section id="${escapeAttr(id)}" class="anchor-section"><h2>Section #${escapeHtml(id)}</h2><p>Ancre de démonstration ${index + 1}. Le clic sur la zone ancre vous amène ici.</p></section>`;
+            }).join('');
+
+            const htmlDocument = `<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Visual Link Builder</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: #f3f4f6;
+      font-family: 'Segoe UI', Tahoma, sans-serif;
+      color: #0f172a;
+      padding: 24px;
+      overflow-x: auto;
+    }
+    .wrapper {
+            width: ${editorWidth}px;
+            max-width: 100%;
+            margin: 0 auto;
+      background: #fff;
+      border-radius: 12px;
+      border: 1px solid #d7dce8;
+      box-shadow: 0 8px 20px rgba(15, 23, 42, 0.08);
+      padding: 14px;
+    }
+    .anchor-section {
+      max-width: 860px;
+      margin: 20px auto 0;
+      background: #fff;
+      border: 1px solid #d7dce8;
+      border-radius: 10px;
+      padding: 16px;
+    }
+    .anchor-section h2 {
+      margin: 0 0 8px;
+      font-size: 20px;
+      color: #0f172a;
+    }
+    .anchor-section p {
+      margin: 0;
+      font-size: 14px;
+      color: #334155;
+      line-height: 1.5;
+    }
+  </style>
+</head>
+<body>
+  <main class="wrapper">
+        <img src="${escapeAttr(imageUrl)}" width="${editorWidth}" height="${editorHeight}" usemap="#${escapeAttr(mapName)}" alt="Visual link layout" style="display:block;width:${editorWidth}px;max-width:100%;height:auto;border-radius:8px;">
+    <map name="${escapeAttr(mapName)}">
+      ${areasMarkup}
+    </map>
+  </main>
+  ${anchorsMarkup}
+</body>
+</html>`;
+
+            return {
+                htmlDocument,
+                imgWidth,
+                imgHeight,
+                editorWidth,
+                editorHeight,
+                mapName,
+                areasMarkup,
+                anchorsMarkup,
+                scaleX,
+                scaleY
+            };
+        }
+
+        function buildExternalPreviewHtml(previewData) {
+            const ajaxUrlJs = JSON.stringify(wpAjaxUrl);
+            const nonceJs = JSON.stringify(wpNonce);
+            const draftIdJs = JSON.stringify(currentDraftId || '');
+            const draftNameJs = JSON.stringify((draftNameInput.value || '').trim());
+            const htmlDocJs = JSON.stringify(previewData.htmlDocument);
+
+            let builderUrl = 'admin.php?page=mayami_epk_html_builder';
+            try {
+                const ajaxEndpoint = new URL(wpAjaxUrl, window.location.href);
+                const adminUrl = new URL('admin.php', ajaxEndpoint);
+                adminUrl.searchParams.set('page', 'mayami_epk_html_builder');
+                if (currentDraftId) {
+                    adminUrl.searchParams.set('draft_id', currentDraftId);
+                }
+                builderUrl = adminUrl.toString();
+            } catch (error) {
+                if (currentDraftId) {
+                    builderUrl += '&draft_id=' + encodeURIComponent(currentDraftId);
+                }
+            }
+            const builderUrlJs = JSON.stringify(builderUrl);
+            const builderUrlAttr = escapeAttr(builderUrl);
+
+            return `<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Visual Link Preview</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: 'Segoe UI', Tahoma, sans-serif;
+      background: #f2f4f8;
+      color: #111827;
+    }
+    .topbar {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 12px 18px;
+      border-bottom: 1px solid #d9deea;
+      background: linear-gradient(90deg, #0f172a, #1e293b);
+      color: #fff;
+    }
+    .topbar-title { font-weight: 600; font-size: 14px; }
+    .topbar-actions { display: flex; align-items: center; gap: 8px; }
+    .preview-btn {
+      border: 0;
+      border-radius: 8px;
+      padding: 8px 14px;
+      cursor: pointer;
+      font-weight: 600;
+      font-size: 13px;
+    }
+    .preview-btn.export { background: #22c55e; color: #07210f; }
+    .preview-btn.modify { background: #e2e8f0; color: #0f172a; }
+    .status {
+      padding: 8px 18px;
+      font-size: 13px;
+      color: #0f5132;
+      background: #d1e7dd;
+      display: none;
+    }
+        .status.error { color: #842029; background: #f8d7da; }
+        .preview-wrap {
+            max-width: min(100%, ${previewData.editorWidth + 28}px);
+            margin: 0 auto;
+            padding: 16px;
+        }
+    .preview-card {
+      background: #fff;
+      border: 1px solid #d7dce8;
+      border-radius: 12px;
+      padding: 14px;
+      box-shadow: 0 8px 20px rgba(15,23,42,0.08);
+    }
+        .preview-image {
+            display: block;
+            width: 100%;
+            max-width: ${previewData.editorWidth}px;
+            height: auto;
+            border-radius: 8px;
+            margin: 0 auto;
+        }
+    .anchor-section {
+      max-width: 860px;
+            margin: 20px auto;
+      background: #fff;
+      border: 1px solid #d7dce8;
+      border-radius: 10px;
+      padding: 16px;
+    }
+    .anchor-section h2 { margin: 0 0 8px; font-size: 20px; color: #0f172a; }
+    .anchor-section p { margin: 0; font-size: 14px; color: #334155; line-height: 1.5; }
+  </style>
+</head>
+<body>
+  <div class="topbar">
+    <div class="topbar-title">Prévisualisation visuelle</div>
+    <div class="topbar-actions">
+      <button class="preview-btn export" id="exportBtn">Exporter HTML</button>
+            <a class="preview-btn modify" id="modifyBtn" href="${builderUrlAttr}" style="text-decoration:none;display:inline-block;">Modifier</a>
+    </div>
+  </div>
+  <div class="status" id="statusBox"></div>
+  <div class="preview-wrap">
+    <div class="preview-card">
+            <img id="previewImage" src="${escapeAttr(imageUrl)}" width="${previewData.editorWidth}" height="${previewData.editorHeight}" usemap="#${escapeAttr(previewData.mapName)}" alt="Visual link preview" class="preview-image">
+            <map id="previewMap" name="${escapeAttr(previewData.mapName)}">
+        ${previewData.areasMarkup}
+      </map>
+    </div>
+  </div>
+  ${previewData.anchorsMarkup}
+
+  <script>
+    const wpAjaxUrl = ${ajaxUrlJs};
+    const wpNonce = ${nonceJs};
+    const draftId = ${draftIdJs};
+    const draftName = ${draftNameJs};
+    const htmlDocument = ${htmlDocJs};
+    const editorWidth = ${previewData.editorWidth};
+    const editorHeight = ${previewData.editorHeight};
+
+    const exportBtn = document.getElementById('exportBtn');
+    const statusBox = document.getElementById('statusBox');
+        const previewImage = document.getElementById('previewImage');
+        const previewMap = document.getElementById('previewMap');
+        const mapAreas = Array.from(previewMap ? previewMap.querySelectorAll('area') : []);
+
+        mapAreas.forEach((area) => {
+            area.dataset.originalCoords = area.getAttribute('coords') || '';
+        });
+
+    function showStatus(message, isError) {
+      statusBox.textContent = message;
+      statusBox.style.display = 'block';
+      statusBox.classList.toggle('error', !!isError);
+    }
+
+        function resizeImageMap() {
+            if (!previewImage || !mapAreas.length || !editorWidth || !editorHeight) {
+                return;
+            }
+
+            const scaleX = previewImage.clientWidth / editorWidth;
+            const scaleY = previewImage.clientHeight / editorHeight;
+
+            mapAreas.forEach((area) => {
+                const original = (area.dataset.originalCoords || '').split(',').map((v) => Number(v.trim()));
+                if (original.length !== 4 || original.some((v) => Number.isNaN(v))) {
+                    return;
+                }
+                const scaled = [
+                    Math.round(original[0] * scaleX),
+                    Math.round(original[1] * scaleY),
+                    Math.round(original[2] * scaleX),
+                    Math.round(original[3] * scaleY)
+                ];
+                area.setAttribute('coords', scaled.join(','));
+            });
+        }
+
+    async function exportHtml() {
+      exportBtn.disabled = true;
+      showStatus('Export en cours...');
+
+            try {
+                const formData = new FormData();
+                formData.append('action', 'mayami_export_epk_html');
+                formData.append('nonce', wpNonce);
+                formData.append('draft_id', draftId);
+                formData.append('draft_name', draftName);
+                formData.append('html', htmlDocument);
+                const response = await fetch(wpAjaxUrl, {
+                    method: 'POST',
+                    credentials: 'include',
+                    body: formData
+                });
+                const data = await response.json();
+                const result = {
+                    success: !!(data && data.success),
+                    filename: data && data.data ? data.data.filename : '',
+                    message: data && data.data ? data.data.message : ''
+                };
+
+                if (!result || !result.success) {
+                    showStatus((result && result.message) || 'Export impossible.', true);
+                    return;
+        }
+
+                showStatus('Fichier exporté : ' + (result.filename || ((draftName || 'epk') + '.html')));
+                setTimeout(() => {
+                    window.close();
+                }, 250);
+      } catch (e) {
+        showStatus('Erreur réseau pendant l\'export.', true);
+      } finally {
+        exportBtn.disabled = false;
+      }
+    }
+
+        if (previewImage) {
+            if (previewImage.complete) {
+                resizeImageMap();
+            } else {
+                previewImage.addEventListener('load', resizeImageMap, { once: true });
+            }
+        }
+        window.addEventListener('resize', resizeImageMap);
+
+    exportBtn.addEventListener('click', exportHtml);
+  <\/script>
+</body>
+</html>`;
+        }
+
+        function openExternalPreview(previewData) {
+            const previewWindow = window.open('', '_blank');
+            if (!previewWindow) {
+                alert('Impossible d\'ouvrir la prévisualisation. Autorisez les popups pour ce site.');
+                return;
+            }
+            previewWindow.document.open();
+            previewWindow.document.write(buildExternalPreviewHtml(previewData));
+            previewWindow.document.close();
+            previewWindow.focus();
+        }
+
+        function escapeHtml(value) {
+            return String(value)
+                .replace(/&/g, '&amp;')
+                .replace(/"/g, '&quot;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;');
+        }
+
+        async function deleteZone(zoneId) {
+            const confirmed = await askDeleteConfirmation('Supprimer cette zone ?');
+            if (!confirmed) {
+                return;
+            }
+
+            const zone = getZoneById(zoneId);
+            if (zone) {
+                zone.element.remove();
+                zones = zones.filter(z => String(z.id) !== String(zoneId));
+                if (String(activeZoneId) === String(zoneId)) {
+                    activeZoneId = null;
+                }
+                updateZonesList();
+                markDraftDirty();
+            }
+        }
+
+        clearAllBtn.addEventListener('click', async () => {
+            const confirmed = await askDeleteConfirmation('Supprimer toutes les zones ?');
+            if (!confirmed) {
+                return;
+            }
+
+            zones.forEach(zone => zone.element.remove());
+            zones = [];
+            updateZonesList();
+            codeOutput.classList.remove('show');
+            copyBtn.style.display = 'none';
+            markDraftDirty();
+        });
+
+        function buildGeneratedCodeText(previewData) {
+            const slices = calculateImageSlices(previewData.scaleX, previewData.scaleY);
+            const hasAnchors = zones.some(zone => zone.hrefType === 'anchor' && getZoneHref(zone));
+            const emailAnchorNotice = hasAnchors
+                ? `\n⚠️ Note : les ancres internes (${String.fromCharCode(35)}section) sont peu fiables dans les emails.\n   Gardez-les pour la version WordPress/page web, pas pour Gmail/Outlook.\n`
+                : '';
+
+            return `╔════════════════════════════════════════════════════════════════╗
+║   VERSION 1 : POUR EMAIL (compatible Gmail, Outlook, etc.)     ║
+╚════════════════════════════════════════════════════════════════╝
+
+⚠️ IMPORTANT : Les image maps (<map>) ne fonctionnent PAS dans les emails !
+📧 Solution : Découper l'image en morceaux et utiliser un tableau HTML.
+${emailAnchorNotice}
+
+──────────────────────────────────────────────────────────────────
+ÉTAPE 1 : Découper votre image
+──────────────────────────────────────────────────────────────────
+Utilisez un outil de découpe d'image (Photoshop, GIMP, Canva, etc.)
+Découpez selon ces coordonnées (en pixels, image originale ${previewData.imgWidth}x${previewData.imgHeight}) :
+
+${slices.map((slice, i) => {
+    const link = slice.href ? `→ CIBLE: ${slice.href}` : '(pas de lien)';
+    return `Morceau ${i + 1}: 
+  Position X: ${slice.x}px
+  Position Y: ${slice.y}px
+  Largeur:    ${slice.width}px
+  Hauteur:    ${slice.height}px
+  ${link}`;
+}).join('\n\n')}
+
+──────────────────────────────────────────────────────────────────
+ÉTAPE 2 : Uploader les morceaux sur votre serveur
+──────────────────────────────────────────────────────────────────
+Nommez-les : slice-1.jpg, slice-2.jpg, slice-3.jpg, etc.
+URL exemple : https://votresite.com/images/mayami/slice-1.jpg
+
+──────────────────────────────────────────────────────────────────
+ÉTAPE 3 : Code HTML pour email
+──────────────────────────────────────────────────────────────────
+
+${generateEmailTableHTML(slices, previewData.imgWidth)}
+
+╔════════════════════════════════════════════════════════════════╗
+║   VERSION 2 : POUR WORDPRESS (plus simple, 1 seule image)      ║
+╚════════════════════════════════════════════════════════════════╝
+
+${previewData.htmlDocument}`;
+        }
+
+        previewBtn.addEventListener('click', () => {
+            if (previewBtn.disabled) {
+                setDraftStatus('Enregistrez d\'abord le visuel en base avant la preview.');
+                return;
+            }
+
+            try {
+                const previewData = buildMapPreviewData();
+                openExternalPreview(previewData);
+            } catch (error) {
+                alert(error && error.message ? error.message : 'Impossible d\'ouvrir la preview.');
+            }
+        });
+
+        generateBtn.addEventListener('click', () => {
+            if (generateBtn.disabled) {
+                setDraftStatus('Enregistrez d\'abord le visuel en base avant de générer le code.');
+                return;
+            }
+
+            try {
+                const previewData = buildMapPreviewData();
+                const html = buildGeneratedCodeText(previewData);
+                codeOutput.textContent = html;
+                codeOutput.classList.add('show');
+                copyBtn.style.display = 'flex';
+            } catch (error) {
+                alert(error && error.message ? error.message : 'Impossible de générer le code.');
+            }
+        });
+        
+        function calculateImageSlices(scaleX, scaleY) {
+            // Créer une grille de découpe basée sur les zones
+            const xPoints = new Set([0]);
+            const yPoints = new Set([0]);
+            
+            // Ajouter les bords de chaque zone
+            zones.forEach(zone => {
+                const x1 = Math.round(zone.x * scaleX);
+                const y1 = Math.round(zone.y * scaleY);
+                const x2 = Math.round((zone.x + zone.width) * scaleX);
+                const y2 = Math.round((zone.y + zone.height) * scaleY);
+                
+                xPoints.add(x1);
+                xPoints.add(x2);
+                yPoints.add(y1);
+                yPoints.add(y2);
+            });
+            
+            const imgWidth = imageCanvas.naturalWidth;
+            const imgHeight = imageCanvas.naturalHeight;
+            xPoints.add(imgWidth);
+            yPoints.add(imgHeight);
+            
+            const xArray = Array.from(xPoints).sort((a, b) => a - b);
+            const yArray = Array.from(yPoints).sort((a, b) => a - b);
+            
+            // Créer les morceaux
+            const slices = [];
+            let sliceIndex = 0;
+            
+            for (let i = 0; i < yArray.length - 1; i++) {
+                for (let j = 0; j < xArray.length - 1; j++) {
+                    const x = xArray[j];
+                    const y = yArray[i];
+                    const width = xArray[j + 1] - x;
+                    const height = yArray[i + 1] - y;
+                    
+                    // Trouver si ce morceau est dans une zone cliquable
+                    const matchingZone = zones.find(zone => {
+                        const zx1 = Math.round(zone.x * scaleX);
+                        const zy1 = Math.round(zone.y * scaleY);
+                        const zx2 = Math.round((zone.x + zone.width) * scaleX);
+                        const zy2 = Math.round((zone.y + zone.height) * scaleY);
+                        const href = getZoneHref(zone);
+                        
+                        return x >= zx1 && y >= zy1 && 
+                               x + width <= zx2 && 
+                               y + height <= zy2 &&
+                               href;
+                    });
+                    
+                    slices.push({
+                        index: ++sliceIndex,
+                        x, y, width, height,
+                        href: matchingZone ? getZoneHref(matchingZone) : null,
+                        row: i,
+                        col: j
+                    });
+                }
+            }
+            
+            return slices;
+        }
+        
+        function generateEmailTableHTML(slices, imgWidth) {
+            // Grouper par rangée
+            const rows = {};
+            slices.forEach(slice => {
+                if (!rows[slice.row]) rows[slice.row] = [];
+                rows[slice.row].push(slice);
+            });
+            
+            let html = `<table border="0" cellpadding="0" cellspacing="0" style="border-collapse: collapse; width: 100%; max-width: ${imgWidth}px; margin: 0 auto;">
+  <tbody>`;
+            
+            Object.keys(rows).sort((a, b) => Number(a) - Number(b)).forEach(rowKey => {
+                html += `\n    <tr>`;
+                rows[rowKey].forEach(slice => {
+                    const imgTag = `<img src="VOTRE_URL_SERVEUR/slice-${slice.index}.jpg" width="${slice.width}" height="${slice.height}" style="display: block; border: 0; margin: 0; padding: 0; max-width: 100%;" alt="">`;
+                    
+                    if (slice.href) {
+                        html += `\n      <td style="padding: 0; margin: 0; line-height: 0;"><a href="${slice.href}" style="display: block; border: 0; text-decoration: none; line-height: 0;">${imgTag}</a></td>`;
+                    } else {
+                        html += `\n      <td style="padding: 0; margin: 0; line-height: 0;">${imgTag}</td>`;
+                    }
+                });
+                html += `\n    </tr>`;
+            });
+            
+            html += `\n  </tbody>
+</table>
+
+<!-- Remplacez VOTRE_URL_SERVEUR par l'URL où vous avez uploadé les morceaux -->
+<!-- Exemple : https://votresite.com/images/campagne-mayami -->`;
+            
+            return html;
+        }
+
+        copyBtn.addEventListener('click', () => {
+            navigator.clipboard.writeText(codeOutput.textContent).then(() => {
+                copyBtn.textContent = '✅ Code copié !';
+                copyBtn.style.background = '#27ae60';
+                setTimeout(() => {
+                    copyBtn.innerHTML = '📋 Copier le code';
+                    copyBtn.style.background = '#2ecc71';
+                }, 2000);
+            });
+        });
+
+        saveDraftBtn.addEventListener('click', () => {
+            saveDraftToDatabase();
+        });
+
+        draftNameInput.addEventListener('input', () => {
+            markDraftDirty();
+        });
+
+        updateGenerateButtonState();
+        loadDraftFromDatabase();
+    </script>
+</body>
+</html>

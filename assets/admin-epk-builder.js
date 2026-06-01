@@ -39,16 +39,21 @@
     function normalizePayload(payload) {
         const state = Object.assign(defaultPayload(), payload || {});
         state.zones = Array.isArray(state.zones) ? state.zones : [];
-        state.zones = state.zones.map((zone, index) => ({
-            id: zone.id || 'zone_' + index + '_' + Date.now(),
-            label: zone.label || '',
-            hrefType: zone.hrefType === 'anchor' ? 'anchor' : 'url',
-            hrefValue: zone.hrefValue || '',
-            x: clamp(Number(zone.x) || 0, 0, 100),
-            y: clamp(Number(zone.y) || 0, 0, 100),
-            width: clamp(Number(zone.width) || 0, 0, 100),
-            height: clamp(Number(zone.height) || 0, 0, 100)
-        })).filter((zone) => zone.width > 0 && zone.height > 0);
+        state.zones = state.zones.map(function (zone, index) {
+            return {
+                id: zone.id || 'zone_' + index + '_' + Date.now(),
+                label: zone.label || '',
+                hrefType: zone.hrefType === 'anchor' ? 'anchor' : 'url',
+                hrefValue: zone.hrefValue || '',
+                x: clamp(Number(zone.x) || 0, 0, 100),
+                y: clamp(Number(zone.y) || 0, 0, 100),
+                width: clamp(Number(zone.width) || 0, 0, 100),
+                height: clamp(Number(zone.height) || 0, 0, 100)
+            };
+        }).filter(function (zone) {
+            return zone.width > 0 && zone.height > 0;
+        });
+
         return state;
     }
 
@@ -94,6 +99,9 @@
         const draftInput = document.querySelector('textarea[name="mayami_landing_options[epk_draft_payload]"]');
         const publishedInput = document.querySelector('textarea[name="mayami_landing_options[epk_published_payload]"]');
         const validationInput = document.querySelector('input[name="mayami_landing_options[epk_validation_ready]"]');
+        const validationRow = validationInput ? validationInput.closest('.cmb-row') : null;
+        const nativeMediaInput = document.querySelector('input[name="mayami_landing_options[epk_draft_image_source]"]');
+        const nativeMediaRow = nativeMediaInput ? nativeMediaInput.closest('.cmb-row') : null;
 
         if (!draftInput || !publishedInput || !validationInput) {
             return;
@@ -108,16 +116,18 @@
         let startX = 0;
         let startY = 0;
         let currentBox = null;
-        let mediaFrame = null;
 
         const elements = {
             draftStatus: root.querySelector('.mayami-epk-draft-status'),
             publishedStatus: root.querySelector('.mayami-epk-published-status'),
+            zoneCount: root.querySelector('.mayami-epk-zone-count'),
+            linkedCount: root.querySelector('.mayami-epk-linked-count'),
             kicker: root.querySelector('[data-epk-field="kicker"]'),
             title: root.querySelector('[data-epk-field="title"]'),
             description: root.querySelector('[data-epk-field="description"]'),
             imageAlt: root.querySelector('[data-epk-field="imageAlt"]'),
-            selectImage: root.querySelector('.mayami-epk-select-image'),
+            nativeMediaHost: root.querySelector('.mayami-epk-native-media-host'),
+            validationHost: root.querySelector('.mayami-epk-validation-host'),
             clearImage: root.querySelector('.mayami-epk-clear-image'),
             canvasEmpty: root.querySelector('.mayami-epk-canvas-empty'),
             canvasWrapper: root.querySelector('.mayami-epk-canvas-wrapper'),
@@ -125,17 +135,60 @@
             canvasOverlay: root.querySelector('.mayami-epk-canvas-overlay'),
             zonesList: root.querySelector('.mayami-epk-zones-list'),
             resetZones: root.querySelector('.mayami-epk-reset-zones'),
-            livePreview: root.querySelector('.mayami-epk-live-preview'),
             previewLink: root.querySelector('.mayami-epk-preview-link'),
             publishButton: root.querySelector('.mayami-epk-publish-button'),
             unpublishButton: root.querySelector('.mayami-epk-unpublish-button')
         };
 
+        function getNativeMediaUploadButton() {
+            return nativeMediaRow ? nativeMediaRow.querySelector('.cmb2-upload-button') : null;
+        }
+
+        function getNativeMediaRemoveButton() {
+            return nativeMediaRow ? nativeMediaRow.querySelector('.cmb2-remove-file-button') : null;
+        }
+
+        function mountNativeMediaControls() {
+            if (!nativeMediaRow || !elements.nativeMediaHost) {
+                return;
+            }
+
+            if (nativeMediaRow.parentNode !== elements.nativeMediaHost) {
+                elements.nativeMediaHost.appendChild(nativeMediaRow);
+            }
+
+            nativeMediaRow.classList.add('mayami-epk-native-media-row');
+
+            const uploadButton = getNativeMediaUploadButton();
+            if (uploadButton) {
+                const label = state.imageUrl ? 'Modifier le visuel' : 'Choisir le visuel';
+                if ('value' in uploadButton) {
+                    uploadButton.value = label;
+                }
+                uploadButton.textContent = label;
+                uploadButton.setAttribute('aria-label', label);
+            }
+        }
+
+        function mountValidationControl() {
+            if (!validationRow || !elements.validationHost) {
+                return;
+            }
+
+            if (validationRow.parentNode !== elements.validationHost) {
+                elements.validationHost.appendChild(validationRow);
+            }
+
+            validationRow.classList.add('mayami-epk-validation-row');
+        }
+
         function syncHiddenValue(markUpdated) {
             if (markUpdated) {
                 state.updatedAt = new Date().toISOString();
             }
+
             draftInput.value = JSON.stringify(state);
+
             if (elements.draftStatus) {
                 elements.draftStatus.textContent = formatTimestamp(state.updatedAt);
             }
@@ -152,6 +205,50 @@
             elements.imageAlt.value = state.imageAlt || '';
         }
 
+        function zoneToPixels(zone) {
+            const width = elements.canvasOverlay.clientWidth || elements.canvasImage.clientWidth || 0;
+            const height = elements.canvasOverlay.clientHeight || elements.canvasImage.clientHeight || 0;
+
+            return {
+                x: Math.round((zone.x / 100) * width),
+                y: Math.round((zone.y / 100) * height),
+                width: Math.round((zone.width / 100) * width),
+                height: Math.round((zone.height / 100) * height)
+            };
+        }
+
+        function updateStats() {
+            if (elements.zoneCount) {
+                elements.zoneCount.textContent = String(state.zones.length);
+            }
+
+            if (elements.linkedCount) {
+                elements.linkedCount.textContent = String(state.zones.filter(function (zone) {
+                    return !!getHref(zone);
+                }).length);
+            }
+        }
+
+        function syncFromNativeMediaField() {
+            if (!nativeMediaInput) {
+                return;
+            }
+
+            const nextUrl = String(nativeMediaInput.value || '').trim();
+            if (nextUrl === state.imageUrl) {
+                return;
+            }
+
+            updateState(function (draft) {
+                const hadPreviousImage = !!draft.imageUrl;
+                draft.imageUrl = nextUrl;
+
+                if (!nextUrl || hadPreviousImage) {
+                    draft.zones = [];
+                }
+            });
+        }
+
         function setActiveZone(zoneId) {
             activeZoneId = zoneId;
             renderZones();
@@ -164,17 +261,20 @@
             if (!state.imageUrl) {
                 elements.canvasEmpty.hidden = false;
                 elements.canvasWrapper.hidden = true;
+                updateStats();
                 return;
             }
 
             elements.canvasEmpty.hidden = true;
             elements.canvasWrapper.hidden = false;
+
             if (elements.canvasImage.getAttribute('src') !== state.imageUrl) {
                 elements.canvasImage.setAttribute('src', state.imageUrl);
             }
+
             elements.canvasImage.setAttribute('alt', state.imageAlt || 'Visuel EPK');
 
-            state.zones.forEach((zone) => {
+            state.zones.forEach(function (zone) {
                 const box = document.createElement('button');
                 box.type = 'button';
                 box.className = 'mayami-epk-zone-box' + (activeZoneId === zone.id ? ' is-active' : '');
@@ -184,67 +284,58 @@
                 box.style.height = zone.height + '%';
                 box.addEventListener('click', function (event) {
                     event.preventDefault();
+                    event.stopPropagation();
                     setActiveZone(zone.id);
                 });
                 elements.canvasOverlay.appendChild(box);
             });
+
+            updateStats();
         }
 
         function renderZones() {
             if (!state.zones.length) {
-                elements.zonesList.innerHTML = '<p style="margin:0;color:#64748b;">Aucune zone pour le moment.</p>';
+                elements.zonesList.innerHTML = '<p class="mayami-epk-zone-empty">Aucune zone créée.<br>Dessinez sur l\'image pour commencer.</p>';
+                updateStats();
                 return;
             }
 
-            elements.zonesList.innerHTML = state.zones.map((zone, index) => {
-                const href = getHref(zone);
+            elements.zonesList.innerHTML = state.zones.map(function (zone, index) {
+                const pixels = zoneToPixels(zone);
                 return '' +
                     '<div class="mayami-epk-zone-item' + (activeZoneId === zone.id ? ' is-active' : '') + '" data-zone-id="' + escapeHtml(zone.id) + '">' +
                         '<div class="mayami-epk-zone-header">' +
                             '<span class="mayami-epk-zone-title">Zone ' + (index + 1) + '</span>' +
-                            '<button type="button" class="button-link-delete" data-zone-action="delete">Supprimer</button>' +
+                            '<button type="button" class="mayami-epk-zone-delete" data-zone-action="delete">X</button>' +
                         '</div>' +
-                        '<div class="mayami-epk-zone-coords">x:' + zone.x.toFixed(2) + '% · y:' + zone.y.toFixed(2) + '% · l:' + zone.width.toFixed(2) + '% · h:' + zone.height.toFixed(2) + '%</div>' +
-                        '<div class="mayami-epk-zone-fields">' +
-                            '<input type="text" class="regular-text mayami-epk-zone-label" data-zone-field="label" value="' + escapeHtml(zone.label) + '" placeholder="Libellé accessible de la zone">' +
+                        '<div class="mayami-epk-zone-coords">x:' + pixels.x + ', y:' + pixels.y + ', w:' + pixels.width + ', h:' + pixels.height + '</div>' +
+                        '<div class="mayami-epk-zone-controls">' +
                             '<select data-zone-field="hrefType">' +
                                 '<option value="url"' + (zone.hrefType === 'url' ? ' selected' : '') + '>Lien</option>' +
                                 '<option value="anchor"' + (zone.hrefType === 'anchor' ? ' selected' : '') + '>Ancre</option>' +
                             '</select>' +
-                            '<input type="text" class="regular-text" data-zone-field="hrefValue" value="' + escapeHtml(zone.hrefValue) + '" placeholder="' + escapeHtml(zone.hrefType === 'anchor' ? '#section' : 'https://exemple.com') + '">' +
+                            '<input type="text" data-zone-field="hrefValue" value="' + escapeHtml(zone.hrefValue) + '" placeholder="' + escapeHtml(zone.hrefType === 'anchor' ? '#section' : 'https://exemple.com') + '">' +
                         '</div>' +
-                        (href ? '<p style="margin:10px 0 0;font-size:12px;color:#334155;">Cible: ' + escapeHtml(href) + '</p>' : '') +
                     '</div>';
             }).join('');
-        }
 
-        function renderPreview() {
-            if (!state.imageUrl) {
-                elements.livePreview.innerHTML = '<p style="margin:0;color:#64748b;">La prévisualisation rapide apparaîtra ici dès qu’un visuel sera sélectionné.</p>';
-                return;
-            }
-
-            const previewZones = state.zones.map((zone, index) => {
-                const label = escapeHtml(zone.label || ('Zone ' + (index + 1)));
-                return '<span class="mayami-epk-preview-hotspot" style="left:' + zone.x + '%;top:' + zone.y + '%;width:' + zone.width + '%;height:' + zone.height + '%;"><span>' + label + '</span></span>';
-            }).join('');
-
-            elements.livePreview.innerHTML = '' +
-                '<div class="mayami-epk-preview-copy">' +
-                    '<p><strong>' + escapeHtml(state.kicker || 'EPK') + '</strong></p>' +
-                    '<p style="font-size:24px;font-weight:700;line-height:1.1;">' + escapeHtml(state.title || 'Electronic Press Kit') + '</p>' +
-                    (state.description ? '<p>' + escapeHtml(state.description) + '</p>' : '') +
-                '</div>' +
-                '<div class="mayami-epk-preview-surface">' +
-                    '<img src="' + escapeHtml(state.imageUrl) + '" alt="' + escapeHtml(state.imageAlt || 'Visuel EPK') + '">' +
-                    previewZones +
-                '</div>';
+            updateStats();
         }
 
         function refreshWorkflowState() {
             const canPublish = !!state.imageUrl && !!validationInput.checked;
-            elements.publishButton.disabled = !canPublish;
-            elements.unpublishButton.disabled = !(publishedInput.value || '').trim();
+            const hasPublishedPayload = !!String(publishedInput.value || '').trim();
+
+            if (elements.publishButton) {
+                elements.publishButton.disabled = !canPublish;
+                elements.publishButton.classList.toggle('is-disabled', !canPublish);
+            }
+
+            if (elements.unpublishButton) {
+                elements.unpublishButton.disabled = !hasPublishedPayload;
+                elements.unpublishButton.classList.toggle('is-disabled', !hasPublishedPayload);
+            }
+
             if (elements.publishedStatus) {
                 const published = normalizePayload(parsePayload(publishedInput.value));
                 elements.publishedStatus.textContent = formatTimestamp(published.publishedAt);
@@ -252,10 +343,11 @@
         }
 
         function redrawAll() {
+            mountNativeMediaControls();
+            mountValidationControl();
             setFieldValues();
             renderCanvas();
             renderZones();
-            renderPreview();
             refreshWorkflowState();
         }
 
@@ -311,34 +403,14 @@
             });
         });
 
-        elements.selectImage.addEventListener('click', function () {
-            if (!window.wp || !wp.media) {
-                return;
-            }
-
-            if (!mediaFrame) {
-                mediaFrame = wp.media({
-                    title: 'Choisir le visuel EPK',
-                    library: { type: 'image' },
-                    button: { text: 'Utiliser cette image' },
-                    multiple: false
-                });
-
-                mediaFrame.on('select', function () {
-                    const attachment = mediaFrame.state().get('selection').first().toJSON();
-                    updateState(function (draft) {
-                        draft.imageUrl = attachment.url || '';
-                        draft.imageAlt = draft.imageAlt || attachment.alt || attachment.title || '';
-                        draft.zones = [];
-                    });
-                });
-            }
-
-            mediaFrame.open();
-        });
-
         elements.clearImage.addEventListener('click', function () {
             activeZoneId = null;
+
+            const removeButton = getNativeMediaRemoveButton();
+            if (removeButton) {
+                removeButton.click();
+            }
+
             updateState(function (draft) {
                 draft.imageUrl = '';
                 draft.imageAlt = '';
@@ -346,17 +418,38 @@
             });
         });
 
+        if (nativeMediaInput) {
+            nativeMediaInput.addEventListener('change', syncFromNativeMediaField);
+            nativeMediaInput.addEventListener('input', syncFromNativeMediaField);
+        }
+
+        document.addEventListener('click', function (event) {
+            if (!event.target) {
+                return;
+            }
+
+            if (nativeMediaRow && event.target.closest('.cmb2-id-epk-draft-image-source .cmb2-upload-button, .cmb2-id-epk-draft-image-source .cmb2-remove-file-button')) {
+                window.setTimeout(syncFromNativeMediaField, 300);
+            }
+        });
+
+        if (!state.imageUrl && nativeMediaInput && nativeMediaInput.value) {
+            state.imageUrl = String(nativeMediaInput.value || '').trim();
+        }
+
         elements.resetZones.addEventListener('click', function () {
             if (!state.zones.length) {
                 return;
             }
-            if (!window.confirm('Supprimer toutes les zones du brouillon EPK ?')) {
+
+            if (!window.confirm('Êtes-vous sûr de vouloir supprimer toutes les zones ?')) {
                 return;
             }
+
+            activeZoneId = null;
             updateState(function (draft) {
                 draft.zones = [];
             });
-            activeZoneId = null;
         });
 
         elements.zonesList.addEventListener('click', function (event) {
@@ -373,6 +466,7 @@
                         return zone.id !== zoneId;
                     });
                 });
+
                 if (activeZoneId === zoneId) {
                     activeZoneId = null;
                 }
@@ -398,49 +492,64 @@
                 const zone = draft.zones.find(function (entry) {
                     return entry.id === zoneId;
                 });
+
                 if (!zone) {
                     return;
                 }
+
                 zone[field] = event.target.value;
+                if (field === 'hrefValue' && !zone.label) {
+                    zone.label = event.target.value;
+                }
             });
         });
 
         validationInput.addEventListener('change', refreshWorkflowState);
 
-        elements.previewLink.addEventListener('click', function (event) {
-            if (hasUnsavedChanges() && !window.confirm('Le brouillon a changé dans cette page mais n’est pas encore enregistré. Ouvrir malgré tout la dernière version sauvegardée ?')) {
-                event.preventDefault();
-            }
-        });
+        if (elements.previewLink) {
+            elements.previewLink.addEventListener('click', function (event) {
+                if (hasUnsavedChanges() && !window.confirm('Le brouillon a changé dans cette page mais n’est pas encore enregistré. Ouvrir malgré tout la dernière version sauvegardée ?')) {
+                    event.preventDefault();
+                }
+            });
+        }
 
-        elements.publishButton.addEventListener('click', function () {
-            if (hasUnsavedChanges()) {
-                window.alert('Enregistrez d’abord la page Mayami Landing pour publier le dernier brouillon EPK.');
-                return;
-            }
+        if (elements.publishButton) {
+            elements.publishButton.addEventListener('click', function () {
+                if (hasUnsavedChanges()) {
+                    window.alert('Enregistrez d’abord la page Mayami Landing pour publier le dernier brouillon EPK.');
+                    return;
+                }
 
-            if (!validationInput.checked) {
-                window.alert('Cochez d’abord la validation finale EPK puis enregistrez la page.');
-                return;
-            }
+                if (!validationInput.checked) {
+                    window.alert('Cochez d’abord la validation finale EPK puis enregistrez la page.');
+                    return;
+                }
 
-            buildActionRequest('mayami_publish_epk_draft', root.dataset.publishNonce);
-        });
+                buildActionRequest('mayami_publish_epk_draft', root.dataset.publishNonce);
+            });
+        }
 
-        elements.unpublishButton.addEventListener('click', function () {
-            if (!window.confirm('Retirer l’EPK du front public ?')) {
-                return;
-            }
+        if (elements.unpublishButton) {
+            elements.unpublishButton.addEventListener('click', function () {
+                if (!window.confirm('Retirer l’EPK du front public ?')) {
+                    return;
+                }
 
-            buildActionRequest('mayami_unpublish_epk', root.dataset.unpublishNonce);
-        });
+                buildActionRequest('mayami_unpublish_epk', root.dataset.unpublishNonce);
+            });
+        }
 
-        elements.canvasImage.addEventListener('mousedown', function (event) {
+        elements.canvasOverlay.addEventListener('mousedown', function (event) {
             if (!state.imageUrl) {
                 return;
             }
 
-            const rect = elements.canvasImage.getBoundingClientRect();
+            if (event.target.closest('.mayami-epk-zone-box')) {
+                return;
+            }
+
+            const rect = elements.canvasOverlay.getBoundingClientRect();
             startX = clamp(event.clientX - rect.left, 0, rect.width);
             startY = clamp(event.clientY - rect.top, 0, rect.height);
             isDrawing = true;
@@ -459,7 +568,7 @@
                 return;
             }
 
-            const rect = elements.canvasImage.getBoundingClientRect();
+            const rect = elements.canvasOverlay.getBoundingClientRect();
             const currentX = clamp(event.clientX - rect.left, 0, rect.width);
             const currentY = clamp(event.clientY - rect.top, 0, rect.height);
             const left = Math.min(startX, currentX);
@@ -478,7 +587,7 @@
                 return;
             }
 
-            const rect = elements.canvasImage.getBoundingClientRect();
+            const rect = elements.canvasOverlay.getBoundingClientRect();
             const currentX = clamp(event.clientX - rect.left, 0, rect.width);
             const currentY = clamp(event.clientY - rect.top, 0, rect.height);
             const left = Math.min(startX, currentX);
@@ -490,7 +599,7 @@
             currentBox = null;
             isDrawing = false;
 
-            if (width < 12 || height < 12) {
+            if (width < 10 || height < 10) {
                 return;
             }
 

@@ -13,8 +13,7 @@
     'section_video_title',
     'section_release_title',
     'section_cta_title',
-    'section_footer_title',
-    'section_epk_title'
+    'section_footer_title'
   ];
 
   const MARQUEE_ITEM_TITLES = [
@@ -24,9 +23,7 @@
   ];
 
   const ACTIVE_SECTION_STORAGE_KEY = 'mayami_active_section_after_save';
-  const SECTION_ROW_SELECTORS = {
-    section_epk_title: ['.cmb2-id-section-epk-title', '.cmb2-id-epk-builder']
-  };
+  const SECTION_ROW_SELECTORS = {};
 
   let isOverviewMode = true;
   let pendingDeleteControl = null;
@@ -49,6 +46,7 @@
     setTimeout(removeNativePageHeading, 1200);
     createStickyNav();
     reorderSectionsInDom();
+    hideLandingEpkSection();
     bindSaveSectionPersistence();
     bindDeleteConfirmationGuard();
     setupAccordion();
@@ -1027,8 +1025,7 @@
       { id: 'section_video_title', label: 'Video' },
       { id: 'section_release_title', label: 'Release' },
       { id: 'section_cta_title', label: 'CTA' },
-      { id: 'section_footer_title', label: 'Footer' },
-      { id: 'section_epk_title', label: 'EPK' }
+      { id: 'section_footer_title', label: 'Footer' }
     ];
 
     // Trouver le conteneur du formulaire
@@ -1141,6 +1138,37 @@
 
     // Observer le scroll pour mettre à jour le bouton actif
     observeSections(sections);
+  }
+
+  function hideLandingEpkSection() {
+    const epkTitle = document.querySelector('.cmb2-id-section-epk-title');
+    if (!epkTitle) {
+      return;
+    }
+
+    const rowsToHide = [epkTitle];
+    let current = epkTitle.nextElementSibling;
+
+    while (current) {
+      const classNames = current.classList ? Array.from(current.classList) : [];
+      const isNextSectionTitle = classNames.some(function(className) {
+        return className.indexOf('cmb2-id-section-') === 0 && className.indexOf('-title') !== -1;
+      });
+
+      if (isNextSectionTitle) {
+        break;
+      }
+
+      if (current.classList && current.classList.contains('cmb-row')) {
+        rowsToHide.push(current);
+      }
+
+      current = current.nextElementSibling;
+    }
+
+    rowsToHide.forEach(function(row) {
+      row.style.display = 'none';
+    });
   }
 
   function setupAccordion() {
