@@ -717,6 +717,94 @@ function mayami_get_visual_links_export_dir() {
 }
 
 /**
+ * Resolve export target (base folder or safe subfolder) for Visual Links Builder.
+ *
+ * @param string $requested_subdir Optional subfolder relative to exports-html.
+ * @return array|WP_Error
+ */
+function mayami_get_visual_links_export_target($requested_subdir = '') {
+    $base_dir = mayami_get_visual_links_export_dir();
+    if (is_wp_error($base_dir)) {
+        return $base_dir;
+    }
+
+    $base_url = trailingslashit(get_template_directory_uri()) . 'visual-link-builder/exports-html';
+    $raw_subdir = trim(str_replace('\\', '/', (string) $requested_subdir), "/ \t\n\r\0\x0B");
+
+    if ($raw_subdir === '') {
+        return array(
+            'dir' => $base_dir,
+            'url' => $base_url,
+            'subdir' => '',
+        );
+    }
+
+    $segments = array_values(array_filter(explode('/', $raw_subdir), static function($segment) {
+        return $segment !== '';
+    }));
+
+    $safe_segments = array();
+    foreach ($segments as $segment) {
+        $safe = sanitize_file_name(remove_accents((string) $segment));
+        $safe = trim((string) $safe, " .-_\t\n\r\0\x0B");
+        if ($safe !== '') {
+            $safe_segments[] = $safe;
+        }
+    }
+
+    if (empty($safe_segments)) {
+        return new WP_Error('invalid_export_subdir', 'Sous-dossier d\'export invalide.');
+    }
+
+    $safe_subdir = implode('/', $safe_segments);
+    $target_dir = trailingslashit($base_dir) . $safe_subdir;
+
+    if (!is_dir($target_dir) && !wp_mkdir_p($target_dir)) {
+        return new WP_Error('export_subdir_create_failed', 'Impossible de créer le sous-dossier d\'export: ' . $safe_subdir . '.');
+    }
+
+    if (!is_writable($target_dir)) {
+        return new WP_Error('export_subdir_not_writable', 'Le sous-dossier d\'export n\'est pas accessible en écriture: ' . $safe_subdir . '.');
+    }
+
+    $encoded_segments = array_map('rawurlencode', $safe_segments);
+    $target_url = trailingslashit($base_url) . implode('/', $encoded_segments);
+
+    return array(
+        'dir' => $target_dir,
+        'url' => $target_url,
+        'subdir' => $safe_subdir,
+    );
+}
+
+/**
+ * Build a normalized export subdir for one visual and one template bucket.
+ *
+ * Result format: <visual-slug>/Template-Email or <visual-slug>/Template-HTML
+ *
+ * @param string $draft_name   Visual name.
+ * @param string $export_bucket template-email|template-html.
+ * @return string
+ */
+function mayami_build_visual_links_export_subdir($draft_name = '', $export_bucket = '') {
+    $safe_name = sanitize_file_name(remove_accents((string) $draft_name));
+    $safe_name = trim((string) $safe_name, " .-_\t\n\r\0\x0B");
+    if ($safe_name === '') {
+        $safe_name = 'visual-links';
+    }
+
+    $bucket_key = sanitize_key((string) $export_bucket);
+    if ($bucket_key === 'template-email') {
+        return $safe_name . '/Template-Email';
+    }
+    if ($bucket_key === 'template-html') {
+        return $safe_name . '/Template-HTML';
+    }
+
+    return $safe_name;
+}
+
+/**
  * AJAX: upload one generated image slice for email templates.
  */
 function mayami_ajax_upload_visual_links_slice() {
@@ -777,12 +865,18 @@ function mayami_ajax_upload_visual_links_slice() {
     }
     $filename = $filename_base . '.' . $mime_to_ext[$detected_mime];
 
-    $export_dir = mayami_get_visual_links_export_dir();
-    if (is_wp_error($export_dir)) {
-        wp_send_json_error(array('message' => $export_dir->get_error_message()), 500);
+    $requested_subdir = isset($_POST['export_subdir']) ? sanitize_text_field(wp_unslash((string) $_POST['export_subdir'])) : '';
+    $draft_name = isset($_POST['draft_name']) ? sanitize_text_field(wp_unslash((string) $_POST['draft_name'])) : '';
+    $export_bucket = isset($_POST['export_bucket']) ? sanitize_key(wp_unslash((string) $_POST['export_bucket'])) : '';
+    if ($requested_subdir === '' && $export_bucket !== '') {
+        $requested_subdir = mayami_build_visual_links_export_subdir($draft_name, $export_bucket);
+    }
+    $export_target = mayami_get_visual_links_export_target($requested_subdir);
+    if (is_wp_error($export_target)) {
+        wp_send_json_error(array('message' => $export_target->get_error_message()), 500);
     }
 
-    $target_path = trailingslashit($export_dir) . $filename;
+    $target_path = trailingslashit((string) $export_target['dir']) . $filename;
     $moved = move_uploaded_file($tmp_name, $target_path);
     if (!$moved) {
         $raw_data = file_get_contents($tmp_name);
@@ -791,12 +885,13 @@ function mayami_ajax_upload_visual_links_slice() {
         }
     }
 
-    $file_url = trailingslashit(get_template_directory_uri()) . 'visual-link-builder/exports-html/' . rawurlencode($filename);
+    $file_url = trailingslashit((string) $export_target['url']) . rawurlencode($filename);
 
     wp_send_json_success(array(
         'filename' => $filename,
         'path' => $target_path,
         'url' => $file_url,
+        'subdir' => (string) $export_target['subdir'],
     ));
 }
 add_action('wp_ajax_mayami_upload_visual_links_slice', 'mayami_ajax_upload_visual_links_slice');
@@ -831,12 +926,17 @@ function mayami_ajax_export_epk_html() {
     }
     $filename = $safe_name . '.html';
 
-    $export_dir = mayami_get_visual_links_export_dir();
-    if (is_wp_error($export_dir)) {
-        wp_send_json_error(array('message' => $export_dir->get_error_message()), 500);
+    $requested_subdir = isset($_POST['export_subdir']) ? sanitize_text_field(wp_unslash((string) $_POST['export_subdir'])) : '';
+    $export_bucket = isset($_POST['export_bucket']) ? sanitize_key(wp_unslash((string) $_POST['export_bucket'])) : '';
+    if ($requested_subdir === '' && $export_bucket !== '') {
+        $requested_subdir = mayami_build_visual_links_export_subdir($draft_name, $export_bucket);
+    }
+    $export_target = mayami_get_visual_links_export_target($requested_subdir);
+    if (is_wp_error($export_target)) {
+        wp_send_json_error(array('message' => $export_target->get_error_message()), 500);
     }
 
-    $export_path = trailingslashit($export_dir) . $filename;
+    $export_path = trailingslashit((string) $export_target['dir']) . $filename;
     $written = file_put_contents($export_path, $html);
     if ($written === false) {
         $last_error = error_get_last();
@@ -844,7 +944,7 @@ function mayami_ajax_export_epk_html() {
         wp_send_json_error(array('message' => 'Échec de l\'écriture du fichier ' . $filename . ' (' . $last_error_message . ').'), 500);
     }
 
-    $export_url = trailingslashit(get_template_directory_uri()) . 'visual-link-builder/exports-html/' . rawurlencode($filename);
+    $export_url = trailingslashit((string) $export_target['url']) . rawurlencode($filename);
 
     // Persist export URL into the draft store so it survives page refreshes.
     $draft_id = isset($_POST['draft_id']) ? sanitize_text_field(wp_unslash($_POST['draft_id'])) : '';
@@ -862,6 +962,7 @@ function mayami_ajax_export_epk_html() {
         'url'      => $export_url,
         'filename' => $filename,
         'bytes'    => (int) $written,
+        'subdir'   => (string) $export_target['subdir'],
     ));
 }
 add_action('wp_ajax_mayami_export_epk_html', 'mayami_ajax_export_epk_html');

@@ -1935,7 +1935,7 @@
             return cleanHref.substring(1).replace(/[^a-zA-Z0-9_-]/g, '');
         }
 
-        async function exportHtmlFromBuilder(htmlDocument, draftName, draftId) {
+        async function exportHtmlFromBuilder(htmlDocument, draftName, draftId, exportSubdir, exportBucket) {
             if (!wpAjaxUrl || !wpNonce) {
                 return { success: false, message: 'Configuration AJAX manquante.' };
             }
@@ -1946,6 +1946,8 @@
             formData.append('draft_id', draftId || '');
             formData.append('draft_name', draftName || 'visual-links');
             formData.append('html', htmlDocument || '');
+            formData.append('export_subdir', exportSubdir || '');
+            formData.append('export_bucket', exportBucket || '');
 
             try {
                 const response = await fetch(wpAjaxUrl, {
@@ -1992,7 +1994,13 @@
 
         window.mayamiExportVisualLinksHtmlFromOpener = async function(payload) {
             const data = payload || {};
-            return exportHtmlFromBuilder(data.htmlDocument || '', data.draftName || '', data.draftId || '');
+            return exportHtmlFromBuilder(
+                data.htmlDocument || '',
+                data.draftName || '',
+                data.draftId || '',
+                data.exportSubdir || '',
+                data.exportBucket || ''
+            );
         };
 
         // Legacy alias kept for compatibility with previously generated preview windows.
@@ -2294,7 +2302,9 @@
                     const result = await exportHtmlFromBuilder(
                         previewData.htmlDocument,
                         (draftNameInput.value || '').trim(),
-                        currentDraftId || ''
+                        currentDraftId || '',
+                        '',
+                        'template-html'
                     );
 
                     if (!result || !result.success) {
@@ -2444,15 +2454,19 @@
             });
         }
 
-        async function uploadEmailSlice(blob, filename) {
+        async function uploadEmailSlice(blob, filename, exportSubdir, exportBucket) {
             if (!wpAjaxUrl || !wpNonce) {
                 return { success: false, message: 'Configuration AJAX manquante.' };
             }
 
+            const visualName = (draftNameInput.value || '').trim() || 'visual-links';
             const formData = new FormData();
             formData.append('action', 'mayami_upload_visual_links_slice');
             formData.append('nonce', wpNonce);
+            formData.append('draft_name', visualName);
             formData.append('filename', filename);
+            formData.append('export_subdir', exportSubdir || '');
+            formData.append('export_bucket', exportBucket || '');
             formData.append('slice_file', blob, filename);
 
             try {
@@ -2536,7 +2550,7 @@ ${tableHtml}
                     ? 'png'
                     : (blobType === 'image/webp' ? 'webp' : 'jpg');
                 const filename = exportPrefix + '-slice-' + String(i + 1).padStart(3, '0') + '.' + extension;
-                const upload = await uploadEmailSlice(blob, filename);
+                const upload = await uploadEmailSlice(blob, filename, '', 'template-email');
                 if (!upload.success || !upload.url) {
                     throw new Error(upload.message || ('Échec upload slice ' + (i + 1) + '.'));
                 }
@@ -2548,7 +2562,7 @@ ${tableHtml}
             downloadTextFile(templateHtml, localFilename, 'text/html;charset=utf-8');
 
             const exportName = (safeBaseName || 'template-email') + '-email-template';
-            const exportResult = await exportHtmlFromBuilder(templateHtml, exportName, currentDraftId || '');
+            const exportResult = await exportHtmlFromBuilder(templateHtml, exportName, currentDraftId || '', '', 'template-email');
             if (exportResult && exportResult.success) {
                 applyExportResult(exportResult.url || '', exportResult.filename || localFilename, templateHtml);
                 setDraftStatus('Template e-mail généré (image découpée), téléchargé et exporté dans exports-html.');
