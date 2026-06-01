@@ -304,9 +304,20 @@
         }
 
         .export-quick-actions__btn.download {
-            width: 100%;
             background: #22c55e;
             color: #07210f;
+        }
+
+        .export-quick-actions__btn.code {
+            background: #dbeafe;
+            color: #1e3a8a;
+        }
+
+        .export-quick-actions__btns-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 6px;
+            margin-top: 6px;
         }
         
         .btn {
@@ -722,7 +733,10 @@
                             <input type="text" id="exportQuickUrl" class="export-quick-actions__url" readonly>
                             <button type="button" id="copyExportQuickBtn" class="export-quick-actions__btn copy">Copier l'URL</button>
                         </div>
-                        <button type="button" id="downloadExportQuickBtn" class="export-quick-actions__btn download">Télécharger</button>
+                        <div class="export-quick-actions__btns-row">
+                            <button type="button" id="downloadExportQuickBtn" class="export-quick-actions__btn download">Télécharger HTML</button>
+                            <button type="button" id="downloadExportCodeQuickBtn" class="export-quick-actions__btn code">Télécharger Code</button>
+                        </div>
                     </div>
                 </div>
 
@@ -815,6 +829,7 @@
         const exportQuickUrl = document.getElementById('exportQuickUrl');
         const copyExportQuickBtn = document.getElementById('copyExportQuickBtn');
         const downloadExportQuickBtn = document.getElementById('downloadExportQuickBtn');
+        const downloadExportCodeQuickBtn = document.getElementById('downloadExportCodeQuickBtn');
         const zoneCount = document.getElementById('zoneCount');
         const linkedCount = document.getElementById('linkedCount');
         const addZoneBtn = document.getElementById('addZoneBtn');
@@ -1459,6 +1474,13 @@
                 lastSavedSignature = getCurrentSignature();
                 setDraftStatus('Visuel chargé depuis la base.');
                 updateGenerateButtonState();
+
+                // Restore quick export actions if a previous export URL was persisted.
+                const restoredExportUrl = String(result.data.export_url || '').trim();
+                const restoredExportFilename = String(result.data.export_filename || '').trim();
+                if (restoredExportUrl) {
+                    applyExportResult(restoredExportUrl, restoredExportFilename || 'visual-links.html', '');
+                }
             } catch (error) {
                 setDraftStatus('Impossible de charger le visuel.', true);
             }
@@ -2576,6 +2598,10 @@ ${tableHtml}
 
         downloadExportQuickBtn.addEventListener('click', () => {
             downloadLastExportHtml();
+        });
+
+        downloadExportCodeQuickBtn.addEventListener('click', () => {
+            downloadLastExportHtmlCode();
         });
 
         closeExportResultModalBtn.addEventListener('click', () => {

@@ -682,10 +682,12 @@ function mayami_ajax_get_epk_draft() {
 
     $draft = $store[$draft_id];
     wp_send_json_success(array(
-        'id' => $draft['id'],
-        'name' => $draft['name'],
-        'payload' => $draft['payload'],
-        'updatedAt' => $draft['updated_at'],
+        'id'              => $draft['id'],
+        'name'            => $draft['name'],
+        'payload'         => $draft['payload'],
+        'updatedAt'       => $draft['updated_at'],
+        'export_url'      => isset($draft['export_url'])      ? (string) $draft['export_url']      : '',
+        'export_filename' => isset($draft['export_filename']) ? (string) $draft['export_filename'] : '',
     ));
 }
 add_action('wp_ajax_mayami_get_epk_draft', 'mayami_ajax_get_epk_draft');
@@ -844,11 +846,22 @@ function mayami_ajax_export_epk_html() {
 
     $export_url = trailingslashit(get_template_directory_uri()) . 'visual-link-builder/exports-html/' . rawurlencode($filename);
 
+    // Persist export URL into the draft store so it survives page refreshes.
+    $draft_id = isset($_POST['draft_id']) ? sanitize_text_field(wp_unslash($_POST['draft_id'])) : '';
+    if ($draft_id !== '') {
+        $store = mayami_get_epk_drafts_store();
+        if (!empty($store[$draft_id]) && is_array($store[$draft_id])) {
+            $store[$draft_id]['export_url']      = $export_url;
+            $store[$draft_id]['export_filename'] = $filename;
+            mayami_update_epk_drafts_store($store);
+        }
+    }
+
     wp_send_json_success(array(
-        'path' => $export_path,
-        'url' => $export_url,
+        'path'     => $export_path,
+        'url'      => $export_url,
         'filename' => $filename,
-        'bytes' => (int) $written,
+        'bytes'    => (int) $written,
     ));
 }
 add_action('wp_ajax_mayami_export_epk_html', 'mayami_ajax_export_epk_html');
