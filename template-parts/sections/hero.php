@@ -80,7 +80,7 @@ $hero_logo_alt = trim((string) cmb2_get_option('mayami_landing_options', 'hero_l
         <?php endif; ?>
     </header>
 
-    <div class="relative z-10 mx-auto grid max-w-7xl grid-cols-1 items-center gap-10 px-5 pb-10 pt-10 sm:px-8 sm:pb-16 sm:pt-14 md:grid-cols-[1.15fr_1fr] md:gap-14 md:pb-32 md:pt-16">
+    <div class="relative z-10 mx-auto grid max-w-7xl grid-cols-1 items-center gap-10 px-5 pb-10 pt-5 sm:px-8 sm:pb-16 sm:pt-8 md:grid-cols-[1.15fr_1fr] md:gap-14 md:pb-32 md:pt-10">
         <!-- Hero copy -->
         <div>
             <div class="mb-4 flex justify-end">
