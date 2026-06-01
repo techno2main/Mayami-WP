@@ -238,6 +238,41 @@
             color: #333;
         }
 
+        .block-head {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
+            margin-bottom: 8px;
+        }
+
+        .block-head h3 {
+            margin: 0;
+        }
+
+        .radio-inline {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 12px;
+            color: #475569;
+        }
+
+        .radio-inline label {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .preview-helper {
+            margin: 4px 0 8px;
+            font-size: 12px;
+            color: #64748b;
+            line-height: 1.4;
+        }
+
         .draft-name-input {
             width: 100%;
             padding: 8px 10px;
@@ -247,11 +282,20 @@
             font-size: 13px;
         }
 
+        .field-label {
+            display: block;
+            margin: 2px 0 6px;
+            font-size: 12px;
+            font-weight: 600;
+            color: #475569;
+        }
+
         .draft-status {
             margin-top: 6px;
             font-size: 12px;
             color: #475569;
             min-height: 16px;
+            white-space: pre-line;
         }
 
         .export-quick-actions {
@@ -296,6 +340,14 @@
             font-size: 12px;
             font-weight: 600;
             cursor: pointer;
+        }
+
+        .export-quick-actions__btn:disabled {
+            background: #e5e7eb !important;
+            color: #94a3b8 !important;
+            cursor: not-allowed;
+            box-shadow: none;
+            filter: saturate(0);
         }
 
         .export-quick-actions__btn.copy {
@@ -668,6 +720,14 @@
             cursor: pointer;
         }
 
+        .export-modal__btn:disabled {
+            background: #e5e7eb !important;
+            color: #94a3b8 !important;
+            cursor: not-allowed;
+            box-shadow: none;
+            filter: saturate(0);
+        }
+
         .export-modal__btn.copy {
             background: #e2e8f0;
             color: #0f172a;
@@ -693,6 +753,23 @@
         .export-modal__btn.close {
             background: #0f172a;
             color: #fff;
+        }
+
+        .pdf-inline-alert {
+            display: none;
+            margin-top: 10px;
+            border: 1px solid #f59e0b;
+            background: #fffbeb;
+            color: #7c2d12;
+            border-radius: 8px;
+            padding: 10px 11px;
+            font-size: 12px;
+            line-height: 1.45;
+            font-weight: 600;
+        }
+
+        .pdf-inline-alert.is-open {
+            display: block;
         }
     </style>
 </head>
@@ -725,22 +802,49 @@
                 <div class="draft-box">
                     <h3>💾 Visuel</h3>
                     <input type="text" id="draftNameInput" class="draft-name-input" placeholder="Nom du visuel (obligatoire)">
-                    <input type="url" id="pdfUrlInput" class="draft-name-input" placeholder="Lien PDF (https://votresite.com/fichier.pdf)">
-                    <button class="btn btn-secondary" id="saveDraftBtn">Enregistrer le visuel</button>
+                </div>
+
+                <div class="draft-box">
+                    <div class="block-head">
+                        <h3>📄 Mettre un lien PDF</h3>
+                        <div class="radio-inline" aria-label="Etat du header PDF">
+                            <label><input type="radio" name="pdfHeaderMode" id="pdfHeaderActive" value="active"> Actif</label>
+                            <label><input type="radio" name="pdfHeaderMode" id="pdfHeaderInactive" value="inactive" checked> Inactif</label>
+                        </div>
+                    </div>
+                    <div id="pdfFieldsWrap">
+                        <label for="pdfCtaTextInput" class="field-label">CTA</label>
+                        <input type="text" id="pdfCtaTextInput" class="draft-name-input" placeholder="Phrase d'appel à l'action (ex: Télécharger le PDF)">
+                        <label for="pdfUrlInput" class="field-label">URL</label>
+                        <input type="url" id="pdfUrlInput" class="draft-name-input" placeholder="Lien PDF (https://votresite.com/fichier.pdf)">
+                    </div>
+                    <div class="pdf-inline-alert" id="pdfInlineAlert" role="alert" aria-live="polite">
+                        Le mode PDF a changé. La PREVIEW est déjà à jour. Cliquez sur SAUVEGARDER pour conserver ce réglage en base.
+                    </div>
+                </div>
+
+                <div class="draft-box">
+                    <button class="btn btn-secondary" id="saveDraftBtn">💾 SAUVEGARDER</button>
+                </div>
+
+                <div class="draft-box">
+                    <h3>👁️ Preview</h3>
+                    <p class="preview-helper">Relancer PREVIEW puis EXPORTER TEMPLATE.</p>
                     <div class="draft-status" id="draftStatus">Visuel non sauvegardé en base.</div>
                     <button class="btn btn-primary" id="previewBtn" disabled style="margin-top:8px;">
                         👁️ Preview
                     </button>
-                    <div class="export-quick-actions" id="exportQuickActions">
-                        <p class="export-quick-actions__title">Dernier export HTML</p>
-                        <div class="export-quick-actions__row">
-                            <input type="text" id="exportQuickUrl" class="export-quick-actions__url" readonly>
-                            <button type="button" id="copyExportQuickBtn" class="export-quick-actions__btn copy">Copier l'URL</button>
-                        </div>
-                        <div class="export-quick-actions__btns-row">
-                            <button type="button" id="downloadExportQuickBtn" class="export-quick-actions__btn download">Télécharger HTML</button>
-                            <button type="button" id="downloadExportCodeQuickBtn" class="export-quick-actions__btn code">Télécharger Code</button>
-                        </div>
+                </div>
+
+                <div class="draft-box export-quick-actions" id="exportQuickActions">
+                    <p class="export-quick-actions__title">Dernier export HTML</p>
+                    <div class="export-quick-actions__row">
+                        <input type="text" id="exportQuickUrl" class="export-quick-actions__url" readonly>
+                        <button type="button" id="copyExportQuickBtn" class="export-quick-actions__btn copy">Copier l'URL</button>
+                    </div>
+                    <div class="export-quick-actions__btns-row">
+                        <button type="button" id="downloadExportQuickBtn" class="export-quick-actions__btn download">Télécharger HTML</button>
+                        <button type="button" id="downloadExportCodeQuickBtn" class="export-quick-actions__btn code">Télécharger Code</button>
                     </div>
                 </div>
 
@@ -825,6 +929,9 @@
         const clearAllBtn = document.getElementById('clearAllBtn');
         const saveDraftBtn = document.getElementById('saveDraftBtn');
         const draftNameInput = document.getElementById('draftNameInput');
+        const pdfHeaderActive = document.getElementById('pdfHeaderActive');
+        const pdfHeaderInactive = document.getElementById('pdfHeaderInactive');
+        const pdfCtaTextInput = document.getElementById('pdfCtaTextInput');
         const pdfUrlInput = document.getElementById('pdfUrlInput');
         const draftStatus = document.getElementById('draftStatus');
         const exportQuickActions = document.getElementById('exportQuickActions');
@@ -846,6 +953,8 @@
         const downloadExportHtmlBtn = document.getElementById('downloadExportHtmlBtn');
         const downloadExportCodeBtn = document.getElementById('downloadExportCodeBtn');
         const closeExportResultModalBtn = document.getElementById('closeExportResultModalBtn');
+        const pdfInlineAlert = document.getElementById('pdfInlineAlert');
+        const pdfFieldsWrap = document.getElementById('pdfFieldsWrap');
 
         const queryParams = new URLSearchParams(window.location.search);
         const wpAjaxUrl = queryParams.get('wp_ajax_url') || '';
@@ -859,6 +968,7 @@
         let activeZoneId = null;
         let currentDraftId = queryParams.get('epk_draft_id') || '';
         let lastSavedSignature = '';
+        let lastSavedPreviewGateSignature = '';
         let isResizing = false;
         let resizeState = null;
         let isDragging = false;
@@ -872,9 +982,12 @@
         let lastTemplateEmailHtmlDocument = '';
         let lastTemplateEmailFilename = '';
         let lastTemplateEmailPublicUrl = '';
+        let lastTemplateEmailExportUpdatedAt = '';
         let lastTemplateHtmlHtmlDocument = '';
         let lastTemplateHtmlFilename = '';
         let lastTemplateHtmlPublicUrl = '';
+        let lastTemplateHtmlExportUpdatedAt = '';
+        let lastDraftUpdatedAt = '';
         let copyFeedbackTimer = null;
 
         const MIN_ZONE_SIZE = 12;
@@ -955,12 +1068,23 @@
             lastTemplateEmailHtmlDocument = '';
             lastTemplateEmailFilename = '';
             lastTemplateEmailPublicUrl = '';
+            lastTemplateEmailExportUpdatedAt = '';
             lastTemplateHtmlHtmlDocument = '';
             lastTemplateHtmlFilename = '';
             lastTemplateHtmlPublicUrl = '';
+            lastTemplateHtmlExportUpdatedAt = '';
             exportQuickUrl.value = '';
             copyExportQuickBtn.disabled = true;
+            setExportDownloadButtonsEnabled(false);
             setExportQuickActionsVisible(false);
+        }
+
+        function setExportDownloadButtonsEnabled(enabled) {
+            const isEnabled = !!enabled;
+            downloadExportQuickBtn.disabled = !isEnabled;
+            downloadExportCodeQuickBtn.disabled = !isEnabled;
+            downloadExportHtmlBtn.disabled = !isEnabled;
+            downloadExportCodeBtn.disabled = !isEnabled;
         }
 
         function applyExportResult(url, filename, htmlDocument) {
@@ -970,6 +1094,7 @@
 
             exportQuickUrl.value = lastExportedPublicUrl || 'URL non disponible';
             copyExportQuickBtn.disabled = !lastExportedPublicUrl;
+            setExportDownloadButtonsEnabled(!!lastExportedPublicUrl);
             setExportQuickActionsVisible(true);
         }
 
@@ -1376,10 +1501,22 @@
             return raw;
         }
 
+        function normalizePdfCtaText(rawValue) {
+            const fallback = 'DOWNLOAD THIS MAYAMI ONESHEET - CLICKABLE IN PDF';
+            const value = String(rawValue || '').trim().replace(/\s+/g, ' ');
+            return value || fallback;
+        }
+
+        function isPdfHeaderEnabled() {
+            return !!(pdfHeaderActive && pdfHeaderActive.checked);
+        }
+
         function serializeDraftPayload() {
             const dims = getCanvasDimensions();
             return {
                 imageUrl: imageUrl || '',
+                pdfHeaderEnabled: isPdfHeaderEnabled(),
+                pdfCtaText: normalizePdfCtaText(pdfCtaTextInput.value),
                 pdfUrl: normalizePdfUrl(pdfUrlInput.value),
                 canvasWidth: dims.width,
                 canvasHeight: dims.height,
@@ -1399,13 +1536,41 @@
             return JSON.stringify(serializeDraftPayload());
         }
 
+        function getCurrentPreviewGateSignature() {
+            const payload = serializeDraftPayload();
+            const gatePayload = {
+                imageUrl: payload.imageUrl || '',
+                canvasWidth: Number(payload.canvasWidth) || 0,
+                canvasHeight: Number(payload.canvasHeight) || 0,
+                zones: Array.isArray(payload.zones) ? payload.zones : []
+            };
+            return JSON.stringify(gatePayload);
+        }
+
         function setDraftStatus(text, isError = false) {
             draftStatus.textContent = text;
             draftStatus.style.color = isError ? '#b91c1c' : '#475569';
         }
 
+        function setPdfInlineAlertVisible(visible, message) {
+            if (!pdfInlineAlert) {
+                return;
+            }
+            if (typeof message === 'string' && message.trim() !== '') {
+                pdfInlineAlert.textContent = message.trim();
+            }
+            pdfInlineAlert.classList.toggle('is-open', !!visible);
+        }
+
+        function syncPdfFieldsVisibility() {
+            if (!pdfFieldsWrap) {
+                return;
+            }
+            pdfFieldsWrap.style.display = isPdfHeaderEnabled() ? '' : 'none';
+        }
+
         function updateGenerateButtonState() {
-            const hasSavedServerState = !!currentDraftId && !!lastSavedSignature && getCurrentSignature() === lastSavedSignature;
+            const hasSavedServerState = !!currentDraftId && !!lastSavedPreviewGateSignature && getCurrentPreviewGateSignature() === lastSavedPreviewGateSignature;
             const hasZones = zones.length > 0;
             const canRun = hasSavedServerState && hasZones;
             previewBtn.disabled = !canRun;
@@ -1511,7 +1676,9 @@
 
                 currentDraftId = result.data.id;
                 lastSavedSignature = getCurrentSignature();
+                lastSavedPreviewGateSignature = getCurrentPreviewGateSignature();
                 setDraftStatus('Visuel enregistré en base.');
+                setPdfInlineAlertVisible(false);
                 updateGenerateButtonState();
             } catch (error) {
                 setDraftStatus('Impossible d\'enregistrer le visuel (erreur réseau).', true);
@@ -1547,6 +1714,12 @@
 
                 const payload = result.data.payload || {};
                 imageUrl = payload.imageUrl || '';
+                const savedPdfHeaderEnabled = payload.pdfHeaderEnabled === true;
+                pdfHeaderActive.checked = !!savedPdfHeaderEnabled;
+                pdfHeaderInactive.checked = !savedPdfHeaderEnabled;
+                syncPdfFieldsVisibility();
+                setPdfInlineAlertVisible(false);
+                pdfCtaTextInput.value = normalizePdfCtaText(payload.pdfCtaText || '');
                 pdfUrlInput.value = normalizePdfUrl(payload.pdfUrl || '');
                 const rawZones = Array.isArray(payload.zones) ? payload.zones : [];
 
@@ -1610,32 +1783,52 @@
                 }).filter(zone => zone.width > 0 && zone.height > 0);
 
                 draftNameInput.value = result.data.name || '';
+                lastDraftUpdatedAt = String(result.data.updatedAt || '').trim();
                 renderZoneOverlays();
                 updateZonesList();
                 setAddZoneMode(false);
                 lastSavedSignature = getCurrentSignature();
+                lastSavedPreviewGateSignature = getCurrentPreviewGateSignature();
                 setDraftStatus('Visuel chargé depuis la base.');
                 updateGenerateButtonState();
 
                 // Restore quick export actions if a previous export URL was persisted.
                 const restoredTemplateEmailExportUrl = String(result.data.template_email_export_url || '').trim();
                 const restoredTemplateEmailExportFilename = String(result.data.template_email_export_filename || '').trim();
+                const restoredTemplateEmailExportUpdatedAt = String(result.data.template_email_export_updated_at || '').trim();
                 const restoredTemplateHtmlExportUrl = String(result.data.template_html_export_url || '').trim();
                 const restoredTemplateHtmlExportFilename = String(result.data.template_html_export_filename || '').trim();
+                const restoredTemplateHtmlExportUpdatedAt = String(result.data.template_html_export_updated_at || '').trim();
                 if (restoredTemplateEmailExportUrl) {
                     lastTemplateEmailPublicUrl = restoredTemplateEmailExportUrl;
                     lastTemplateEmailFilename = restoredTemplateEmailExportFilename || 'template-email.html';
+                    lastTemplateEmailExportUpdatedAt = restoredTemplateEmailExportUpdatedAt;
                     void ensureTemplateEmailHtmlDocument();
                 }
                 if (restoredTemplateHtmlExportUrl) {
                     lastTemplateHtmlPublicUrl = restoredTemplateHtmlExportUrl;
                     lastTemplateHtmlFilename = restoredTemplateHtmlExportFilename || 'visual-links.html';
+                    lastTemplateHtmlExportUpdatedAt = restoredTemplateHtmlExportUpdatedAt;
                 }
                 const restoredExportUrl = restoredTemplateEmailExportUrl || restoredTemplateHtmlExportUrl || String(result.data.export_url || '').trim();
                 const restoredExportFilename = restoredTemplateEmailExportFilename || restoredTemplateHtmlExportFilename || String(result.data.export_filename || '').trim();
                 if (restoredExportUrl) {
                     applyExportResult(restoredExportUrl, restoredExportFilename || 'visual-links.html', '');
                     void ensureLastExportedHtmlDocument();
+
+                    // Export considéré à jour uniquement si Template-HTML et Template-Email
+                    // existent tous les deux et sont plus récents que le visuel sauvegardé.
+                    const hasBothExports = !!(restoredTemplateEmailExportUrl && restoredTemplateHtmlExportUrl);
+                    const htmlFresh = !!(restoredTemplateHtmlExportUrl && restoredTemplateHtmlExportUpdatedAt && lastDraftUpdatedAt && restoredTemplateHtmlExportUpdatedAt >= lastDraftUpdatedAt);
+                    const emailFresh = !!(restoredTemplateEmailExportUrl && restoredTemplateEmailExportUpdatedAt && lastDraftUpdatedAt && restoredTemplateEmailExportUpdatedAt >= lastDraftUpdatedAt);
+                    const exportsFresh = hasBothExports && htmlFresh && emailFresh;
+
+                    if (!exportsFresh) {
+                        setExportDownloadButtonsEnabled(false);
+                        setDraftStatus('Visuel chargé depuis la base.');
+                    }
+                } else {
+                    setExportDownloadButtonsEnabled(false);
                 }
             } catch (error) {
                 setDraftStatus('Impossible de charger le visuel.', true);
@@ -2326,6 +2519,14 @@
                 }
             }
             const builderUrlAttr = escapeAttr(builderUrl);
+            const previewPdfText = normalizePdfCtaText(pdfCtaTextInput ? pdfCtaTextInput.value : '');
+            const previewPdfUrl = normalizePdfUrl(pdfUrlInput ? pdfUrlInput.value : '');
+            const previewPdfEnabled = isPdfHeaderEnabled();
+            const previewPdfHasUrl = /^https?:\/\//i.test(previewPdfUrl);
+            const previewPdfNotice = (previewPdfEnabled && previewPdfHasUrl)
+                ? `<a href="${escapeAttr(previewPdfUrl)}" target="_blank" rel="noopener noreferrer" class="pdf-cta-preview__text">${escapeHtml(previewPdfText)}</a>`
+                : `<span class="pdf-cta-preview__text">${escapeHtml(previewPdfText)}</span>`;
+            const previewPdfClass = previewPdfEnabled ? 'active' : 'inactive';
 
             return `<!DOCTYPE html>
 <html lang="fr">
@@ -2386,6 +2587,43 @@
       padding: 14px;
       box-shadow: 0 8px 20px rgba(15,23,42,0.08);
     }
+        .pdf-cta-preview {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            margin: 0 auto 12px;
+            max-width: ${previewData.editorWidth}px;
+            text-align: center;
+            font-family: Arial, sans-serif;
+            font-size: 14px;
+            line-height: 1.35;
+            font-weight: 700;
+            letter-spacing: 0.2px;
+        }
+        .pdf-cta-preview__label {
+            display: inline-block;
+            border: 1px solid currentColor;
+            border-radius: 4px;
+            padding: 2px 6px;
+            font-size: 11px;
+            line-height: 1;
+            font-weight: 800;
+            text-transform: uppercase;
+        }
+        .pdf-cta-preview__text {
+            color: inherit;
+            text-decoration: none;
+        }
+        .pdf-cta-preview.active {
+            color: #dc2626;
+        }
+        .pdf-cta-preview.active .pdf-cta-preview__text {
+            text-decoration: underline;
+        }
+        .pdf-cta-preview.inactive {
+            color: #94a3b8;
+        }
         .preview-image {
             display: block;
             width: 100%;
@@ -2416,6 +2654,10 @@
   </div>
   <div class="status" id="statusBox"></div>
   <div class="preview-wrap">
+        <div class="pdf-cta-preview ${previewPdfClass}">
+            <span class="pdf-cta-preview__label">PDF</span>
+            ${previewPdfNotice}
+        </div>
     <div class="preview-card">
             <img id="previewImage" src="${escapeAttr(imageUrl)}" width="${previewData.editorWidth}" height="${previewData.editorHeight}" usemap="#${escapeAttr(previewData.mapName)}" alt="Visual link preview" class="preview-image">
             <map id="previewMap" name="${escapeAttr(previewData.mapName)}">
@@ -2757,8 +2999,10 @@
                         const emailWidth = Math.min(Number(previewData.imgWidth) || 600, 600);
                         const tableHtml = generateEmailTableHTML(uploadedSlices, previewData.imgWidth, emailWidth, (slice) => slice.url || '');
                         const pdfUrl = normalizePdfUrl(pdfUrlInput.value);
+                        const pdfCtaText = normalizePdfCtaText(pdfCtaTextInput.value);
+                        const pdfHeaderEnabled = isPdfHeaderEnabled();
                         const hasPdfUrl = /^https?:\/\//i.test(pdfUrl);
-                        const pdfBannerHtml = hasPdfUrl
+                        const pdfBannerHtml = (pdfHeaderEnabled && hasPdfUrl)
                                 ? `
     <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" style="border-collapse:collapse;width:100%;margin:0;padding:0;">
         <tr>
@@ -2768,7 +3012,7 @@
                         <td align="center" style="padding:0;margin:0;font-family:Arial,sans-serif;font-size:14px;line-height:1.4;">
                             <a href="${escapeAttr(pdfUrl)}" target="_blank" rel="noopener noreferrer" style="color:#dc2626;text-decoration:underline;font-weight:800;letter-spacing:0.2px;white-space:nowrap;">
                                 <span style="display:inline-block;font-size:11px;line-height:1;padding:2px 5px;border:1px solid #dc2626;border-radius:3px;color:#dc2626;vertical-align:middle;">PDF</span>
-                                <span style="display:inline-block;vertical-align:middle;margin-left:6px;">DOWNLOAD THIS MAYAMI ONESHEET - CLICKABLE IN PDF</span>
+                                <span style="display:inline-block;vertical-align:middle;margin-left:6px;">${escapeHtml(pdfCtaText)}</span>
                             </a>
                         </td>
                     </tr>
@@ -3014,6 +3258,26 @@ ${tableHtml}
             markDraftDirty(true);
         });
 
+        pdfCtaTextInput.addEventListener('input', () => {
+            markDraftDirty(true);
+        });
+
+        pdfHeaderActive.addEventListener('change', () => {
+            markDraftDirty(true);
+            syncPdfFieldsVisibility();
+            if (pdfHeaderActive.checked) {
+                setPdfInlineAlertVisible(true, 'Mode PDF activé. Cliquez sur SAUVEGARDER.');
+            }
+        });
+
+        pdfHeaderInactive.addEventListener('change', () => {
+            markDraftDirty(true);
+            syncPdfFieldsVisibility();
+            if (pdfHeaderInactive.checked) {
+                setPdfInlineAlertVisible(true, 'Mode PDF désactivé. Cliquez sur SAUVEGARDER.');
+            }
+        });
+
         pdfUrlInput.addEventListener('blur', () => {
             const normalized = normalizePdfUrl(pdfUrlInput.value);
             if (normalized !== (pdfUrlInput.value || '').trim()) {
@@ -3022,6 +3286,7 @@ ${tableHtml}
             }
         });
 
+        syncPdfFieldsVisibility();
         updateGenerateButtonState();
         loadDraftFromDatabase();
     </script>
