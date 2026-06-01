@@ -2994,28 +2994,9 @@
             }
         }
 
-        function scaleEmailAreasMarkup(areasMarkup, ratioX, ratioY) {
-            const safeRatioX = Number(ratioX) > 0 ? Number(ratioX) : 1;
-            const safeRatioY = Number(ratioY) > 0 ? Number(ratioY) : 1;
-            return String(areasMarkup || '').replace(/coords="(\d+),(\d+),(\d+),(\d+)"/g, (_match, x1, y1, x2, y2) => {
-                const sx1 = Math.round(Number(x1) * safeRatioX);
-                const sy1 = Math.round(Number(y1) * safeRatioY);
-                const sx2 = Math.round(Number(x2) * safeRatioX);
-                const sy2 = Math.round(Number(y2) * safeRatioY);
-                return 'coords="' + sx1 + ',' + sy1 + ',' + sx2 + ',' + sy2 + '"';
-            });
-        }
-
-        function buildIntegratedEmailTemplateHtmlDocument(previewData) {
+        function buildSlicedEmailTemplateHtmlDocument(emailWidth, uploadedSlices) {
             const title = escapeHtml((draftNameInput.value || '').trim() || 'Template e-mail');
-            const sourceWidth = Math.max(1, Number(previewData.editorWidth) || Number(previewData.imgWidth) || 600);
-            const sourceHeight = Math.max(1, Number(previewData.editorHeight) || Number(previewData.imgHeight) || 1);
-            const emailWidth = Math.min(sourceWidth, 600);
-            const scaleRatio = emailWidth / sourceWidth;
-            const emailHeight = Math.max(1, Math.round(sourceHeight * scaleRatio));
-            const mapName = 'emailMap' + Date.now();
-            const scaledAreasMarkup = scaleEmailAreasMarkup(previewData.areasMarkup, scaleRatio, scaleRatio);
-
+            const tableHtml = generateEmailTableHTML(uploadedSlices, emailWidth, emailWidth, (slice) => slice.url || '');
             const pdfUrl = normalizePdfUrl(pdfUrlInput.value);
             const pdfCtaText = normalizePdfCtaText(pdfCtaTextInput.value);
             const pdfHeaderEnabled = isPdfHeaderEnabled();
@@ -3049,30 +3030,168 @@
 </head>
 <body style="margin:0;padding:0;background:#ffffff;">
 ${pdfBannerHtml}
-    <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" style="border-collapse:collapse;width:100%;margin:0;padding:0;">
-      <tr>
-        <td align="center" style="padding:0;margin:0;">
-          <img src="${escapeAttr(imageUrl)}" width="${emailWidth}" height="${emailHeight}" usemap="#${escapeAttr(mapName)}" alt="Visual link layout" style="display:block;border:0;margin:0;padding:0;width:${emailWidth}px;height:${emailHeight}px;max-width:${emailWidth}px;">
-          <map name="${escapeAttr(mapName)}">
-            ${scaledAreasMarkup}
-          </map>
-        </td>
-      </tr>
-    </table>
+  <div style="margin:0 auto;max-width:${emailWidth}px;">
+${tableHtml}
+  </div>
 </body>
 </html>`;
         }
 
-        async function generateEmailTemplateFromPreviewData(previewData) {
-            const visualName = (draftNameInput.value || '').trim() || 'visual-links';
-            const templateHtml = buildIntegratedEmailTemplateHtmlDocument(previewData);
-            const localFilename = visualName + '.html';
+        function buildScaledEmailSlicesFromNaturalSlices(naturalSlices, sourceWidth, sourceHeight, targetWidth, targetHeight) {
+            const safeSourceWidth = Math.max(1, Number(sourceWidth) || 1);
+            const safeSourceHeight = Math.max(1, Number(sourceHeight) || 1);
+            const safeTargetWidth = Math.max(1, Number(targetWidth) || 1);
+            const safeTargetHeight = Math.max(1, Number(targetHeight) || 1);
+            const ratioX = safeTargetWidth / safeSourceWidth;
+            const ratioY = safeTargetHeight / safeSourceHeight;
 
+            const scaled = naturalSlices.map((slice) => ({
+                ...slice,
+                x: Math.round((Number(slice.x) || 0) * ratioX),
+                y: Math.round((Number(slice.y) || 0) * ratioY),
+                width: Math.max(1, Math.round((Number(slice.width) || 0) * ratioX)),
+                height: Math.max(1, Math.round((Number(slice.height) || 0) * ratioY))
+            }));
+
+            const rows = {};
+            scaled.forEach((slice) => {
+                if (!rows[slice.row]) rows[slice.row] = [];
+                rows[slice.row].push(slice);
+            });
+
+            Object.keys(rows).forEach((rowKey) => {
+                const rowSlices = rows[rowKey].sort((a, b) => a.x - b.x);
+                let consumed = 0;
+                rowSlices.forEach((slice, index) => {
+                    if (index === rowSlices.length - 1) {
+                        slice.width = Math.max(1, safeTargetWidth - consumed);
+                    }
+                    consumed += slice.width;
+                });
+            });
+
+            const byCols = {};
+            scaled.forEach((slice) => {
+                if (!byCols[slice.col]) byCols[slice.col] = [];
+                byCols[slice.col].push(slice);
+            });
+
+            Object.keys(byCols).forEach((colKey) => {
+                const colSlices = byCols[colKey].sort((a, b) => a.y - b.y);
+                let consumed = 0;
+                colSlices.forEach((slice, index) => {
+                    if (index === colSlices.length - 1) {
+                        slice.height = Math.max(1, safeTargetHeight - consumed);
+                    }
+                    consumed += slice.height;
+                });
+            });
+
+            return scaled;
+        }
+
+        function createScaledBaseCanvas(targetWidth, targetHeight) {
+            const canvas = document.createElement('canvas');
+            canvas.width = Math.max(1, Number(targetWidth) || 1);
+            canvas.height = Math.max(1, Number(targetHeight) || 1);
+            const ctx = canvas.getContext('2d');
+            if (!ctx) {
+                return null;
+            }
+            ctx.imageSmoothingEnabled = true;
+            ctx.imageSmoothingQuality = 'high';
+            ctx.drawImage(imageCanvas, 0, 0, canvas.width, canvas.height);
+            return canvas;
+        }
+
+        async function createSliceBlobFromSource(slice, sourceCanvas, outputType = 'image/png', outputQuality) {
+            return new Promise((resolve, reject) => {
+                if (!slice || !sourceCanvas || slice.width <= 0 || slice.height <= 0) {
+                    reject(new Error('Slice invalide.'));
+                    return;
+                }
+
+                const canvas = document.createElement('canvas');
+                canvas.width = slice.width;
+                canvas.height = slice.height;
+                const ctx = canvas.getContext('2d');
+                if (!ctx) {
+                    reject(new Error('Contexte canvas indisponible.'));
+                    return;
+                }
+
+                ctx.drawImage(
+                    sourceCanvas,
+                    slice.x,
+                    slice.y,
+                    slice.width,
+                    slice.height,
+                    0,
+                    0,
+                    slice.width,
+                    slice.height
+                );
+
+                canvas.toBlob((blob) => {
+                    if (!blob) {
+                        reject(new Error('Impossible de générer le blob image.'));
+                        return;
+                    }
+                    resolve(blob);
+                }, outputType, outputQuality);
+            });
+        }
+
+        async function generateEmailTemplateFromPreviewData(previewData) {
+            const naturalSlices = calculateImageSlices(previewData.scaleX, previewData.scaleY);
+            if (!naturalSlices.length) {
+                throw new Error('Aucune slice à générer.');
+            }
+
+            const visualName = (draftNameInput.value || '').trim() || 'visual-links';
+            const emailWidth = Math.min(Math.max(1, Number(previewData.imgWidth) || 600), 600);
+            const emailHeight = Math.max(1, Math.round((Number(previewData.imgHeight) || 1) * (emailWidth / Math.max(1, Number(previewData.imgWidth) || 1))));
+            const scaledSlices = buildScaledEmailSlicesFromNaturalSlices(
+                naturalSlices,
+                previewData.imgWidth,
+                previewData.imgHeight,
+                emailWidth,
+                emailHeight
+            );
+
+            const baseCanvas = createScaledBaseCanvas(emailWidth, emailHeight);
+            if (!baseCanvas) {
+                throw new Error('Impossible de préparer l\'image email.');
+            }
+
+            const slicesExportSubdir = visualName + '/Template-Email/img';
+            const draftBaseName = (draftNameInput.value || '').trim() || 'template-email';
+            const safeBaseName = draftBaseName
+                .replace(/[\\\/:*?"<>|]+/g, '')
+                .replace(/\s+/g, '-')
+                .toLowerCase();
+            const exportPrefix = (safeBaseName || 'template-email') + '-' + Date.now();
+            const uploadedSlices = [];
+
+            setDraftStatus('Génération template e-mail cliquable en cours...');
+            for (let i = 0; i < scaledSlices.length; i++) {
+                const slice = scaledSlices[i];
+                const filename = exportPrefix + '-slice-' + String(i + 1).padStart(3, '0') + '.png';
+                const blob = await createSliceBlobFromSource(slice, baseCanvas, 'image/png');
+                const upload = await uploadEmailSlice(blob, filename, slicesExportSubdir, 'template-email');
+                if (!upload.success || !upload.url) {
+                    throw new Error(upload.message || ('Échec upload slice ' + (i + 1) + '.'));
+                }
+                uploadedSlices.push({ ...slice, url: upload.url, filename: upload.filename || filename });
+            }
+
+            const templateHtml = buildSlicedEmailTemplateHtmlDocument(emailWidth, uploadedSlices);
+            const localFilename = (safeBaseName || 'template-email') + '-email-template.html';
             const templateEmailSubdir = visualName + '/Template-Email';
             const exportResult = await exportHtmlFromBuilder(templateHtml, visualName, currentDraftId || '', templateEmailSubdir, 'template-email');
             if (exportResult && exportResult.success) {
                 applyTemplateEmailExportResult(exportResult.url || '', exportResult.filename || localFilename, templateHtml);
-                setDraftStatus('Template e-mail intégré généré (sans découpage) + HTML + TXT exportés dans Template-Email.');
+                setDraftStatus('Template e-mail cliquable généré (liens conservés) + HTML + TXT exportés dans Template-Email.');
                 return {
                     success: true,
                     filename: exportResult.filename || localFilename,
