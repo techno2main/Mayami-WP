@@ -13,7 +13,8 @@
     'section_video_title',
     'section_release_title',
     'section_cta_title',
-    'section_footer_title'
+    'section_footer_title',
+    'section_epk_title'
   ];
 
   const MARQUEE_ITEM_TITLES = [
@@ -23,6 +24,9 @@
   ];
 
   const ACTIVE_SECTION_STORAGE_KEY = 'mayami_active_section_after_save';
+  const SECTION_ROW_SELECTORS = {
+    section_epk_title: ['.cmb2-id-section-epk-title', '.cmb2-id-epk-builder']
+  };
 
   let isOverviewMode = true;
   let pendingDeleteControl = null;
@@ -978,7 +982,8 @@
       { id: 'section_video_title', label: 'Video' },
       { id: 'section_release_title', label: 'Release' },
       { id: 'section_cta_title', label: 'CTA' },
-      { id: 'section_footer_title', label: 'Footer' }
+      { id: 'section_footer_title', label: 'Footer' },
+      { id: 'section_epk_title', label: 'EPK' }
     ];
 
     // Trouver le conteneur du formulaire
@@ -1034,7 +1039,7 @@
     buttonsContainer.className = 'mayami-admin-nav-buttons';
 
     sections.forEach(section => {
-      const sectionEl = document.querySelector('.cmb2-id-' + section.id.replace(/_/g, '-'));
+      const sectionEl = getSectionTitleElement(section.id);
       if (!sectionEl) return;
 
       const btn = document.createElement('a');
@@ -1236,7 +1241,33 @@
   }
 
   function getSectionTitleElement(sectionId) {
-    return document.querySelector('.cmb2-id-' + sectionId.replace(/_/g, '-'));
+    const defaultSelector = '.cmb2-id-' + sectionId.replace(/_/g, '-');
+    const defaultMatch = document.querySelector(defaultSelector);
+    if (defaultMatch) {
+      return defaultMatch;
+    }
+
+    const fallbackSelectors = SECTION_ROW_SELECTORS[sectionId] || [];
+    for (let i = 0; i < fallbackSelectors.length; i += 1) {
+      const fallbackMatch = document.querySelector(fallbackSelectors[i]);
+      if (!fallbackMatch) {
+        continue;
+      }
+
+      if (fallbackMatch.classList.contains('cmb-type-title')) {
+        return fallbackMatch;
+      }
+
+      let current = fallbackMatch.previousElementSibling;
+      while (current) {
+        if (current.classList && current.classList.contains('cmb-type-title')) {
+          return current;
+        }
+        current = current.previousElementSibling;
+      }
+    }
+
+    return null;
   }
 
   function getSectionContentRows(sectionId) {
@@ -1264,8 +1295,16 @@
   function isSectionTitleRow(el) {
     if (!el || !el.classList) return false;
 
-    return Array.from(el.classList).some(className => {
+    const directMatch = Array.from(el.classList).some(className => {
       return className.indexOf('cmb2-id-section-') === 0 && className.indexOf('-title') !== -1;
+    });
+
+    if (directMatch) {
+      return true;
+    }
+
+    return SECTION_IDS.some(function(sectionId) {
+      return getSectionTitleElement(sectionId) === el;
     });
   }
 
