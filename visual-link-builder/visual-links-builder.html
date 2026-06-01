@@ -3076,7 +3076,8 @@ ${tableHtml}
             // Important: utiliser le nom du visuel pour que HTML/TXT soient écrits
             // dans le même sous-dossier que les images (Mayami-EPK/Template-Email).
             const exportName = visualName;
-            const exportResult = await exportHtmlFromBuilder(templateHtml, exportName, currentDraftId || '', '', 'template-email');
+            const templateEmailSubdir = visualName + '/Template-Email';
+            const exportResult = await exportHtmlFromBuilder(templateHtml, exportName, currentDraftId || '', templateEmailSubdir, 'template-email');
             if (exportResult && exportResult.success) {
                 applyTemplateEmailExportResult(exportResult.url || '', exportResult.filename || localFilename, templateHtml);
                 setDraftStatus('Template e-mail généré (images dans img/ + HTML + TXT) et exporté dans exports-html.');
