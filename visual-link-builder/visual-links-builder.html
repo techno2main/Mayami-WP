@@ -869,6 +869,12 @@
         let lastExportedHtmlDocument = '';
         let lastExportedFilename = 'visual-links.html';
         let lastExportedPublicUrl = '';
+        let lastTemplateEmailHtmlDocument = '';
+        let lastTemplateEmailFilename = '';
+        let lastTemplateEmailPublicUrl = '';
+        let lastTemplateHtmlHtmlDocument = '';
+        let lastTemplateHtmlFilename = '';
+        let lastTemplateHtmlPublicUrl = '';
         let copyFeedbackTimer = null;
 
         const MIN_ZONE_SIZE = 12;
@@ -946,6 +952,12 @@
             lastExportedPublicUrl = '';
             lastExportedHtmlDocument = '';
             lastExportedFilename = 'visual-links.html';
+            lastTemplateEmailHtmlDocument = '';
+            lastTemplateEmailFilename = '';
+            lastTemplateEmailPublicUrl = '';
+            lastTemplateHtmlHtmlDocument = '';
+            lastTemplateHtmlFilename = '';
+            lastTemplateHtmlPublicUrl = '';
             exportQuickUrl.value = '';
             copyExportQuickBtn.disabled = true;
             setExportQuickActionsVisible(false);
@@ -959,6 +971,20 @@
             exportQuickUrl.value = lastExportedPublicUrl || 'URL non disponible';
             copyExportQuickBtn.disabled = !lastExportedPublicUrl;
             setExportQuickActionsVisible(true);
+        }
+
+        function applyTemplateEmailExportResult(url, filename, htmlDocument) {
+            lastTemplateEmailPublicUrl = String(url || '').trim();
+            lastTemplateEmailFilename = String(filename || '').trim();
+            lastTemplateEmailHtmlDocument = String(htmlDocument || '');
+            applyExportResult(lastTemplateEmailPublicUrl, lastTemplateEmailFilename || 'template-email.html', lastTemplateEmailHtmlDocument);
+        }
+
+        function applyTemplateHtmlExportResult(url, filename, htmlDocument) {
+            lastTemplateHtmlPublicUrl = String(url || '').trim();
+            lastTemplateHtmlFilename = String(filename || '').trim();
+            lastTemplateHtmlHtmlDocument = String(htmlDocument || '');
+            applyExportResult(lastTemplateHtmlPublicUrl, lastTemplateHtmlFilename || 'visual-links.html', lastTemplateHtmlHtmlDocument);
         }
 
         function showExportResultModal(url, filename, htmlDocument) {
@@ -1062,6 +1088,35 @@
             }
         }
 
+        async function ensureTemplateEmailHtmlDocument() {
+            const cachedHtml = String(lastTemplateEmailHtmlDocument || '');
+            if (cachedHtml) {
+                return cachedHtml;
+            }
+
+            const exportUrl = String(lastTemplateEmailPublicUrl || '').trim();
+            if (!exportUrl || exportUrl === 'URL non disponible') {
+                return '';
+            }
+
+            try {
+                const response = await fetch(exportUrl, {
+                    method: 'GET',
+                    credentials: 'same-origin'
+                });
+
+                if (!response.ok) {
+                    return '';
+                }
+
+                const html = await response.text();
+                lastTemplateEmailHtmlDocument = String(html || '');
+                return lastTemplateEmailHtmlDocument;
+            } catch (error) {
+                return '';
+            }
+        }
+
         async function downloadLastExportHtml() {
             const html = await ensureLastExportedHtmlDocument();
             if (!html) {
@@ -1081,7 +1136,7 @@
         }
 
         async function downloadLastExportHtmlCode() {
-            const html = await ensureLastExportedHtmlDocument();
+            const html = await ensureTemplateEmailHtmlDocument() || await ensureLastExportedHtmlDocument();
             if (!html) {
                 setDraftStatus('Aucun code HTML à exporter.', true);
                 return;
@@ -1095,7 +1150,8 @@
                 .join('\n')
                 .trim();
 
-            const baseFilename = String(lastExportedFilename || 'visual-links.html').replace(/\.html?$/i, '');
+            const preferredFilename = String(lastTemplateEmailFilename || lastExportedFilename || 'visual-links.html');
+            const baseFilename = preferredFilename.replace(/\.html?$/i, '');
             const codeFilename = (baseFilename || 'visual-links') + '-code.txt';
 
             const blob = new Blob([normalizedHtml], { type: 'text/plain;charset=utf-8' });
@@ -1540,6 +1596,15 @@
                 const restoredTemplateEmailExportFilename = String(result.data.template_email_export_filename || '').trim();
                 const restoredTemplateHtmlExportUrl = String(result.data.template_html_export_url || '').trim();
                 const restoredTemplateHtmlExportFilename = String(result.data.template_html_export_filename || '').trim();
+                if (restoredTemplateEmailExportUrl) {
+                    lastTemplateEmailPublicUrl = restoredTemplateEmailExportUrl;
+                    lastTemplateEmailFilename = restoredTemplateEmailExportFilename || 'template-email.html';
+                    void ensureTemplateEmailHtmlDocument();
+                }
+                if (restoredTemplateHtmlExportUrl) {
+                    lastTemplateHtmlPublicUrl = restoredTemplateHtmlExportUrl;
+                    lastTemplateHtmlFilename = restoredTemplateHtmlExportFilename || 'visual-links.html';
+                }
                 const restoredExportUrl = restoredTemplateEmailExportUrl || restoredTemplateHtmlExportUrl || String(result.data.export_url || '').trim();
                 const restoredExportFilename = restoredTemplateEmailExportFilename || restoredTemplateHtmlExportFilename || String(result.data.export_filename || '').trim();
                 if (restoredExportUrl) {
@@ -2379,6 +2444,7 @@
 
                     const fileLabel = result.filename || (((draftNameInput.value || '').trim() || 'visual-links') + '.html');
                     showPreviewStatus('Fichier exporté dans exports-html : ' + fileLabel, false);
+                    applyTemplateHtmlExportResult(result.url || '', fileLabel, previewData.htmlDocument);
                     showExportResultModal(result.url || '', fileLabel, previewData.htmlDocument);
                     setTimeout(() => {
                         previewWindow.close();
@@ -2573,19 +2639,30 @@
             }
         }
 
-        function buildSlicedEmailTemplateHtmlDocument(previewData, uploadedSlices) {
+                function buildSlicedEmailTemplateHtmlDocument(previewData, uploadedSlices) {
             const title = escapeHtml((draftNameInput.value || '').trim() || 'Template e-mail');
-            const tableHtml = generateEmailTableHTML(uploadedSlices, previewData.imgWidth, (slice) => slice.url || '');
+                        const emailWidth = Math.min(Number(previewData.imgWidth) || 600, 600);
+                        const tableHtml = generateEmailTableHTML(uploadedSlices, previewData.imgWidth, emailWidth, (slice) => slice.url || '');
                         const pdfUrl = normalizePdfUrl(pdfUrlInput.value);
                         const hasPdfUrl = /^https?:\/\//i.test(pdfUrl);
                         const pdfBannerHtml = hasPdfUrl
                                 ? `
-    <div style="margin:0 auto 12px;max-width:${previewData.imgWidth}px;text-align:center;font-family:Arial,sans-serif;font-size:14px;line-height:1.4;">
-        <a href="${escapeAttr(pdfUrl)}" target="_blank" rel="noopener noreferrer" style="display:inline-flex;align-items:center;gap:6px;color:#dc2626;text-decoration:underline;font-weight:800;letter-spacing:0.2px;">
-            <span style="display:inline-block;font-size:11px;line-height:1;padding:2px 5px;border:1px solid #dc2626;border-radius:3px;color:#dc2626;">PDF</span>
-            <span>DOWNLOAD THIS MAYAMI ONESHEET - CLICKABLE IN PDF</span>
-        </a>
-    </div>`
+    <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" style="border-collapse:collapse;width:100%;margin:0;padding:0;">
+        <tr>
+            <td align="center" style="padding:0 0 12px;margin:0;">
+                <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="${emailWidth}" style="border-collapse:collapse;width:${emailWidth}px;max-width:${emailWidth}px;margin:0 auto;">
+                    <tr>
+                        <td align="center" style="padding:0;margin:0;font-family:Arial,sans-serif;font-size:14px;line-height:1.4;">
+                            <a href="${escapeAttr(pdfUrl)}" target="_blank" rel="noopener noreferrer" style="color:#dc2626;text-decoration:underline;font-weight:800;letter-spacing:0.2px;white-space:nowrap;">
+                                <span style="display:inline-block;font-size:11px;line-height:1;padding:2px 5px;border:1px solid #dc2626;border-radius:3px;color:#dc2626;vertical-align:middle;">PDF</span>
+                                <span style="display:inline-block;vertical-align:middle;margin-left:6px;">DOWNLOAD THIS MAYAMI ONESHEET - CLICKABLE IN PDF</span>
+                            </a>
+                        </td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+    </table>`
                                 : '';
 
             return `<!DOCTYPE html>
@@ -2597,7 +2674,7 @@
 </head>
 <body style="margin:0;padding:0;background:#ffffff;">
 ${pdfBannerHtml}
-  <div style="margin:0 auto;max-width:${previewData.imgWidth}px;">
+    <div style="margin:0 auto;max-width:${emailWidth}px;">
 ${tableHtml}
   </div>
 </body>
@@ -2641,7 +2718,7 @@ ${tableHtml}
             const exportName = (safeBaseName || 'template-email') + '-email-template';
             const exportResult = await exportHtmlFromBuilder(templateHtml, exportName, currentDraftId || '', '', 'template-email');
             if (exportResult && exportResult.success) {
-                applyExportResult(exportResult.url || '', exportResult.filename || localFilename, templateHtml);
+                applyTemplateEmailExportResult(exportResult.url || '', exportResult.filename || localFilename, templateHtml);
                 setDraftStatus('Template e-mail généré (image découpée), téléchargé et exporté dans exports-html.');
                 return {
                     success: true,
@@ -2769,27 +2846,39 @@ ${tableHtml}
             return slices;
         }
         
-        function generateEmailTableHTML(slices, imgWidth, getSliceSrc) {
+        function generateEmailTableHTML(slices, imgWidth, targetWidth, getSliceSrc) {
             // Grouper par rangée
             const rows = {};
             slices.forEach(slice => {
                 if (!rows[slice.row]) rows[slice.row] = [];
                 rows[slice.row].push(slice);
             });
+            const safeImgWidth = Math.max(1, Number(imgWidth) || 1);
+            const safeTargetWidth = Math.max(1, Number(targetWidth) || safeImgWidth);
+            const displayScale = safeTargetWidth / safeImgWidth;
             
-            let html = `<table border="0" cellpadding="0" cellspacing="0" style="border-collapse: collapse; width: 100%; max-width: ${imgWidth}px; margin: 0 auto;">
+            let html = `<table role="presentation" border="0" cellpadding="0" cellspacing="0" width="${safeTargetWidth}" style="border-collapse:collapse;border-spacing:0;mso-table-lspace:0pt;mso-table-rspace:0pt;width:${safeTargetWidth}px;max-width:${safeTargetWidth}px;margin:0 auto;table-layout:fixed;">
   <tbody>`;
             
             Object.keys(rows).sort((a, b) => Number(a) - Number(b)).forEach(rowKey => {
+                const rowSlices = rows[rowKey].slice().sort((a, b) => Number(a.x) - Number(b.x));
+                let consumedWidth = 0;
                 html += `\n    <tr>`;
-                rows[rowKey].forEach(slice => {
+                rowSlices.forEach((slice, sliceIndex) => {
                     const resolvedSrc = typeof getSliceSrc === 'function' ? getSliceSrc(slice) : '';
-                    const imgTag = `<img src="${escapeAttr(resolvedSrc || '')}" width="${slice.width}" height="${slice.height}" style="display: block; border: 0; margin: 0; padding: 0; max-width: 100%;" alt="">`;
+                    let displayWidth = Math.max(1, Math.round((Number(slice.width) || 0) * displayScale));
+                    const remainingWidth = safeTargetWidth - consumedWidth;
+                    if (sliceIndex === rowSlices.length - 1) {
+                        displayWidth = Math.max(1, remainingWidth);
+                    }
+                    consumedWidth += displayWidth;
+                    const displayHeight = Math.max(1, Math.round((Number(slice.height) || 0) * displayScale));
+                    const imgTag = `<img src="${escapeAttr(resolvedSrc || '')}" width="${displayWidth}" height="${displayHeight}" style="display:block;border:0;margin:0;padding:0;width:${displayWidth}px;height:${displayHeight}px;" alt="">`;
                     
                     if (slice.href) {
-                        html += `\n      <td style="padding: 0; margin: 0; line-height: 0;"><a href="${slice.href}" style="display: block; border: 0; text-decoration: none; line-height: 0;">${imgTag}</a></td>`;
+                        html += `\n      <td width="${displayWidth}" style="padding:0;margin:0;line-height:0;font-size:0;width:${displayWidth}px;"><a href="${slice.href}" style="display:block;border:0;text-decoration:none;line-height:0;font-size:0;">${imgTag}</a></td>`;
                     } else {
-                        html += `\n      <td style="padding: 0; margin: 0; line-height: 0;">${imgTag}</td>`;
+                        html += `\n      <td width="${displayWidth}" style="padding:0;margin:0;line-height:0;font-size:0;width:${displayWidth}px;">${imgTag}</td>`;
                     }
                 });
                 html += `\n    </tr>`;
