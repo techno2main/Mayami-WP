@@ -22,7 +22,7 @@ if (!defined('ABSPATH')) {
 
 <?php if (mayami_is_epk_preview_request()): ?>
     <div class="mayami-preview-banner">
-        Prévisualisation privée EPK active. Seul votre compte admin voit ce brouillon.
+        Prévisualisation privée Visual Links active. Seul votre compte admin voit ce brouillon.
     </div>
 <?php endif; ?>
 
@@ -47,8 +47,8 @@ if (!defined('ABSPATH')) {
     <!-- Release Info Section -->
     <?php get_template_part('template-parts/sections/release-info'); ?>
 
-    <!-- EPK Section -->
-    <?php get_template_part('template-parts/sections/epk'); ?>
+    <!-- Visual Links Section -->
+    <?php get_template_part('template-parts/sections/visual-links'); ?>
     
     <!-- CTA Section -->
     <?php get_template_part('template-parts/sections/cta'); ?>

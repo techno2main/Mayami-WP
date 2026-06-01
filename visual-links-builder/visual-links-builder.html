@@ -966,7 +966,7 @@
         let currentRect = null;
         let imageUrl = '';
         let activeZoneId = null;
-        let currentDraftId = queryParams.get('epk_draft_id') || '';
+        let currentDraftId = queryParams.get('visual_links_draft_id') || queryParams.get('epk_draft_id') || '';
         let lastSavedSignature = '';
         let lastSavedPreviewGateSignature = '';
         let isResizing = false;
@@ -1651,7 +1651,7 @@
 
             const payload = serializeDraftPayload();
             const formData = new FormData();
-            formData.append('action', 'mayami_save_epk_draft');
+            formData.append('action', 'mayami_save_visual_links_draft');
             formData.append('nonce', wpNonce);
             formData.append('name', draftName);
             formData.append('draft_id', currentDraftId || '');
@@ -1697,7 +1697,7 @@
 
             try {
                 const url = new URL(wpAjaxUrl, window.location.href);
-                url.searchParams.set('action', 'mayami_get_epk_draft');
+                url.searchParams.set('action', 'mayami_get_visual_links_draft');
                 url.searchParams.set('nonce', wpNonce);
                 url.searchParams.set('draft_id', currentDraftId);
 
@@ -2504,11 +2504,11 @@
         }
 
         function buildExternalPreviewHtml(previewData) {
-            let builderUrl = 'admin.php?page=mayami_epk_html_builder';
+            let builderUrl = 'admin.php?page=mayami_visual_links_builder';
             try {
                 const ajaxEndpoint = new URL(wpAjaxUrl, window.location.href);
                 const adminUrl = new URL('admin.php', ajaxEndpoint);
-                adminUrl.searchParams.set('page', 'mayami_epk_html_builder');
+                adminUrl.searchParams.set('page', 'mayami_visual_links_builder');
                 if (currentDraftId) {
                     adminUrl.searchParams.set('draft_id', currentDraftId);
                 }

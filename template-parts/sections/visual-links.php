@@ -1,6 +1,6 @@
 <?php
 /**
- * Template part - EPK Section
+ * Template part - Visual Links Section
  *
  * @package Mayami
  */
@@ -17,7 +17,7 @@ $epk_zones = array_values(array_filter($epk_payload['zones'], static function ($
 
 $is_preview = mayami_is_epk_preview_request();
 ?>
-<section id="epk" class="mayami-epk-section"<?php echo $is_preview ? ' data-epk-preview="1"' : ''; ?>>
+<section id="visual-links" class="mayami-epk-section"<?php echo $is_preview ? ' data-epk-preview="1"' : ''; ?>>
     <div class="mayami-epk-shell">
         <div class="mayami-epk-header">
             <div>
@@ -44,7 +44,7 @@ $is_preview = mayami_is_epk_preview_request();
             <?php foreach ($epk_zones as $index => $zone): ?>
                 <?php
                 $href = mayami_get_epk_zone_href($zone);
-                $label = !empty($zone['label']) ? $zone['label'] : sprintf('Zone EPK %d', $index + 1);
+                $label = !empty($zone['label']) ? $zone['label'] : sprintf('Zone Visual Links %d', $index + 1);
                 $style = sprintf(
                     'left:%1$.4F%%;top:%2$.4F%%;width:%3$.4F%%;height:%4$.4F%%;',
                     (float) $zone['x'],

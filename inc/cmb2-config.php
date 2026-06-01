@@ -1065,15 +1065,15 @@ function mayami_register_options() {
         'type' => 'checkbox',
     ));
 
-    // ========== SECTION: EPK ==========
+    // ========== SECTION: VISUAL LINKS ==========
     $cmb->add_field(array(
-        'name' => 'EPK',
+        'name' => 'Visual Links',
         'type' => 'title',
         'id'   => 'section_epk_title',
     ));
 
     $cmb->add_field(array(
-        'name' => 'Source visuel EPK',
+        'name' => 'Source du visuel',
         'id'   => 'epk_draft_image_source',
         'type' => 'file',
         'row_classes' => 'mayami-epk-media-row',
@@ -1083,20 +1083,20 @@ function mayami_register_options() {
     ));
 
     $cmb->add_field(array(
-        'name' => 'Builder EPK',
+        'name' => 'Builder Visual Links',
         'id'   => 'epk_builder',
         'type' => 'mayami_epk_builder',
     ));
 
     $cmb->add_field(array(
-        'name' => 'Validation finale EPK',
+        'name' => 'Validation finale Visual Links',
         'id'   => 'epk_validation_ready',
         'type' => 'checkbox',
         'desc' => 'À cocher uniquement après contrôle du brouillon dans la prévisualisation privée.',
     ));
 
     $cmb->add_field(array(
-        'name' => 'Stockage brouillon EPK',
+        'name' => 'Stockage brouillon Visual Links',
         'id'   => 'epk_draft_payload',
         'type' => 'textarea_code',
         'row_classes' => 'mayami-epk-storage-row',
@@ -1104,7 +1104,7 @@ function mayami_register_options() {
     ));
 
     $cmb->add_field(array(
-        'name' => 'Stockage publication EPK',
+        'name' => 'Stockage publication Visual Links',
         'id'   => 'epk_published_payload',
         'type' => 'textarea_code',
         'row_classes' => 'mayami-epk-storage-row',

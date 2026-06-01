@@ -1,6 +1,6 @@
 <?php
 /**
- * EPK workflow helpers.
+ * Visual Links workflow helpers.
  *
  * @package Mayami
  */
@@ -16,7 +16,7 @@ add_action('admin_notices', 'mayami_render_epk_admin_notice');
 
 function mayami_get_epk_default_payload() {
     return array(
-        'kicker' => 'EPK',
+        'kicker' => 'VISUAL LINKS',
         'title' => 'Electronic Press Kit',
         'description' => '',
         'imageUrl' => '',
@@ -212,7 +212,7 @@ function mayami_render_epk_builder_field($field, $escaped_value, $object_id, $ob
         <div class="mayami-epk-proto-shell">
             <div class="mayami-epk-proto-header">
                 <div class="mayami-epk-proto-header-copy">
-                    <h3>Créateur de liens sur image pour EPK</h3>
+                    <h3>Créateur de liens sur image - Visual Links</h3>
                     <p>Dessinez des zones cliquables sur votre image puis prévisualisez et publiez la version validée sur la landing.</p>
                 </div>
                 <div class="mayami-epk-builder__badges">
@@ -238,7 +238,7 @@ function mayami_render_epk_builder_field($field, $escaped_value, $object_id, $ob
 
                     <div class="mayami-epk-info-box">
                         <strong>Mode d'emploi :</strong>
-                        1. Choisissez le visuel EPK dans la médiathèque.<br>
+                        1. Choisissez le visuel dans la médiathèque.<br>
                         2. Cliquez-glissez pour dessiner des zones rectangulaires.<br>
                         3. Ajoutez un lien ou une ancre pour chaque zone.<br>
                         4. Enregistrez, prévisualisez, validez, puis publiez.
@@ -247,11 +247,11 @@ function mayami_render_epk_builder_field($field, $escaped_value, $object_id, $ob
                     <div class="mayami-epk-form-grid">
                         <label>
                             <span>Kicker</span>
-                            <input type="text" class="regular-text mayami-epk-input" data-epk-field="kicker" placeholder="EPK">
+                            <input type="text" class="regular-text mayami-epk-input" data-epk-field="kicker" placeholder="VISUAL LINKS">
                         </label>
                         <label>
                             <span>Titre</span>
-                            <input type="text" class="regular-text mayami-epk-input" data-epk-field="title" placeholder="Electronic Press Kit">
+                            <input type="text" class="regular-text mayami-epk-input" data-epk-field="title" placeholder="Visual Links">
                         </label>
                         <label class="mayami-epk-form-grid__full">
                             <span>Description</span>
@@ -259,7 +259,7 @@ function mayami_render_epk_builder_field($field, $escaped_value, $object_id, $ob
                         </label>
                         <label class="mayami-epk-form-grid__full">
                             <span>Texte alternatif de l'image</span>
-                            <input type="text" class="regular-text mayami-epk-input" data-epk-field="imageAlt" placeholder="Visuel EPK de Mayami">
+                            <input type="text" class="regular-text mayami-epk-input" data-epk-field="imageAlt" placeholder="Visuel cliquable de Mayami">
                         </label>
                     </div>
                 </div>
@@ -283,8 +283,8 @@ function mayami_render_epk_builder_field($field, $escaped_value, $object_id, $ob
                     <div class="mayami-epk-actions">
                         <button type="button" class="mayami-epk-btn mayami-epk-btn-secondary mayami-epk-reset-zones">Tout effacer</button>
                         <a href="<?php echo esc_url(mayami_get_epk_preview_url()); ?>" target="_blank" rel="noreferrer" class="mayami-epk-btn mayami-epk-btn-secondary mayami-epk-preview-link">Prévisualiser la landing</a>
-                        <button type="button" class="mayami-epk-btn mayami-epk-btn-primary mayami-epk-publish-button">Publier l'EPK sur le front</button>
-                        <button type="button" class="mayami-epk-btn mayami-epk-btn-secondary mayami-epk-unpublish-button">Retirer l'EPK du front</button>
+                        <button type="button" class="mayami-epk-btn mayami-epk-btn-primary mayami-epk-publish-button">Publier Visual Links sur le front</button>
+                        <button type="button" class="mayami-epk-btn mayami-epk-btn-secondary mayami-epk-unpublish-button">Retirer Visual Links du front</button>
                     </div>
 
                     <div class="mayami-epk-workflow-box">
@@ -379,19 +379,19 @@ function mayami_render_epk_admin_notice() {
     switch ($notice) {
         case 'published':
             $class = 'notice-success';
-            $message = 'L’EPK brouillon a été publié sur le front.';
+            $message = 'Le brouillon Visual Links a été publié sur le front.';
             break;
         case 'unpublished':
             $class = 'notice-warning';
-            $message = 'L’EPK a été retiré du front.';
+            $message = 'Visual Links a été retiré du front.';
             break;
         case 'validation-missing':
             $class = 'notice-error';
-            $message = 'Cochez d’abord la validation finale EPK puis enregistrez la page avant publication.';
+            $message = 'Cochez d’abord la validation finale Visual Links puis enregistrez la page avant publication.';
             break;
         case 'draft-missing':
             $class = 'notice-error';
-            $message = 'Aucun brouillon EPK valide à publier.';
+            $message = 'Aucun brouillon Visual Links valide à publier.';
             break;
     }
 
