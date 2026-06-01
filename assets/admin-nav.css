@@ -206,6 +206,30 @@
   display: none !important;
 }
 
+.cmb-row.cmb-field-with-toggle .cmb-td {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.cmb-row.cmb-field-with-toggle .cmb-td .mayami-inline-field-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: auto;
+  white-space: nowrap;
+}
+
+.cmb-row.cmb-field-with-toggle .cmb-td .mayami-inline-field-toggle-label {
+  font-weight: 600;
+  color: #374151;
+}
+
+.cmb-row.cmb-inline-toggle.mayami-hidden-source-row {
+  display: none !important;
+}
+
 body.mayami-delete-modal-open {
   overflow: hidden;
 }

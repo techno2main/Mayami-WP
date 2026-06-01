@@ -69,6 +69,7 @@
     renameMarqueeItemTitles();
     refreshTopBarVisualFieldUi();
     layoutTopBarVisualInlineToggle();
+    layoutInlineFieldToggles();
     bindRepeatableGroupAccordionEvents();
     bindTopBarVisualEvents();
     bindSliderTypeEvents();
@@ -867,6 +868,50 @@
     }
 
     hideRow.classList.add('mayami-hidden-source-row');
+  }
+
+  function layoutInlineFieldToggles() {
+    const toggleRows = document.querySelectorAll('.cmb-row.cmb-inline-toggle');
+    if (!toggleRows.length) {
+      return;
+    }
+
+    toggleRows.forEach(function(toggleRow) {
+      const fieldRow = toggleRow.previousElementSibling;
+      if (!fieldRow || !fieldRow.classList || !fieldRow.classList.contains('cmb-field-with-toggle')) {
+        return;
+      }
+
+      const fieldTd = fieldRow.querySelector('.cmb-td');
+      const toggleInput = toggleRow.querySelector('input[type="checkbox"]');
+      if (!fieldTd || !toggleInput) {
+        return;
+      }
+
+      let inlineWrap = fieldTd.querySelector('.mayami-inline-field-toggle');
+      if (!inlineWrap) {
+        inlineWrap = document.createElement('span');
+        inlineWrap.className = 'mayami-inline-field-toggle';
+
+        const label = document.createElement('span');
+        label.className = 'mayami-inline-field-toggle-label';
+        label.textContent = 'Masquer';
+        inlineWrap.appendChild(label);
+
+        const mediaButton = fieldTd.querySelector('.cmb2-upload-button, .cmb2-remove-file-button, .button');
+        if (mediaButton && mediaButton.parentNode) {
+          mediaButton.insertAdjacentElement('afterend', inlineWrap);
+        } else {
+          fieldTd.appendChild(inlineWrap);
+        }
+      }
+
+      if (toggleInput.parentNode !== inlineWrap) {
+        inlineWrap.appendChild(toggleInput);
+      }
+
+      toggleRow.classList.add('mayami-hidden-source-row');
+    });
   }
 
   function renameMarqueeItemTitles() {
