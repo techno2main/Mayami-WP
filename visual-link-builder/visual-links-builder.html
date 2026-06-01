@@ -667,6 +667,11 @@
             color: #07210f;
         }
 
+        .export-modal__btn.code {
+            background: #dbeafe;
+            color: #1e3a8a;
+        }
+
         .export-modal__actions {
             display: flex;
             justify-content: flex-end;
@@ -701,7 +706,7 @@
                     1. Chargez votre image depuis l'ordinateur ou la bibliothèque média<br>
                     2. Cliquez et glissez pour dessiner des zones rectangulaires<br>
                     3. Ajoutez un lien ou une ancre pour chaque zone<br>
-                    4. Générez le template e-mail
+                    4. Ouvrez Preview puis cliquez sur Template E-Mail
                 </div>
             </div>
             
@@ -717,7 +722,7 @@
                             <input type="text" id="exportQuickUrl" class="export-quick-actions__url" readonly>
                             <button type="button" id="copyExportQuickBtn" class="export-quick-actions__btn copy">Copier l'URL</button>
                         </div>
-                        <button type="button" id="downloadExportQuickBtn" class="export-quick-actions__btn download">Enregistrer sous</button>
+                        <button type="button" id="downloadExportQuickBtn" class="export-quick-actions__btn download">Télécharger</button>
                     </div>
                 </div>
 
@@ -759,9 +764,6 @@
                     <button class="btn btn-primary" id="previewBtn" disabled>
                         👁️ Preview
                     </button>
-                    <button class="btn btn-primary" id="generateBtn" disabled>
-                        ⚡ Générer le template e-mail
-                    </button>
                 </div>
             </div>
         </div>
@@ -781,13 +783,14 @@
     <div class="export-modal" id="exportResultModal" aria-hidden="true">
         <div class="export-modal__card" role="dialog" aria-modal="true" aria-labelledby="exportResultTitle">
             <h3 class="export-modal__title" id="exportResultTitle">Export HTML terminé</h3>
-            <p class="export-modal__message">Copiez l'URL publique ci-dessous et/ou enregistrez une copie HTML sur votre ordinateur.</p>
+            <p class="export-modal__message">Copiez l'URL publique ci-dessous, téléchargez le fichier HTML, ou exportez le code HTML en .txt copiable.</p>
             <div class="export-modal__url-row">
                 <input type="text" id="exportResultUrl" class="export-modal__url-input" readonly>
                 <button type="button" id="copyExportUrlBtn" class="export-modal__btn copy">Copier l'URL</button>
             </div>
             <div class="export-modal__actions">
-                <button type="button" id="downloadExportHtmlBtn" class="export-modal__btn download">Enregistrer sous</button>
+                <button type="button" id="downloadExportHtmlBtn" class="export-modal__btn download">Télécharger</button>
+                <button type="button" id="downloadExportCodeBtn" class="export-modal__btn code">Code HTML (.txt)</button>
                 <button type="button" id="closeExportResultModalBtn" class="export-modal__btn close">Fermer</button>
             </div>
         </div>
@@ -804,7 +807,6 @@
         const overlayContainer = document.getElementById('overlayContainer');
         const zonesList = document.getElementById('zonesList');
         const previewBtn = document.getElementById('previewBtn');
-        const generateBtn = document.getElementById('generateBtn');
         const clearAllBtn = document.getElementById('clearAllBtn');
         const saveDraftBtn = document.getElementById('saveDraftBtn');
         const draftNameInput = document.getElementById('draftNameInput');
@@ -825,6 +827,7 @@
         const exportResultUrl = document.getElementById('exportResultUrl');
         const copyExportUrlBtn = document.getElementById('copyExportUrlBtn');
         const downloadExportHtmlBtn = document.getElementById('downloadExportHtmlBtn');
+        const downloadExportCodeBtn = document.getElementById('downloadExportCodeBtn');
         const closeExportResultModalBtn = document.getElementById('closeExportResultModalBtn');
 
         const queryParams = new URLSearchParams(window.location.search);
@@ -1029,6 +1032,37 @@
             downloadLink.click();
             document.body.removeChild(downloadLink);
             URL.revokeObjectURL(objectUrl);
+        }
+
+        function downloadLastExportHtmlCode() {
+            const html = String(lastExportedHtmlDocument || '');
+            if (!html) {
+                setDraftStatus('Aucun code HTML à exporter.', true);
+                return;
+            }
+
+            const normalizedHtml = html
+                .replace(/\r\n/g, '\n')
+                .replace(/\r/g, '\n')
+                .split('\n')
+                .map((line) => line.replace(/[ \t]+$/g, ''))
+                .join('\n')
+                .trim();
+
+            const baseFilename = String(lastExportedFilename || 'visual-links.html').replace(/\.html?$/i, '');
+            const codeFilename = (baseFilename || 'visual-links') + '-code.txt';
+
+            const blob = new Blob([normalizedHtml], { type: 'text/plain;charset=utf-8' });
+            const objectUrl = URL.createObjectURL(blob);
+            const downloadLink = document.createElement('a');
+            downloadLink.href = objectUrl;
+            downloadLink.download = codeFilename;
+            document.body.appendChild(downloadLink);
+            downloadLink.click();
+            document.body.removeChild(downloadLink);
+            URL.revokeObjectURL(objectUrl);
+
+            setDraftStatus('Fichier code HTML copiable téléchargé.');
         }
 
         function getCanvasDimensions() {
@@ -1246,7 +1280,6 @@
             const hasSavedServerState = !!currentDraftId && !!lastSavedSignature && getCurrentSignature() === lastSavedSignature;
             const hasZones = zones.length > 0;
             const canRun = hasSavedServerState && hasZones;
-            generateBtn.disabled = !canRun;
             previewBtn.disabled = !canRun;
         }
 
@@ -2109,6 +2142,7 @@
       font-size: 13px;
     }
     .preview-btn.export { background: #22c55e; color: #07210f; }
+        .preview-btn.email { background: #f59e0b; color: #1f2937; }
     .preview-btn.modify { background: #e2e8f0; color: #0f172a; }
     .status {
       padding: 8px 18px;
@@ -2155,6 +2189,7 @@
     <div class="topbar-title">Prévisualisation visuelle</div>
     <div class="topbar-actions">
       <button class="preview-btn export" id="exportBtn">Exporter HTML</button>
+            <button class="preview-btn email" id="emailTemplateBtn">Template E-Mail</button>
             <a class="preview-btn modify" id="modifyBtn" href="${builderUrlAttr}" style="text-decoration:none;display:inline-block;">Modifier</a>
     </div>
   </div>
@@ -2184,6 +2219,7 @@
 
             const statusBox = previewWindow.document.getElementById('statusBox');
             const exportBtn = previewWindow.document.getElementById('exportBtn');
+            const emailTemplateBtn = previewWindow.document.getElementById('emailTemplateBtn');
             const previewImage = previewWindow.document.getElementById('previewImage');
             const previewMap = previewWindow.document.getElementById('previewMap');
             const mapAreas = Array.from(previewMap ? previewMap.querySelectorAll('area') : []);
@@ -2257,6 +2293,28 @@
                 }
             }
 
+            async function handlePreviewEmailTemplate() {
+                if (!emailTemplateBtn) {
+                    return;
+                }
+
+                emailTemplateBtn.disabled = true;
+                showPreviewStatus('Génération du template e-mail en cours...', false);
+
+                try {
+                    const result = await generateEmailTemplateFromPreviewData(previewData);
+                    if (!result || !result.success) {
+                        showPreviewStatus((result && result.message) ? result.message : 'Génération template e-mail impossible.', true);
+                        return;
+                    }
+                    showPreviewStatus('Template e-mail généré et exporté : ' + (result.filename || ''), false);
+                } catch (error) {
+                    showPreviewStatus(error && error.message ? error.message : 'Génération template e-mail impossible.', true);
+                } finally {
+                    emailTemplateBtn.disabled = false;
+                }
+            }
+
             if (previewImage) {
                 if (previewImage.complete) {
                     resizePreviewMap();
@@ -2268,6 +2326,9 @@
             previewWindow.addEventListener('resize', resizePreviewMap);
             if (exportBtn) {
                 exportBtn.addEventListener('click', handlePreviewExport);
+            }
+            if (emailTemplateBtn) {
+                emailTemplateBtn.addEventListener('click', handlePreviewEmailTemplate);
             }
             previewWindow.focus();
         }
@@ -2310,74 +2371,178 @@
             markDraftDirty();
         });
 
-                function buildEmailTemplateHtmlDocument(previewData) {
-                        const title = escapeHtml((draftNameInput.value || '').trim() || 'Template e-mail');
-                        const contentWidth = Math.min(680, Math.max(320, Number(previewData.imgWidth) || 600));
-                        const heroSrc = String(imageUrl || '').trim();
-                        const uniqueLinks = Array.from(new Set(
-                                zones
-                                        .map((zone) => getZoneHref(zone))
-                                        .filter((href) => !!href)
-                        ));
+        function downloadTextFile(content, filename, mimeType) {
+            const blob = new Blob([content], { type: mimeType || 'text/plain;charset=utf-8' });
+            const downloadUrl = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = downloadUrl;
+            link.download = filename;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(downloadUrl);
+        }
 
-                        const linksHtml = uniqueLinks.length > 0
-                                ? uniqueLinks.map((href, index) => {
-                                        const safeHref = escapeAttr(href);
-                                        const safeLabel = escapeHtml('Lien ' + (index + 1));
-                                        return `
-                    <tr>
-                        <td style="padding:0 24px 10px 24px;">
-                            <a href="${safeHref}" target="_blank" style="display:block;background:#111827;color:#ffffff;text-decoration:none;font-family:Arial,Helvetica,sans-serif;font-size:14px;line-height:20px;font-weight:600;text-align:center;border-radius:8px;padding:10px 14px;">${safeLabel}</a>
-                        </td>
-                    </tr>`;
-                                }).join('')
-                                : `
-                    <tr>
-                        <td style="padding:0 24px 16px 24px;color:#64748b;font-family:Arial,Helvetica,sans-serif;font-size:13px;line-height:18px;">
-                            Aucun lien n'a été configuré sur ce visuel.
-                        </td>
-                    </tr>`;
+        function createSliceBlob(slice) {
+            return new Promise((resolve, reject) => {
+                if (!slice || slice.width <= 0 || slice.height <= 0) {
+                    reject(new Error('Slice invalide.'));
+                    return;
+                }
 
-                        const dataUrlNotice = heroSrc.startsWith('data:image/')
-                                ? `
-                    <tr>
-                        <td style="padding:0 24px 16px 24px;color:#b45309;font-family:Arial,Helvetica,sans-serif;font-size:12px;line-height:17px;">
-                            Note: l'image est embarquée en data URL. Pour un envoi e-mail réel, remplacez-la par une URL publique HTTPS.
-                        </td>
-                    </tr>`
-                                : '';
+                const canvas = document.createElement('canvas');
+                canvas.width = slice.width;
+                canvas.height = slice.height;
 
-                        return `<!DOCTYPE html>
+                const ctx = canvas.getContext('2d');
+                if (!ctx) {
+                    reject(new Error('Contexte canvas indisponible.'));
+                    return;
+                }
+
+                ctx.drawImage(
+                    imageCanvas,
+                    slice.x,
+                    slice.y,
+                    slice.width,
+                    slice.height,
+                    0,
+                    0,
+                    slice.width,
+                    slice.height
+                );
+
+                canvas.toBlob((blob) => {
+                    if (!blob) {
+                        reject(new Error('Impossible de générer le blob image.'));
+                        return;
+                    }
+                    resolve(blob);
+                }, 'image/jpeg', 0.92);
+            });
+        }
+
+        async function uploadEmailSlice(blob, filename) {
+            if (!wpAjaxUrl || !wpNonce) {
+                return { success: false, message: 'Configuration AJAX manquante.' };
+            }
+
+            const formData = new FormData();
+            formData.append('action', 'mayami_upload_visual_links_slice');
+            formData.append('nonce', wpNonce);
+            formData.append('filename', filename);
+            formData.append('slice_file', blob, filename);
+
+            try {
+                const response = await fetch(wpAjaxUrl, {
+                    method: 'POST',
+                    credentials: 'same-origin',
+                    body: formData
+                });
+
+                const responseText = await response.text();
+                let result = null;
+                try {
+                    result = JSON.parse(responseText);
+                } catch (parseError) {
+                    const rawText = (responseText || '').trim();
+                    const suffix = rawText ? (' Détail serveur: ' + rawText.slice(0, 180)) : '';
+                    return { success: false, message: 'Réponse upload slice invalide (' + response.status + ').' + suffix };
+                }
+
+                if (!response.ok || !result || !result.success) {
+                    const fallbackDetail = (typeof result === 'string' || typeof result === 'number')
+                        ? String(result)
+                        : ((responseText || '').trim().slice(0, 180));
+                    return {
+                        success: false,
+                        message: (result && result.data && result.data.message)
+                            ? result.data.message
+                            : ('Upload slice impossible (HTTP ' + response.status + ')' + (fallbackDetail ? (': ' + fallbackDetail) : '.'))
+                    };
+                }
+
+                return {
+                    success: true,
+                    filename: result.data && result.data.filename ? result.data.filename : filename,
+                    url: result.data && result.data.url ? result.data.url : ''
+                };
+            } catch (error) {
+                return { success: false, message: 'Erreur réseau pendant upload slice.' };
+            }
+        }
+
+        function buildSlicedEmailTemplateHtmlDocument(previewData, uploadedSlices) {
+            const title = escapeHtml((draftNameInput.value || '').trim() || 'Template e-mail');
+            const tableHtml = generateEmailTableHTML(uploadedSlices, previewData.imgWidth, (slice) => slice.url || '');
+
+            return `<!DOCTYPE html>
 <html lang="fr">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>${title}</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>${title}</title>
 </head>
-<body style="margin:0;padding:0;background:#f1f5f9;">
-    <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" style="border-collapse:collapse;background:#f1f5f9;">
-        <tr>
-            <td align="center" style="padding:18px 10px;">
-                <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="${contentWidth}" style="width:${contentWidth}px;max-width:${contentWidth}px;border-collapse:collapse;background:#ffffff;border:1px solid #e2e8f0;border-radius:10px;overflow:hidden;">
-                    <tr>
-                        <td style="padding:0;line-height:0;">
-                            <img src="${escapeAttr(heroSrc)}" alt="Visuel" width="${contentWidth}" style="display:block;width:100%;max-width:${contentWidth}px;height:auto;border:0;outline:none;text-decoration:none;">
-                        </td>
-                    </tr>
-                    <tr>
-                        <td style="padding:16px 24px 10px 24px;color:#0f172a;font-family:Arial,Helvetica,sans-serif;font-size:16px;line-height:22px;font-weight:700;">
-                            ${title}
-                        </td>
-                    </tr>
-                    ${linksHtml}
-                    ${dataUrlNotice}
-                </table>
-            </td>
-        </tr>
-    </table>
+<body style="margin:0;padding:0;background:#ffffff;">
+  <div style="margin:0 auto;max-width:${previewData.imgWidth}px;">
+${tableHtml}
+  </div>
 </body>
 </html>`;
+        }
+
+        async function generateEmailTemplateFromPreviewData(previewData) {
+            const slices = calculateImageSlices(previewData.scaleX, previewData.scaleY);
+            if (!slices.length) {
+                throw new Error('Aucune slice à générer.');
+            }
+
+            const draftBaseName = (draftNameInput.value || '').trim() || 'template-email';
+            const safeBaseName = draftBaseName
+                .replace(/[\\\/:*?"<>|]+/g, '')
+                .replace(/\s+/g, '-')
+                .toLowerCase();
+            const exportPrefix = (safeBaseName || 'template-email') + '-' + Date.now();
+            const uploadedSlices = [];
+
+            setDraftStatus('Découpe de l\'image en cours...');
+            for (let i = 0; i < slices.length; i++) {
+                const slice = slices[i];
+                const blob = await createSliceBlob(slice);
+                const blobType = (blob && blob.type) ? String(blob.type).toLowerCase() : '';
+                const extension = blobType === 'image/png'
+                    ? 'png'
+                    : (blobType === 'image/webp' ? 'webp' : 'jpg');
+                const filename = exportPrefix + '-slice-' + String(i + 1).padStart(3, '0') + '.' + extension;
+                const upload = await uploadEmailSlice(blob, filename);
+                if (!upload.success || !upload.url) {
+                    throw new Error(upload.message || ('Échec upload slice ' + (i + 1) + '.'));
                 }
+                uploadedSlices.push({ ...slice, url: upload.url, filename: upload.filename || filename });
+            }
+
+            const templateHtml = buildSlicedEmailTemplateHtmlDocument(previewData, uploadedSlices);
+            const localFilename = (safeBaseName || 'template-email') + '-email-template.html';
+            downloadTextFile(templateHtml, localFilename, 'text/html;charset=utf-8');
+
+            const exportName = (safeBaseName || 'template-email') + '-email-template';
+            const exportResult = await exportHtmlFromBuilder(templateHtml, exportName, currentDraftId || '');
+            if (exportResult && exportResult.success) {
+                applyExportResult(exportResult.url || '', exportResult.filename || localFilename, templateHtml);
+                setDraftStatus('Template e-mail généré (image découpée), téléchargé et exporté dans exports-html.');
+                return {
+                    success: true,
+                    filename: exportResult.filename || localFilename,
+                    url: exportResult.url || ''
+                };
+            }
+
+            setDraftStatus('Template téléchargé, mais export serveur impossible: ' + ((exportResult && exportResult.message) ? exportResult.message : 'erreur inconnue'), true);
+            return {
+                success: false,
+                message: (exportResult && exportResult.message) ? exportResult.message : 'Export serveur impossible.'
+            };
+        }
 
         previewBtn.addEventListener('click', () => {
             if (previewBtn.disabled) {
@@ -2405,6 +2570,10 @@
             downloadLastExportHtml();
         });
 
+        downloadExportCodeBtn.addEventListener('click', () => {
+            downloadLastExportHtmlCode();
+        });
+
         downloadExportQuickBtn.addEventListener('click', () => {
             downloadLastExportHtml();
         });
@@ -2419,44 +2588,6 @@
             }
         });
 
-        generateBtn.addEventListener('click', async () => {
-            if (generateBtn.disabled) {
-                setDraftStatus('Enregistrez d\'abord le visuel en base avant de générer le template e-mail.');
-                return;
-            }
-
-            try {
-                const previewData = buildMapPreviewData();
-                const templateHtml = buildEmailTemplateHtmlDocument(previewData);
-                const draftBaseName = (draftNameInput.value || '').trim() || 'template-email';
-                const safeBaseName = draftBaseName
-                    .replace(/[\\\/:*?"<>|]+/g, '')
-                    .replace(/\s+/g, '-')
-                    .toLowerCase();
-                const localFilename = (safeBaseName || 'template-email') + '-email-template.html';
-                const blob = new Blob([templateHtml], { type: 'text/html;charset=utf-8' });
-                const downloadUrl = URL.createObjectURL(blob);
-                const link = document.createElement('a');
-                link.href = downloadUrl;
-                link.download = localFilename;
-                document.body.appendChild(link);
-                link.click();
-                document.body.removeChild(link);
-                URL.revokeObjectURL(downloadUrl);
-
-                const exportName = (safeBaseName || 'template-email') + '-email-template';
-                const exportResult = await exportHtmlFromBuilder(templateHtml, exportName, currentDraftId || '');
-                if (exportResult && exportResult.success) {
-                    applyExportResult(exportResult.url || '', exportResult.filename || localFilename, templateHtml);
-                    setDraftStatus('Template e-mail généré, téléchargé et exporté dans exports-html.');
-                } else {
-                    setDraftStatus('Template téléchargé, mais export serveur impossible: ' + ((exportResult && exportResult.message) ? exportResult.message : 'erreur inconnue'), true);
-                }
-            } catch (error) {
-                alert(error && error.message ? error.message : 'Impossible de générer le template e-mail.');
-            }
-        });
-        
         function calculateImageSlices(scaleX, scaleY) {
             // Créer une grille de découpe basée sur les zones
             const xPoints = new Set([0]);
@@ -2521,7 +2652,7 @@
             return slices;
         }
         
-        function generateEmailTableHTML(slices, imgWidth) {
+        function generateEmailTableHTML(slices, imgWidth, getSliceSrc) {
             // Grouper par rangée
             const rows = {};
             slices.forEach(slice => {
@@ -2535,7 +2666,8 @@
             Object.keys(rows).sort((a, b) => Number(a) - Number(b)).forEach(rowKey => {
                 html += `\n    <tr>`;
                 rows[rowKey].forEach(slice => {
-                    const imgTag = `<img src="VOTRE_URL_SERVEUR/slice-${slice.index}.jpg" width="${slice.width}" height="${slice.height}" style="display: block; border: 0; margin: 0; padding: 0; max-width: 100%;" alt="">`;
+                    const resolvedSrc = typeof getSliceSrc === 'function' ? getSliceSrc(slice) : '';
+                    const imgTag = `<img src="${escapeAttr(resolvedSrc || '')}" width="${slice.width}" height="${slice.height}" style="display: block; border: 0; margin: 0; padding: 0; max-width: 100%;" alt="">`;
                     
                     if (slice.href) {
                         html += `\n      <td style="padding: 0; margin: 0; line-height: 0;"><a href="${slice.href}" style="display: block; border: 0; text-decoration: none; line-height: 0;">${imgTag}</a></td>`;
@@ -2547,10 +2679,7 @@
             });
             
             html += `\n  </tbody>
-</table>
-
-<!-- Remplacez VOTRE_URL_SERVEUR par l'URL où vous avez uploadé les morceaux -->
-<!-- Exemple : https://votresite.com/images/campagne-mayami -->`;
+</table>`;
             
             return html;
         }

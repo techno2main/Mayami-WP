@@ -691,6 +691,115 @@ function mayami_ajax_get_epk_draft() {
 add_action('wp_ajax_mayami_get_epk_draft', 'mayami_ajax_get_epk_draft');
 
 /**
+ * Resolve the required export directory for Visual Links Builder.
+ *
+ * @return string|WP_Error
+ */
+function mayami_get_visual_links_export_dir() {
+    $export_dir = trailingslashit(get_template_directory()) . 'visual-link-builder/exports-html';
+    if (!is_dir($export_dir) && !wp_mkdir_p($export_dir)) {
+        return new WP_Error(
+            'export_dir_create_failed',
+            'Impossible de créer le dossier d\'export requis: visual-link-builder/exports-html. Créez-le manuellement via FTP puis mettez les droits en écriture (755/775).'
+        );
+    }
+
+    if (!is_writable($export_dir)) {
+        return new WP_Error(
+            'export_dir_not_writable',
+            'Le dossier d\'export requis n\'est pas accessible en écriture: visual-link-builder/exports-html. Vérifiez les permissions (755/775) et le propriétaire.'
+        );
+    }
+
+    return $export_dir;
+}
+
+/**
+ * AJAX: upload one generated image slice for email templates.
+ */
+function mayami_ajax_upload_visual_links_slice() {
+    if (!current_user_can('manage_options')) {
+        wp_send_json_error(array('message' => 'Accès refusé.'), 403);
+    }
+
+    check_ajax_referer('mayami_epk_draft', 'nonce');
+
+    if (empty($_FILES['slice_file']) || !is_array($_FILES['slice_file'])) {
+        wp_send_json_error(array('message' => 'Fichier slice manquant.'), 400);
+    }
+
+    $file = $_FILES['slice_file'];
+    if (!isset($file['error']) || (int) $file['error'] !== UPLOAD_ERR_OK) {
+        wp_send_json_error(array('message' => 'Erreur upload slice (code ' . (int) ($file['error'] ?? -1) . ').'), 400);
+    }
+
+    $tmp_name = isset($file['tmp_name']) ? (string) $file['tmp_name'] : '';
+    if ($tmp_name === '' || !file_exists($tmp_name) || !is_readable($tmp_name)) {
+        wp_send_json_error(array('message' => 'Fichier temporaire invalide pour la slice.'), 400);
+    }
+
+    // Some server setups make is_uploaded_file() unreliable in admin-ajax contexts.
+    if (!is_uploaded_file($tmp_name) && !isset($file['name'])) {
+        wp_send_json_error(array('message' => 'Upload slice non reconnu par le serveur.'), 400);
+    }
+
+    $requested_filename = isset($_POST['filename']) ? sanitize_file_name(wp_unslash((string) $_POST['filename'])) : '';
+    if ($requested_filename === '') {
+        $requested_filename = 'slice-' . wp_generate_uuid4() . '.jpg';
+    }
+
+    $allowed_exts = array('jpg', 'jpeg', 'jpe', 'png', 'webp');
+    $requested_ext = strtolower((string) pathinfo($requested_filename, PATHINFO_EXTENSION));
+    if ($requested_ext === '' || !in_array($requested_ext, $allowed_exts, true)) {
+        wp_send_json_error(array('message' => 'Extension de slice non autorisée (jpg/png/webp uniquement).'), 400);
+    }
+
+    $image_info = @getimagesize($tmp_name);
+    if ($image_info === false || empty($image_info['mime'])) {
+        wp_send_json_error(array('message' => 'Le fichier slice n\'est pas une image valide.'), 400);
+    }
+
+    $mime_to_ext = array(
+        'image/jpeg' => 'jpg',
+        'image/png' => 'png',
+        'image/webp' => 'webp',
+    );
+    $detected_mime = strtolower((string) $image_info['mime']);
+    if (!isset($mime_to_ext[$detected_mime])) {
+        wp_send_json_error(array('message' => 'Format image slice non pris en charge (' . $detected_mime . ').'), 400);
+    }
+
+    $filename_base = sanitize_file_name(pathinfo($requested_filename, PATHINFO_FILENAME));
+    if ($filename_base === '') {
+        $filename_base = 'slice-' . time();
+    }
+    $filename = $filename_base . '.' . $mime_to_ext[$detected_mime];
+
+    $export_dir = mayami_get_visual_links_export_dir();
+    if (is_wp_error($export_dir)) {
+        wp_send_json_error(array('message' => $export_dir->get_error_message()), 500);
+    }
+
+    $target_path = trailingslashit($export_dir) . $filename;
+    $moved = move_uploaded_file($tmp_name, $target_path);
+    if (!$moved) {
+        $raw_data = file_get_contents($tmp_name);
+        if ($raw_data === false || file_put_contents($target_path, $raw_data) === false) {
+            wp_send_json_error(array('message' => 'Impossible d\'écrire la slice ' . $filename . '.'), 500);
+        }
+    }
+
+    $file_url = trailingslashit(get_template_directory_uri()) . 'visual-link-builder/exports-html/' . rawurlencode($filename);
+
+    wp_send_json_success(array(
+        'filename' => $filename,
+        'path' => $target_path,
+        'url' => $file_url,
+    ));
+}
+add_action('wp_ajax_mayami_upload_visual_links_slice', 'mayami_ajax_upload_visual_links_slice');
+
+/**
  * AJAX: export current preview to the dedicated HTML file used for communication.
  */
 function mayami_ajax_export_epk_html() {
@@ -720,13 +829,9 @@ function mayami_ajax_export_epk_html() {
     }
     $filename = $safe_name . '.html';
 
-    $export_dir = trailingslashit(get_template_directory()) . 'visual-link-builder/exports-html';
-    if (!is_dir($export_dir) && !wp_mkdir_p($export_dir)) {
-        wp_send_json_error(array('message' => 'Impossible de créer le dossier d\'export requis: visual-link-builder/exports-html. Créez-le manuellement via FTP puis mettez les droits en écriture (755/775).'), 500);
-    }
-
-    if (!is_writable($export_dir)) {
-        wp_send_json_error(array('message' => 'Le dossier d\'export requis n\'est pas accessible en écriture: visual-link-builder/exports-html. Vérifiez les permissions (755/775) et le propriétaire.'), 500);
+    $export_dir = mayami_get_visual_links_export_dir();
+    if (is_wp_error($export_dir)) {
+        wp_send_json_error(array('message' => $export_dir->get_error_message()), 500);
     }
 
     $export_path = trailingslashit($export_dir) . $filename;
