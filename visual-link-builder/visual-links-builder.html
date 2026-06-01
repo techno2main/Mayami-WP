@@ -725,6 +725,7 @@
                 <div class="draft-box">
                     <h3>💾 Visuel</h3>
                     <input type="text" id="draftNameInput" class="draft-name-input" placeholder="Nom du visuel (obligatoire)">
+                    <input type="url" id="pdfUrlInput" class="draft-name-input" placeholder="Lien PDF (https://votresite.com/fichier.pdf)">
                     <button class="btn btn-secondary" id="saveDraftBtn">Enregistrer le visuel</button>
                     <div class="draft-status" id="draftStatus">Visuel non sauvegardé en base.</div>
                     <div class="export-quick-actions" id="exportQuickActions">
@@ -824,6 +825,7 @@
         const clearAllBtn = document.getElementById('clearAllBtn');
         const saveDraftBtn = document.getElementById('saveDraftBtn');
         const draftNameInput = document.getElementById('draftNameInput');
+        const pdfUrlInput = document.getElementById('pdfUrlInput');
         const draftStatus = document.getElementById('draftStatus');
         const exportQuickActions = document.getElementById('exportQuickActions');
         const exportQuickUrl = document.getElementById('exportQuickUrl');
@@ -1031,8 +1033,37 @@
             }
         }
 
-        function downloadLastExportHtml() {
-            const html = String(lastExportedHtmlDocument || '');
+        async function ensureLastExportedHtmlDocument() {
+            const cachedHtml = String(lastExportedHtmlDocument || '');
+            if (cachedHtml) {
+                return cachedHtml;
+            }
+
+            const exportUrl = String(lastExportedPublicUrl || '').trim();
+            if (!exportUrl || exportUrl === 'URL non disponible') {
+                return '';
+            }
+
+            try {
+                const response = await fetch(exportUrl, {
+                    method: 'GET',
+                    credentials: 'same-origin'
+                });
+
+                if (!response.ok) {
+                    return '';
+                }
+
+                const html = await response.text();
+                lastExportedHtmlDocument = String(html || '');
+                return lastExportedHtmlDocument;
+            } catch (error) {
+                return '';
+            }
+        }
+
+        async function downloadLastExportHtml() {
+            const html = await ensureLastExportedHtmlDocument();
             if (!html) {
                 setDraftStatus('Aucun contenu HTML à télécharger.', true);
                 return;
@@ -1049,8 +1080,8 @@
             URL.revokeObjectURL(objectUrl);
         }
 
-        function downloadLastExportHtmlCode() {
-            const html = String(lastExportedHtmlDocument || '');
+        async function downloadLastExportHtmlCode() {
+            const html = await ensureLastExportedHtmlDocument();
             if (!html) {
                 setDraftStatus('Aucun code HTML à exporter.', true);
                 return;
@@ -1264,10 +1295,36 @@
             mediaFrame.open();
         }
 
+        function normalizePdfUrl(rawValue) {
+            const raw = String(rawValue || '').trim();
+            if (!raw) {
+                return '';
+            }
+
+            if (/^https?:\/\//i.test(raw)) {
+                return raw;
+            }
+
+            if (/^\/\//.test(raw)) {
+                return window.location.protocol + raw;
+            }
+
+            if (/^\//.test(raw)) {
+                return window.location.origin + raw;
+            }
+
+            if (/^wp-content\//i.test(raw)) {
+                return window.location.origin + '/' + raw;
+            }
+
+            return raw;
+        }
+
         function serializeDraftPayload() {
             const dims = getCanvasDimensions();
             return {
                 imageUrl: imageUrl || '',
+                pdfUrl: normalizePdfUrl(pdfUrlInput.value),
                 canvasWidth: dims.width,
                 canvasHeight: dims.height,
                 zones: zones.map(zone => ({
@@ -1298,8 +1355,10 @@
             previewBtn.disabled = !canRun;
         }
 
-        function markDraftDirty() {
-            clearExportResultState();
+        function markDraftDirty(preserveExportState = false) {
+            if (!preserveExportState) {
+                clearExportResultState();
+            }
             if (!currentDraftId) {
                 setDraftStatus('Visuel non sauvegardé en base.');
             } else {
@@ -1432,6 +1491,7 @@
 
                 const payload = result.data.payload || {};
                 imageUrl = payload.imageUrl || '';
+                pdfUrlInput.value = normalizePdfUrl(payload.pdfUrl || '');
                 const rawZones = Array.isArray(payload.zones) ? payload.zones : [];
 
                 if (imageUrl) {
@@ -1476,10 +1536,15 @@
                 updateGenerateButtonState();
 
                 // Restore quick export actions if a previous export URL was persisted.
-                const restoredExportUrl = String(result.data.export_url || '').trim();
-                const restoredExportFilename = String(result.data.export_filename || '').trim();
+                const restoredTemplateEmailExportUrl = String(result.data.template_email_export_url || '').trim();
+                const restoredTemplateEmailExportFilename = String(result.data.template_email_export_filename || '').trim();
+                const restoredTemplateHtmlExportUrl = String(result.data.template_html_export_url || '').trim();
+                const restoredTemplateHtmlExportFilename = String(result.data.template_html_export_filename || '').trim();
+                const restoredExportUrl = restoredTemplateEmailExportUrl || restoredTemplateHtmlExportUrl || String(result.data.export_url || '').trim();
+                const restoredExportFilename = restoredTemplateEmailExportFilename || restoredTemplateHtmlExportFilename || String(result.data.export_filename || '').trim();
                 if (restoredExportUrl) {
                     applyExportResult(restoredExportUrl, restoredExportFilename || 'visual-links.html', '');
+                    void ensureLastExportedHtmlDocument();
                 }
             } catch (error) {
                 setDraftStatus('Impossible de charger le visuel.', true);
@@ -2511,6 +2576,17 @@
         function buildSlicedEmailTemplateHtmlDocument(previewData, uploadedSlices) {
             const title = escapeHtml((draftNameInput.value || '').trim() || 'Template e-mail');
             const tableHtml = generateEmailTableHTML(uploadedSlices, previewData.imgWidth, (slice) => slice.url || '');
+                        const pdfUrl = normalizePdfUrl(pdfUrlInput.value);
+                        const hasPdfUrl = /^https?:\/\//i.test(pdfUrl);
+                        const pdfBannerHtml = hasPdfUrl
+                                ? `
+    <div style="margin:0 auto 12px;max-width:${previewData.imgWidth}px;text-align:center;font-family:Arial,sans-serif;font-size:14px;line-height:1.4;">
+        <a href="${escapeAttr(pdfUrl)}" target="_blank" rel="noopener noreferrer" style="display:inline-flex;align-items:center;gap:6px;color:#dc2626;text-decoration:underline;font-weight:800;letter-spacing:0.2px;">
+            <span style="display:inline-block;font-size:11px;line-height:1;padding:2px 5px;border:1px solid #dc2626;border-radius:3px;color:#dc2626;">PDF</span>
+            <span>DOWNLOAD THIS MAYAMI ONESHEET - CLICKABLE IN PDF</span>
+        </a>
+    </div>`
+                                : '';
 
             return `<!DOCTYPE html>
 <html lang="fr">
@@ -2520,6 +2596,7 @@
   <title>${title}</title>
 </head>
 <body style="margin:0;padding:0;background:#ffffff;">
+${pdfBannerHtml}
   <div style="margin:0 auto;max-width:${previewData.imgWidth}px;">
 ${tableHtml}
   </div>
@@ -2730,6 +2807,18 @@ ${tableHtml}
 
         draftNameInput.addEventListener('input', () => {
             markDraftDirty();
+        });
+
+        pdfUrlInput.addEventListener('input', () => {
+            markDraftDirty(true);
+        });
+
+        pdfUrlInput.addEventListener('blur', () => {
+            const normalized = normalizePdfUrl(pdfUrlInput.value);
+            if (normalized !== (pdfUrlInput.value || '').trim()) {
+                pdfUrlInput.value = normalized;
+                markDraftDirty(true);
+            }
         });
 
         updateGenerateButtonState();

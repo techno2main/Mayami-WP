@@ -547,6 +547,7 @@ function mayami_sanitize_epk_html_payload($payload) {
     if (!is_array($payload)) {
         return array(
             'imageUrl' => '',
+            'pdfUrl' => '',
             'zones' => array(),
         );
     }
@@ -565,6 +566,12 @@ function mayami_sanitize_epk_html_payload($payload) {
         } else {
             $image_url = esc_url_raw($raw_image_url);
         }
+    }
+
+    $pdf_url = '';
+    if (!empty($payload['pdfUrl'])) {
+        $raw_pdf_url = trim((string) $payload['pdfUrl']);
+        $pdf_url = esc_url_raw($raw_pdf_url);
     }
 
     $zones = array();
@@ -608,6 +615,7 @@ function mayami_sanitize_epk_html_payload($payload) {
 
     return array(
         'imageUrl' => $image_url,
+        'pdfUrl' => $pdf_url,
         'canvasWidth' => max(0, $canvas_width),
         'canvasHeight' => max(0, $canvas_height),
         'zones' => $zones,
@@ -688,6 +696,10 @@ function mayami_ajax_get_epk_draft() {
         'updatedAt'       => $draft['updated_at'],
         'export_url'      => isset($draft['export_url'])      ? (string) $draft['export_url']      : '',
         'export_filename' => isset($draft['export_filename']) ? (string) $draft['export_filename'] : '',
+        'template_email_export_url' => isset($draft['template_email_export_url']) ? (string) $draft['template_email_export_url'] : '',
+        'template_email_export_filename' => isset($draft['template_email_export_filename']) ? (string) $draft['template_email_export_filename'] : '',
+        'template_html_export_url' => isset($draft['template_html_export_url']) ? (string) $draft['template_html_export_url'] : '',
+        'template_html_export_filename' => isset($draft['template_html_export_filename']) ? (string) $draft['template_html_export_filename'] : '',
     ));
 }
 add_action('wp_ajax_mayami_get_epk_draft', 'mayami_ajax_get_epk_draft');
@@ -953,6 +965,15 @@ function mayami_ajax_export_epk_html() {
         if (!empty($store[$draft_id]) && is_array($store[$draft_id])) {
             $store[$draft_id]['export_url']      = $export_url;
             $store[$draft_id]['export_filename'] = $filename;
+
+            if ($export_bucket === 'template-email') {
+                $store[$draft_id]['template_email_export_url'] = $export_url;
+                $store[$draft_id]['template_email_export_filename'] = $filename;
+            } elseif ($export_bucket === 'template-html') {
+                $store[$draft_id]['template_html_export_url'] = $export_url;
+                $store[$draft_id]['template_html_export_filename'] = $filename;
+            }
+
             mayami_update_epk_drafts_store($store);
         }
     }
