@@ -160,17 +160,25 @@ add_action('wp_enqueue_scripts', 'mayami_enqueue_assets');
  * Enqueue admin assets for Mayami Landing page
  */
 function mayami_enqueue_admin_assets($hook) {
-    // Only load on our options page
-    if ('toplevel_page_mayami_landing_options' !== $hook) {
+    $is_landing_page = ('toplevel_page_mayami_landing_options' === $hook);
+    $is_visual_links_page = (strpos((string) $hook, 'mayami_epk') !== false);
+
+    if (!$is_landing_page && !$is_visual_links_page) {
         return;
     }
-    
+
+    // Required by the Visual Links Builder (selection from WP media library).
+    wp_enqueue_media();
+
+    // Keep existing landing admin assets behavior unchanged.
+    if (!$is_landing_page) {
+        return;
+    }
+
     $admin_css_path = get_template_directory() . '/assets/admin-nav.css';
     $admin_js_path = get_template_directory() . '/assets/admin-nav.js';
-    $epk_admin_css_path = get_template_directory() . '/assets/admin-epk-builder.css';
-    $epk_admin_js_path = get_template_directory() . '/assets/admin-epk-builder.js';
-
-    wp_enqueue_media();
+    $visual_links_admin_css_path = get_template_directory() . '/assets/admin-visual-links-builder.css';
+    $visual_links_admin_js_path = get_template_directory() . '/assets/admin-visual-links-builder.js';
 
     // Admin navigation CSS
     wp_enqueue_style(
@@ -190,17 +198,17 @@ function mayami_enqueue_admin_assets($hook) {
     );
 
     wp_enqueue_style(
-        'mayami-admin-epk-builder',
-        get_template_directory_uri() . '/assets/admin-epk-builder.css',
+        'mayami-admin-visual-links-builder',
+        get_template_directory_uri() . '/assets/admin-visual-links-builder.css',
         array('mayami-admin-nav'),
-        file_exists($epk_admin_css_path) ? (string) filemtime($epk_admin_css_path) : '1.0.0'
+        file_exists($visual_links_admin_css_path) ? (string) filemtime($visual_links_admin_css_path) : '1.0.0'
     );
 
     wp_enqueue_script(
-        'mayami-admin-epk-builder',
-        get_template_directory_uri() . '/assets/admin-epk-builder.js',
+        'mayami-admin-visual-links-builder',
+        get_template_directory_uri() . '/assets/admin-visual-links-builder.js',
         array('jquery', 'media-editor', 'media-views', 'wp-util'),
-        file_exists($epk_admin_js_path) ? (string) filemtime($epk_admin_js_path) : '1.0.0',
+        file_exists($visual_links_admin_js_path) ? (string) filemtime($visual_links_admin_js_path) : '1.0.0',
         true
     );
 }
@@ -394,12 +402,12 @@ function mayami_redirect_admin_bar_edit_to_landing($wp_admin_bar) {
 add_action('admin_bar_menu', 'mayami_redirect_admin_bar_edit_to_landing', 1001);
 
 /**
- * Register an independent Visual Link Builder top-level menu.
+ * Register an independent Visual Links Builder top-level menu.
  */
 function mayami_register_epk_html_menu() {
     add_menu_page(
-        'Visual Link Builder',
-        'Visual Link Builder',
+        'Visual Links Builder',
+        'Visual Links Builder',
         'manage_options',
         'mayami_epk_html_builder',
         'mayami_render_epk_html_builder_page',
@@ -703,42 +711,83 @@ function mayami_ajax_export_epk_html() {
 
     $draft_name = isset($_POST['draft_name']) ? sanitize_text_field(wp_unslash($_POST['draft_name'])) : '';
     if ($draft_name === '') {
-        $draft_name = 'epk';
+        $draft_name = 'visual-links';
     }
-    $safe_name = remove_accents($draft_name);
-    $safe_name = preg_replace('/[\\\/:*?"<>|]+/', '', (string) $safe_name);
-    $safe_name = preg_replace('/\s+/', ' ', (string) $safe_name);
-    $safe_name = trim((string) $safe_name);
+    $safe_name = sanitize_file_name(remove_accents($draft_name));
+    $safe_name = trim((string) $safe_name, " .-_\t\n\r\0\x0B");
     if ($safe_name === '') {
-        $safe_name = 'epk';
+        $safe_name = 'visual-links';
     }
     $filename = $safe_name . '.html';
 
-    $export_dir = trailingslashit(get_template_directory()) . 'visual-link-builder/html-exports';
-    if (!is_dir($export_dir) && !wp_mkdir_p($export_dir)) {
-        wp_send_json_error(array('message' => 'Impossible de créer le dossier html-exports.'), 500);
+    $theme_export_dir = trailingslashit(get_template_directory()) . 'visual-link-builder/html-exports';
+    $uploads = wp_upload_dir();
+    $candidate_dirs = array($theme_export_dir);
+
+    if (empty($uploads['error']) && !empty($uploads['basedir'])) {
+        $candidate_dirs[] = trailingslashit($uploads['basedir']) . 'visual-links-builder-exports';
     }
 
-    if (!is_writable($export_dir)) {
-        wp_send_json_error(array('message' => 'Le dossier html-exports n\'est pas accessible en écriture.'), 500);
+    $export_dir = '';
+    $last_dir_error = '';
+    foreach ($candidate_dirs as $candidate_dir) {
+        if (!is_dir($candidate_dir) && !wp_mkdir_p($candidate_dir)) {
+            $last_dir_error = 'Impossible de créer le dossier d\'export: ' . $candidate_dir;
+            continue;
+        }
+
+        if (!is_writable($candidate_dir)) {
+            $last_dir_error = 'Dossier non accessible en écriture: ' . $candidate_dir;
+            continue;
+        }
+
+        $export_dir = $candidate_dir;
+        break;
+    }
+
+    if ($export_dir === '') {
+        wp_send_json_error(array('message' => $last_dir_error !== '' ? $last_dir_error : 'Impossible de préparer un dossier d\'export.'), 500);
     }
 
     $export_path = trailingslashit($export_dir) . $filename;
     $written = file_put_contents($export_path, $html);
     if ($written === false) {
-        wp_send_json_error(array('message' => 'Échec de l\'écriture du fichier ' . $filename . '.'), 500);
+        $last_error = error_get_last();
+        $last_error_message = is_array($last_error) && !empty($last_error['message']) ? (string) $last_error['message'] : 'inconnue';
+        wp_send_json_error(array('message' => 'Échec de l\'écriture du fichier ' . $filename . ' (' . $last_error_message . ').'), 500);
+    }
+
+    $export_url = '';
+    if (empty($uploads['error']) && !empty($uploads['basedir']) && !empty($uploads['baseurl'])) {
+        $normalized_export_dir = wp_normalize_path(trailingslashit($export_dir));
+        $normalized_uploads_dir = wp_normalize_path(trailingslashit((string) $uploads['basedir']));
+        if (strpos($normalized_export_dir, $normalized_uploads_dir) === 0) {
+            $relative = ltrim((string) substr($normalized_export_dir, strlen($normalized_uploads_dir)), '/');
+            $encoded_relative = $relative !== '' ? str_replace('%2F', '/', rawurlencode($relative)) . '/' : '';
+            $export_url = trailingslashit((string) $uploads['baseurl']) . $encoded_relative . rawurlencode($filename);
+        }
+    }
+
+    if ($export_url === '') {
+        $normalized_export_dir = wp_normalize_path(trailingslashit($export_dir));
+        $normalized_theme_export_dir = wp_normalize_path(trailingslashit($theme_export_dir));
+        if (strpos($normalized_export_dir, $normalized_theme_export_dir) === 0) {
+            $export_url = trailingslashit(get_template_directory_uri()) . 'visual-link-builder/html-exports/' . rawurlencode($filename);
+        }
     }
 
     wp_send_json_success(array(
         'path' => $export_path,
+        'url' => $export_url,
         'filename' => $filename,
         'bytes' => (int) $written,
     ));
 }
 add_action('wp_ajax_mayami_export_epk_html', 'mayami_ajax_export_epk_html');
+add_action('wp_ajax_mayami_export_visual_links_html', 'mayami_ajax_export_epk_html');
 
 /**
- * Render the standalone HTML Visual Link Builder inside WP admin.
+ * Render the standalone HTML Visual Links Builder inside WP admin.
  */
 function mayami_render_epk_html_builder_page() {
     if (!current_user_can('manage_options')) {
@@ -750,7 +799,7 @@ function mayami_render_epk_html_builder_page() {
         'wp_ajax_url' => admin_url('admin-ajax.php'),
         'wp_nonce' => wp_create_nonce('mayami_epk_draft'),
         'epk_draft_id' => $draft_id,
-    ), trailingslashit(get_template_directory_uri()) . 'visual-link-builder/visual-link-map-creator.html');
+    ), trailingslashit(get_template_directory_uri()) . 'visual-link-builder/visual-links-builder.html');
 
     $selected_name = '';
     if ($draft_id !== '') {
@@ -761,7 +810,7 @@ function mayami_render_epk_html_builder_page() {
     }
     ?>
     <div class="wrap mayami-epk-html-page">
-        <h1>Visual Link Builder</h1>
+        <h1>Visual Links Builder</h1>
         <p>Utilisez ce builder pour ajouter des zones cliquables sur n'importe quel visuel.</p>
         <?php if ($selected_name !== '') : ?>
             <p><strong>Visuel ouvert :</strong> <?php echo esc_html($selected_name); ?></p>
@@ -769,7 +818,7 @@ function mayami_render_epk_html_builder_page() {
         <div style="background:#fff;border:1px solid #dcdcde;border-radius:8px;overflow:hidden;">
             <iframe
                 src="<?php echo esc_url($html_builder_url); ?>"
-                title="Visual Link Builder"
+                title="Visual Links Builder"
                 style="width:100%;height:calc(100vh - 210px);min-height:760px;border:0;display:block;"
             ></iframe>
         </div>
@@ -792,7 +841,7 @@ function mayami_render_epk_drafts_page() {
     ?>
     <div class="wrap mayami-epk-drafts-page">
         <h1>Liste des visuels</h1>
-        <p>Ouvrez un visuel existant pour reprendre l'edition dans Visual Link Builder.</p>
+        <p>Ouvrez un visuel existant pour reprendre l'edition dans Visual Links Builder.</p>
         <p>
             <a href="<?php echo esc_url(admin_url('admin.php?page=mayami_epk_html_builder_new')); ?>" class="button button-primary">Nouveau visuel</a>
         </p>

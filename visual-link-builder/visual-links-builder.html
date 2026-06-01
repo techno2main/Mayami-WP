@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Visual Link Builder</title>
+    <title>Visual Links Builder</title>
     <style>
         * {
             margin: 0;
@@ -392,6 +392,51 @@
         .upload-zone input {
             display: none;
         }
+
+        .upload-zone__media-btn {
+            margin-top: 12px;
+            border: 1px solid #c7d2fe;
+            background: #eef2ff;
+            color: #3730a3;
+            border-radius: 8px;
+            padding: 8px 12px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        .image-source-box {
+            margin-bottom: 20px;
+            padding: 14px;
+            border: 1px solid #d6dbe4;
+            border-radius: 8px;
+            background: #f8f9fb;
+        }
+
+        .image-source-box h3 {
+            margin: 0 0 8px;
+            font-size: 14px;
+            color: #333;
+        }
+
+        .image-source-actions {
+            display: grid;
+            gap: 8px;
+        }
+
+        .btn-image-source {
+            padding: 10px 12px;
+            margin: 0;
+            font-size: 13px;
+            border-radius: 6px;
+        }
+
+        .image-source-help {
+            margin-top: 8px;
+            font-size: 12px;
+            color: #64748b;
+            line-height: 1.4;
+        }
         
         .rectangle-overlay {
             position: absolute;
@@ -502,6 +547,7 @@
                 <div class="upload-zone" id="uploadZone">
                     <p style="margin-bottom: 10px; font-size: 14px;">📁 Cliquez ou glissez votre image ici</p>
                     <p style="font-size: 12px; color: #666;">Formats acceptés : JPG, PNG, GIF</p>
+                    <button type="button" id="uploadFromMediaBtn" class="upload-zone__media-btn">Choisir depuis la bibliothèque média</button>
                     <input type="file" id="imageUpload" accept="image/*">
                 </div>
                 
@@ -512,7 +558,7 @@
                 
                 <div class="info-box">
                     <strong>Mode d'emploi :</strong>
-                    1. Uploadez votre image ou utilisez l'image par défaut<br>
+                    1. Chargez votre image depuis l'ordinateur ou la bibliothèque média<br>
                     2. Cliquez et glissez pour dessiner des zones rectangulaires<br>
                     3. Ajoutez un lien ou une ancre pour chaque zone<br>
                     4. Générez le code HTML
@@ -525,6 +571,15 @@
                     <input type="text" id="draftNameInput" class="draft-name-input" placeholder="Nom du visuel (obligatoire)">
                     <button class="btn btn-secondary" id="saveDraftBtn">Enregistrer le visuel</button>
                     <div class="draft-status" id="draftStatus">Visuel non sauvegardé en base.</div>
+                </div>
+
+                <div class="image-source-box">
+                    <h3>🖼️ Image de fond</h3>
+                    <div class="image-source-actions">
+                        <button type="button" class="btn btn-secondary btn-image-source" id="replaceImageFileBtn">Remplacer depuis l'ordinateur</button>
+                        <button type="button" class="btn btn-secondary btn-image-source" id="replaceImageMediaBtn">Choisir dans la bibliothèque média</button>
+                    </div>
+                    <p class="image-source-help">Le remplacement conserve vos zones et les recale automatiquement.</p>
                 </div>
 
                 <div class="stats">
@@ -583,6 +638,9 @@
     <script>
         const imageUpload = document.getElementById('imageUpload');
         const uploadZone = document.getElementById('uploadZone');
+        const uploadFromMediaBtn = document.getElementById('uploadFromMediaBtn');
+        const replaceImageFileBtn = document.getElementById('replaceImageFileBtn');
+        const replaceImageMediaBtn = document.getElementById('replaceImageMediaBtn');
         const canvasWrapper = document.getElementById('canvasWrapper');
         const imageCanvas = document.getElementById('imageCanvas');
         const overlayContainer = document.getElementById('overlayContainer');
@@ -622,6 +680,7 @@
         let dragState = null;
         let suppressDragUntil = 0;
         let isAddZoneMode = false;
+        let mediaFrame = null;
 
         const MIN_ZONE_SIZE = 12;
         const DRAG_START_THRESHOLD = 4;
@@ -714,6 +773,159 @@
                 imageCanvas.addEventListener('load', onLoad);
                 imageCanvas.addEventListener('error', onError);
             });
+        }
+
+        function cloneZones() {
+            return zones.map((zone) => ({
+                id: zone.id,
+                x: Number(zone.x) || 0,
+                y: Number(zone.y) || 0,
+                width: Number(zone.width) || 0,
+                height: Number(zone.height) || 0,
+                hrefType: zone.hrefType === 'anchor' ? 'anchor' : 'url',
+                hrefValue: zone.hrefValue || ''
+            }));
+        }
+
+        function scaleZonesForNewImage(baseZones, sourceDims, targetDims) {
+            const sx = sourceDims.width > 0 ? (targetDims.width / sourceDims.width) : 1;
+            const sy = sourceDims.height > 0 ? (targetDims.height / sourceDims.height) : 1;
+
+            return baseZones.map((zone) => {
+                const x = Math.max(0, Math.round((Number(zone.x) || 0) * sx));
+                const y = Math.max(0, Math.round((Number(zone.y) || 0) * sy));
+                const width = Math.max(1, Math.round((Number(zone.width) || 0) * sx));
+                const height = Math.max(1, Math.round((Number(zone.height) || 0) * sy));
+
+                const maxWidth = Math.max(1, targetDims.width - x);
+                const maxHeight = Math.max(1, targetDims.height - y);
+
+                return {
+                    id: zone.id,
+                    x,
+                    y,
+                    width: Math.min(width, maxWidth),
+                    height: Math.min(height, maxHeight),
+                    hrefType: zone.hrefType,
+                    hrefValue: zone.hrefValue || ''
+                };
+            }).filter((zone) => zone.width > 0 && zone.height > 0);
+        }
+
+        async function setImageSource(source, options = {}) {
+            const preserveZones = !!options.preserveZones;
+            const beforeDims = getCanvasDimensions();
+            const previousZones = preserveZones ? cloneZones() : [];
+
+            imageUrl = source;
+            imageCanvas.src = source;
+            uploadZone.style.display = 'none';
+            canvasWrapper.style.display = 'inline-block';
+            setAddZoneMode(false);
+
+            await waitForImageReady();
+
+            if (!(imageCanvas.naturalWidth > 0 && imageCanvas.naturalHeight > 0)) {
+                setDraftStatus('Impossible de charger l\'image sélectionnée.', true);
+                return;
+            }
+
+            const afterDims = getCanvasDimensions();
+            if (preserveZones && previousZones.length > 0) {
+                zones = scaleZonesForNewImage(previousZones, beforeDims, afterDims);
+                renderZoneOverlays();
+                updateZonesList();
+                markDraftDirty();
+                setDraftStatus('Image remplacée. Zones conservées et recalées.');
+                return;
+            }
+
+            zones = [];
+            activeZoneId = null;
+            overlayContainer.innerHTML = '';
+            updateZonesList();
+            markDraftDirty();
+            setDraftStatus('Image chargée. Ajoutez vos zones puis enregistrez le visuel.');
+        }
+
+        function loadImage(file, options = {}) {
+            if (!file) {
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.onload = async (e) => {
+                const src = e && e.target ? e.target.result : '';
+                if (!src) {
+                    setDraftStatus('Impossible de lire le fichier image.', true);
+                    return;
+                }
+
+                await setImageSource(src, options);
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function getWordPressMediaApi() {
+            try {
+                if (window.parent && window.parent !== window && window.parent.wp && window.parent.wp.media) {
+                    return window.parent.wp.media;
+                }
+            } catch (error) {
+                // Access to parent can fail due to browser policies.
+            }
+
+            try {
+                if (window.top && window.top.wp && window.top.wp.media) {
+                    return window.top.wp.media;
+                }
+            } catch (error) {
+                // Access to top can fail due to browser policies.
+            }
+
+            if (window.wp && window.wp.media) {
+                return window.wp.media;
+            }
+
+            return null;
+        }
+
+        function openMediaLibrary(options = {}) {
+            const mediaApi = getWordPressMediaApi();
+            if (!mediaApi) {
+                setDraftStatus('Bibliothèque média indisponible sur cette page.', true);
+                return;
+            }
+
+            if (!mediaFrame) {
+                mediaFrame = mediaApi({
+                    title: 'Choisir un visuel',
+                    button: {
+                        text: 'Utiliser ce visuel'
+                    },
+                    library: {
+                        type: 'image'
+                    },
+                    multiple: false
+                });
+
+                mediaFrame.on('select', async () => {
+                    const selection = mediaFrame.state().get('selection');
+                    const attachment = selection && selection.first ? selection.first().toJSON() : null;
+                    const selectedUrl = attachment && attachment.url ? attachment.url : '';
+
+                    if (!selectedUrl) {
+                        setDraftStatus('Aucune image valide sélectionnée.', true);
+                        return;
+                    }
+
+                    await setImageSource(selectedUrl, {
+                        preserveZones: zones.length > 0
+                    });
+                });
+            }
+
+            mediaFrame.open();
         }
 
         function serializeDraftPayload() {
@@ -932,7 +1144,26 @@
         }
 
         // Upload handlers
-        uploadZone.addEventListener('click', () => imageUpload.click());
+        uploadZone.addEventListener('click', (event) => {
+            if (event.target === uploadFromMediaBtn) {
+                return;
+            }
+            imageUpload.click();
+        });
+
+        uploadFromMediaBtn.addEventListener('click', (event) => {
+            event.preventDefault();
+            event.stopPropagation();
+            openMediaLibrary({ preserveZones: false });
+        });
+
+        replaceImageFileBtn.addEventListener('click', () => {
+            imageUpload.click();
+        });
+
+        replaceImageMediaBtn.addEventListener('click', () => {
+            openMediaLibrary({ preserveZones: zones.length > 0 });
+        });
         
         uploadZone.addEventListener('dragover', (e) => {
             e.preventDefault();
@@ -948,31 +1179,17 @@
             uploadZone.style.borderColor = '#ccc';
             const file = e.dataTransfer.files[0];
             if (file && file.type.startsWith('image/')) {
-                loadImage(file);
+                loadImage(file, { preserveZones: zones.length > 0 });
             }
         });
 
         imageUpload.addEventListener('change', (e) => {
             const file = e.target.files[0];
             if (file) {
-                loadImage(file);
+                loadImage(file, { preserveZones: zones.length > 0 });
             }
+            imageUpload.value = '';
         });
-
-        function loadImage(file) {
-            const reader = new FileReader();
-            reader.onload = (e) => {
-                imageUrl = e.target.result;
-                imageCanvas.src = imageUrl;
-                uploadZone.style.display = 'none';
-                canvasWrapper.style.display = 'inline-block';
-                zones = [];
-                setAddZoneMode(false);
-                updateZonesList();
-                markDraftDirty();
-            };
-            reader.readAsDataURL(file);
-        }
 
         // Drawing zones
         function getCanvasPoint(clientX, clientY) {
@@ -1381,10 +1598,10 @@
             }
 
             const formData = new FormData();
-            formData.append('action', 'mayami_export_epk_html');
+            formData.append('action', 'mayami_export_visual_links_html');
             formData.append('nonce', wpNonce);
             formData.append('draft_id', draftId || '');
-            formData.append('draft_name', draftName || 'epk');
+            formData.append('draft_name', draftName || 'visual-links');
             formData.append('html', htmlDocument || '');
 
             try {
@@ -1394,7 +1611,24 @@
                     body: formData
                 });
 
-                const result = await response.json();
+                const responseText = await response.text();
+                let result = null;
+                try {
+                    result = JSON.parse(responseText);
+                } catch (parseError) {
+                    return {
+                        success: false,
+                        message: 'Réponse export invalide (' + response.status + ').'
+                    };
+                }
+
+                if (!response.ok) {
+                    return {
+                        success: false,
+                        message: (result && result.data && result.data.message) ? result.data.message : ('Erreur HTTP ' + response.status + ' pendant l\'export.')
+                    };
+                }
+
                 if (!result || !result.success) {
                     return {
                         success: false,
@@ -1404,17 +1638,22 @@
 
                 return {
                     success: true,
-                    filename: (result.data && result.data.filename) ? result.data.filename : ((draftName || 'epk') + '.html')
+                    filename: (result.data && result.data.filename) ? result.data.filename : ((draftName || 'visual-links') + '.html'),
+                    path: (result.data && result.data.path) ? result.data.path : '',
+                    url: (result.data && result.data.url) ? result.data.url : ''
                 };
             } catch (error) {
                 return { success: false, message: 'Erreur réseau pendant l\'export.' };
             }
         }
 
-        window.mayamiExportEpkHtmlFromOpener = async function(payload) {
+        window.mayamiExportVisualLinksHtmlFromOpener = async function(payload) {
             const data = payload || {};
             return exportHtmlFromBuilder(data.htmlDocument || '', data.draftName || '', data.draftId || '');
         };
+
+        // Legacy alias kept for compatibility with previously generated preview windows.
+        window.mayamiExportEpkHtmlFromOpener = window.mayamiExportVisualLinksHtmlFromOpener;
 
         function buildMapPreviewData() {
             if (!imageUrl) {
@@ -1460,7 +1699,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Visual Link Builder</title>
+    <title>Visual Links Builder</title>
   <style>
     * { box-sizing: border-box; }
     body {
@@ -1528,12 +1767,6 @@
         }
 
         function buildExternalPreviewHtml(previewData) {
-            const ajaxUrlJs = JSON.stringify(wpAjaxUrl);
-            const nonceJs = JSON.stringify(wpNonce);
-            const draftIdJs = JSON.stringify(currentDraftId || '');
-            const draftNameJs = JSON.stringify((draftNameInput.value || '').trim());
-            const htmlDocJs = JSON.stringify(previewData.htmlDocument);
-
             let builderUrl = 'admin.php?page=mayami_epk_html_builder';
             try {
                 const ajaxEndpoint = new URL(wpAjaxUrl, window.location.href);
@@ -1548,7 +1781,6 @@
                     builderUrl += '&draft_id=' + encodeURIComponent(currentDraftId);
                 }
             }
-            const builderUrlJs = JSON.stringify(builderUrl);
             const builderUrlAttr = escapeAttr(builderUrl);
 
             return `<!DOCTYPE html>
@@ -1648,105 +1880,6 @@
     </div>
   </div>
   ${previewData.anchorsMarkup}
-
-  <script>
-    const wpAjaxUrl = ${ajaxUrlJs};
-    const wpNonce = ${nonceJs};
-    const draftId = ${draftIdJs};
-    const draftName = ${draftNameJs};
-    const htmlDocument = ${htmlDocJs};
-    const editorWidth = ${previewData.editorWidth};
-    const editorHeight = ${previewData.editorHeight};
-
-    const exportBtn = document.getElementById('exportBtn');
-    const statusBox = document.getElementById('statusBox');
-        const previewImage = document.getElementById('previewImage');
-        const previewMap = document.getElementById('previewMap');
-        const mapAreas = Array.from(previewMap ? previewMap.querySelectorAll('area') : []);
-
-        mapAreas.forEach((area) => {
-            area.dataset.originalCoords = area.getAttribute('coords') || '';
-        });
-
-    function showStatus(message, isError) {
-      statusBox.textContent = message;
-      statusBox.style.display = 'block';
-      statusBox.classList.toggle('error', !!isError);
-    }
-
-        function resizeImageMap() {
-            if (!previewImage || !mapAreas.length || !editorWidth || !editorHeight) {
-                return;
-            }
-
-            const scaleX = previewImage.clientWidth / editorWidth;
-            const scaleY = previewImage.clientHeight / editorHeight;
-
-            mapAreas.forEach((area) => {
-                const original = (area.dataset.originalCoords || '').split(',').map((v) => Number(v.trim()));
-                if (original.length !== 4 || original.some((v) => Number.isNaN(v))) {
-                    return;
-                }
-                const scaled = [
-                    Math.round(original[0] * scaleX),
-                    Math.round(original[1] * scaleY),
-                    Math.round(original[2] * scaleX),
-                    Math.round(original[3] * scaleY)
-                ];
-                area.setAttribute('coords', scaled.join(','));
-            });
-        }
-
-    async function exportHtml() {
-      exportBtn.disabled = true;
-      showStatus('Export en cours...');
-
-            try {
-                const formData = new FormData();
-                formData.append('action', 'mayami_export_epk_html');
-                formData.append('nonce', wpNonce);
-                formData.append('draft_id', draftId);
-                formData.append('draft_name', draftName);
-                formData.append('html', htmlDocument);
-                const response = await fetch(wpAjaxUrl, {
-                    method: 'POST',
-                    credentials: 'include',
-                    body: formData
-                });
-                const data = await response.json();
-                const result = {
-                    success: !!(data && data.success),
-                    filename: data && data.data ? data.data.filename : '',
-                    message: data && data.data ? data.data.message : ''
-                };
-
-                if (!result || !result.success) {
-                    showStatus((result && result.message) || 'Export impossible.', true);
-                    return;
-        }
-
-                showStatus('Fichier exporté : ' + (result.filename || ((draftName || 'epk') + '.html')));
-                setTimeout(() => {
-                    window.close();
-                }, 250);
-      } catch (e) {
-        showStatus('Erreur réseau pendant l\'export.', true);
-      } finally {
-        exportBtn.disabled = false;
-      }
-    }
-
-        if (previewImage) {
-            if (previewImage.complete) {
-                resizeImageMap();
-            } else {
-                previewImage.addEventListener('load', resizeImageMap, { once: true });
-            }
-        }
-        window.addEventListener('resize', resizeImageMap);
-
-    exportBtn.addEventListener('click', exportHtml);
-  <\/script>
 </body>
 </html>`;
         }
@@ -1760,6 +1893,93 @@
             previewWindow.document.open();
             previewWindow.document.write(buildExternalPreviewHtml(previewData));
             previewWindow.document.close();
+
+            const statusBox = previewWindow.document.getElementById('statusBox');
+            const exportBtn = previewWindow.document.getElementById('exportBtn');
+            const previewImage = previewWindow.document.getElementById('previewImage');
+            const previewMap = previewWindow.document.getElementById('previewMap');
+            const mapAreas = Array.from(previewMap ? previewMap.querySelectorAll('area') : []);
+
+            mapAreas.forEach((area) => {
+                area.dataset.originalCoords = area.getAttribute('coords') || '';
+            });
+
+            function showPreviewStatus(message, isError) {
+                if (!statusBox) {
+                    return;
+                }
+                statusBox.textContent = message;
+                statusBox.style.display = 'block';
+                statusBox.classList.toggle('error', !!isError);
+            }
+
+            function resizePreviewMap() {
+                if (!previewImage || !mapAreas.length || !previewData.editorWidth || !previewData.editorHeight) {
+                    return;
+                }
+
+                const scaleX = previewImage.clientWidth / previewData.editorWidth;
+                const scaleY = previewImage.clientHeight / previewData.editorHeight;
+
+                mapAreas.forEach((area) => {
+                    const original = (area.dataset.originalCoords || '').split(',').map((v) => Number(v.trim()));
+                    if (original.length !== 4 || original.some((v) => Number.isNaN(v))) {
+                        return;
+                    }
+                    const scaled = [
+                        Math.round(original[0] * scaleX),
+                        Math.round(original[1] * scaleY),
+                        Math.round(original[2] * scaleX),
+                        Math.round(original[3] * scaleY)
+                    ];
+                    area.setAttribute('coords', scaled.join(','));
+                });
+            }
+
+            async function handlePreviewExport() {
+                if (!exportBtn) {
+                    return;
+                }
+
+                exportBtn.disabled = true;
+                showPreviewStatus('Export en cours...', false);
+
+                try {
+                    const result = await exportHtmlFromBuilder(
+                        previewData.htmlDocument,
+                        (draftNameInput.value || '').trim(),
+                        currentDraftId || ''
+                    );
+
+                    if (!result || !result.success) {
+                        showPreviewStatus((result && result.message) ? result.message : 'Export impossible.', true);
+                        return;
+                    }
+
+                    const fileLabel = result.filename || (((draftNameInput.value || '').trim() || 'visual-links') + '.html');
+                    showPreviewStatus('Fichier exporté dans html-exports : ' + fileLabel, false);
+                    setTimeout(() => {
+                        previewWindow.close();
+                    }, 250);
+                } catch (error) {
+                    showPreviewStatus('Erreur réseau pendant l\'export.', true);
+                } finally {
+                    exportBtn.disabled = false;
+                }
+            }
+
+            if (previewImage) {
+                if (previewImage.complete) {
+                    resizePreviewMap();
+                } else {
+                    previewImage.addEventListener('load', resizePreviewMap, { once: true });
+                }
+            }
+
+            previewWindow.addEventListener('resize', resizePreviewMap);
+            if (exportBtn) {
+                exportBtn.addEventListener('click', handlePreviewExport);
+            }
             previewWindow.focus();
         }
 
