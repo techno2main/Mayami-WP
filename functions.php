@@ -1144,6 +1144,49 @@ function mayami_render_epk_drafts_page() {
     });
     ?>
     <div class="wrap mayami-epk-drafts-page">
+        <style>
+            .mayami-delete-modal-backdrop {
+                position: fixed;
+                inset: 0;
+                background: rgba(15, 23, 42, 0.58);
+                z-index: 100000;
+                display: none;
+                align-items: center;
+                justify-content: center;
+                padding: 16px;
+            }
+            .mayami-delete-modal-backdrop.is-open {
+                display: flex;
+            }
+            .mayami-delete-modal {
+                width: min(520px, 100%);
+                background: #fff;
+                border-radius: 12px;
+                border: 1px solid #d0d7e2;
+                box-shadow: 0 18px 42px rgba(15, 23, 42, 0.22);
+                overflow: hidden;
+            }
+            .mayami-delete-modal__head {
+                padding: 16px 18px 10px;
+                font-size: 19px;
+                font-weight: 700;
+                color: #0f172a;
+            }
+            .mayami-delete-modal__body {
+                padding: 0 18px 16px;
+                color: #334155;
+                font-size: 14px;
+                line-height: 1.45;
+            }
+            .mayami-delete-modal__actions {
+                display: flex;
+                justify-content: flex-end;
+                gap: 10px;
+                padding: 14px 18px 16px;
+                border-top: 1px solid #e2e8f0;
+                background: #f8fafc;
+            }
+        </style>
         <h1>Liste des visuels</h1>
         <p>Ouvrez un visuel existant pour reprendre l'edition dans Visual Links Builder.</p>
         <p>
@@ -1177,8 +1220,8 @@ function mayami_render_epk_drafts_page() {
                                     <input type="hidden" name="draft_id" value="<?php echo esc_attr((string) ($draft['id'] ?? '')); ?>">
                                     <button
                                         type="submit"
-                                        class="button button-link-delete"
-                                        onclick="return window.confirm('Supprimer definitivement ce visuel ?');"
+                                        class="button button-link-delete mayami-delete-draft-btn"
+                                        data-draft-name="<?php echo esc_attr((string) ($draft['name'] ?? 'ce visuel')); ?>"
                                     >
                                         Supprimer
                                     </button>
@@ -1190,6 +1233,75 @@ function mayami_render_epk_drafts_page() {
             </tbody>
         </table>
     </div>
+
+    <div class="mayami-delete-modal-backdrop" id="mayamiDeleteModalBackdrop" aria-hidden="true">
+        <div class="mayami-delete-modal" role="dialog" aria-modal="true" aria-labelledby="mayamiDeleteModalTitle">
+            <div class="mayami-delete-modal__head" id="mayamiDeleteModalTitle">Supprimer ce visuel ?</div>
+            <div class="mayami-delete-modal__body" id="mayamiDeleteModalBody">
+                Cette action est definitive et supprimera ce visuel de la liste.
+            </div>
+            <div class="mayami-delete-modal__actions">
+                <button type="button" class="button" id="mayamiDeleteCancelBtn">Annuler</button>
+                <button type="button" class="button button-primary" id="mayamiDeleteConfirmBtn">Supprimer</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+    (function () {
+        const modalBackdrop = document.getElementById('mayamiDeleteModalBackdrop');
+        const modalBody = document.getElementById('mayamiDeleteModalBody');
+        const cancelBtn = document.getElementById('mayamiDeleteCancelBtn');
+        const confirmBtn = document.getElementById('mayamiDeleteConfirmBtn');
+        const deleteButtons = Array.from(document.querySelectorAll('.mayami-delete-draft-btn'));
+        let pendingForm = null;
+
+        function closeModal() {
+            pendingForm = null;
+            modalBackdrop.classList.remove('is-open');
+            modalBackdrop.setAttribute('aria-hidden', 'true');
+        }
+
+        function openModal(form, draftName) {
+            pendingForm = form;
+            modalBody.textContent = 'Supprimer definitivement "' + String(draftName || 'ce visuel') + '" ? Cette action est irreversible.';
+            modalBackdrop.classList.add('is-open');
+            modalBackdrop.setAttribute('aria-hidden', 'false');
+            confirmBtn.focus();
+        }
+
+        deleteButtons.forEach((btn) => {
+            btn.addEventListener('click', (event) => {
+                event.preventDefault();
+                const form = btn.closest('form');
+                if (!form) {
+                    return;
+                }
+                openModal(form, btn.getAttribute('data-draft-name') || 'ce visuel');
+            });
+        });
+
+        cancelBtn.addEventListener('click', closeModal);
+
+        confirmBtn.addEventListener('click', () => {
+            if (pendingForm) {
+                pendingForm.submit();
+            }
+        });
+
+        modalBackdrop.addEventListener('click', (event) => {
+            if (event.target === modalBackdrop) {
+                closeModal();
+            }
+        });
+
+        window.addEventListener('keydown', (event) => {
+            if (event.key === 'Escape' && modalBackdrop.classList.contains('is-open')) {
+                closeModal();
+            }
+        });
+    })();
+    </script>
     <?php
 }
 
