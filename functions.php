@@ -980,7 +980,10 @@ function mayami_ajax_export_epk_html() {
     if ($export_bucket === 'template-email') {
         $txt_filename = $safe_name . '.txt';
         $txt_path = trailingslashit((string) $export_target['dir']) . $txt_filename;
-        file_put_contents($txt_path, $html);
+        $txt_written = file_put_contents($txt_path, $html);
+        if ($txt_written === false) {
+            wp_send_json_error(array('message' => 'Échec de l\'écriture du fichier TXT ' . $txt_filename . '.'), 500);
+        }
     }
 
     $export_url = trailingslashit((string) $export_target['url']) . rawurlencode($filename);

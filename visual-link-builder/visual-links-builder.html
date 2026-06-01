@@ -3044,6 +3044,8 @@ ${tableHtml}
                 throw new Error('Aucune slice à générer.');
             }
 
+            const visualName = (draftNameInput.value || '').trim() || 'visual-links';
+            const slicesExportSubdir = visualName + '/Template-Email/img';
             const draftBaseName = (draftNameInput.value || '').trim() || 'template-email';
             const safeBaseName = draftBaseName
                 .replace(/[\\\/:*?"<>|]+/g, '')
@@ -3061,7 +3063,7 @@ ${tableHtml}
                     ? 'png'
                     : (blobType === 'image/webp' ? 'webp' : 'jpg');
                 const filename = exportPrefix + '-slice-' + String(i + 1).padStart(3, '0') + '.' + extension;
-                const upload = await uploadEmailSlice(blob, filename, '', 'template-email');
+                const upload = await uploadEmailSlice(blob, filename, slicesExportSubdir, 'template-email');
                 if (!upload.success || !upload.url) {
                     throw new Error(upload.message || ('Échec upload slice ' + (i + 1) + '.'));
                 }
@@ -3071,11 +3073,13 @@ ${tableHtml}
             const templateHtml = buildSlicedEmailTemplateHtmlDocument(previewData, uploadedSlices);
             const localFilename = (safeBaseName || 'template-email') + '-email-template.html';
 
-            const exportName = (safeBaseName || 'template-email') + '-email-template';
+            // Important: utiliser le nom du visuel pour que HTML/TXT soient écrits
+            // dans le même sous-dossier que les images (Mayami-EPK/Template-Email).
+            const exportName = visualName;
             const exportResult = await exportHtmlFromBuilder(templateHtml, exportName, currentDraftId || '', '', 'template-email');
             if (exportResult && exportResult.success) {
                 applyTemplateEmailExportResult(exportResult.url || '', exportResult.filename || localFilename, templateHtml);
-                setDraftStatus('Template e-mail généré (image découpée), téléchargé et exporté dans exports-html.');
+                setDraftStatus('Template e-mail généré (images dans img/ + HTML + TXT) et exporté dans exports-html.');
                 return {
                     success: true,
                     filename: exportResult.filename || localFilename,
