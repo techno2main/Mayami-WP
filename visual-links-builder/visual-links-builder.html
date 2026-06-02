@@ -2503,6 +2503,161 @@
             };
         }
 
+        /**
+         * Build clean export HTML template WITH PDF header (for template-html export).
+         * This is the proper template users want when exporting "Template HTML".
+         */
+        function buildExportTemplateHtml(previewData) {
+            const previewPdfText = normalizePdfCtaText(pdfCtaTextInput ? pdfCtaTextInput.value : '');
+            const previewPdfUrl = normalizePdfUrl(pdfUrlInput ? pdfUrlInput.value : '');
+            const previewPdfEnabled = isPdfHeaderEnabled();
+            const previewPdfHasUrl = /^https?:\/\//i.test(previewPdfUrl);
+            const previewPdfNotice = (previewPdfEnabled && previewPdfHasUrl)
+                ? `<a href="${escapeAttr(previewPdfUrl)}" target="_blank" rel="noopener noreferrer" class="pdf-cta-preview__text">${escapeHtml(previewPdfText)}</a>`
+                : `<span class="pdf-cta-preview__text">${escapeHtml(previewPdfText)}</span>`;
+            const previewPdfClass = previewPdfEnabled ? 'active' : 'inactive';
+            const scriptCloseTag = '</scr' + 'ipt>';
+
+            return `<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Visual Links Builder</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: #f3f4f6;
+      font-family: 'Segoe UI', Tahoma, sans-serif;
+      color: #0f172a;
+      padding: 24px 16px;
+    }
+    .wrapper {
+      max-width: ${previewData.editorWidth + 28}px;
+      width: 100%;
+      margin: 0 auto;
+    }
+    .pdf-cta-preview {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      margin: 0 auto 12px;
+      max-width: ${previewData.editorWidth}px;
+      text-align: center;
+      font-family: Arial, sans-serif;
+      font-size: 14px;
+      line-height: 1.35;
+      font-weight: 700;
+      letter-spacing: 0.2px;
+    }
+    .pdf-cta-preview__label {
+      display: inline-block;
+      border: 1px solid currentColor;
+      border-radius: 4px;
+      padding: 2px 6px;
+      font-size: 11px;
+      line-height: 1;
+      font-weight: 800;
+      text-transform: uppercase;
+    }
+    .pdf-cta-preview__text {
+      color: inherit;
+      text-decoration: none;
+    }
+    .pdf-cta-preview.active {
+      color: #dc2626;
+    }
+    .pdf-cta-preview.active .pdf-cta-preview__text {
+      text-decoration: underline;
+    }
+    .pdf-cta-preview.inactive {
+      color: #94a3b8;
+    }
+    .img-card {
+      background: #fff;
+      border-radius: 12px;
+      border: 1px solid #d7dce8;
+      box-shadow: 0 8px 20px rgba(15, 23, 42, 0.08);
+      padding: 14px;
+    }
+    .img-wrap {
+      position: relative;
+      width: 100%;
+      line-height: 0;
+    }
+    .img-wrap img {
+      display: block;
+      width: 100%;
+      height: auto;
+      border-radius: 8px;
+    }
+    .anchor-section {
+      max-width: 860px;
+      margin: 20px auto 0;
+      background: #fff;
+      border: 1px solid #d7dce8;
+      border-radius: 10px;
+      padding: 16px;
+    }
+    .anchor-section h2 { margin: 0 0 8px; font-size: 20px; color: #0f172a; }
+    .anchor-section p { margin: 0; font-size: 14px; color: #334155; line-height: 1.5; }
+    @media (max-width: 600px) {
+      body { padding: 12px 8px; }
+      .img-card { padding: 8px; border-radius: 8px; }
+      .anchor-section { padding: 12px; }
+    }
+  </style>
+</head>
+<body>
+  <main class="wrapper">
+    <div class="pdf-cta-preview ${previewPdfClass}">
+      <span class="pdf-cta-preview__label">PDF</span>
+      ${previewPdfNotice}
+    </div>
+    <div class="img-card">
+      <div class="img-wrap">
+        <img id="mapImg" src="${escapeAttr(imageUrl)}" usemap="#${escapeAttr(previewData.mapName)}" alt="Visual link layout">
+      </div>
+      <map name="${escapeAttr(previewData.mapName)}">
+        ${previewData.areasMarkup}
+      </map>
+    </div>
+  </main>
+  ${previewData.anchorsMarkup}
+  <script>
+    (function () {
+      var img = document.getElementById('mapImg');
+      var map = document.querySelector('map[name="${escapeAttr(previewData.mapName)}"]');
+      if (!img || !map) return;
+      var areas = Array.from(map.querySelectorAll('area'));
+      var origCoords = areas.map(function (a) { return (a.getAttribute('coords') || '').split(',').map(Number); });
+      var naturalW = ${previewData.editorWidth};
+      function rescale() {
+        var displayW = img.offsetWidth;
+        if (!displayW) return;
+        var ratio = displayW / naturalW;
+        areas.forEach(function (area, i) {
+          var c = origCoords[i];
+          if (c && c.length === 4) {
+            area.setAttribute('coords', [
+              Math.round(c[0] * ratio),
+              Math.round(c[1] * ratio),
+              Math.round(c[2] * ratio),
+              Math.round(c[3] * ratio)
+            ].join(','));
+          }
+        });
+      }
+      if (img.complete) rescale(); else img.addEventListener('load', rescale);
+      window.addEventListener('resize', rescale);
+    })();
+    ${scriptCloseTag}
+</body>
+</html>`;
+        }
+
         function buildExternalPreviewHtml(previewData) {
             let builderUrl = 'admin.php?page=mayami_visual_links_builder';
             try {
@@ -2732,6 +2887,7 @@
 
                 const draftName = (draftNameInput.value || '').trim();
                 const draftId   = currentDraftId || '';
+                let exportTemplateHtml = buildExportTemplateHtml(previewData);
 
                 try {
                     // 1. Purger les deux buckets avant de regénérer
@@ -2749,10 +2905,10 @@
                         return;
                     }
 
-                    // 2. Export Template-HTML (carte interactive responsive)
+                    // 2. Export Template-HTML (carte interactive responsive avec PDF header)
                     showPreviewStatus('Export Template HTML en cours...', false);
                     const htmlResult = await exportHtmlFromBuilder(
-                        previewData.htmlDocument,
+                        exportTemplateHtml,
                         draftName,
                         draftId,
                         '',
@@ -2765,7 +2921,7 @@
                         return;
                     }
 
-                    applyTemplateHtmlExportResult(htmlResult.url || '', htmlResult.filename || '', previewData.htmlDocument);
+                    applyTemplateHtmlExportResult(htmlResult.url || '', htmlResult.filename || '', exportTemplateHtml);
 
                     // 3. Export Template-Email (slices + HTML + txt auto-sauvegardé côté serveur)
                     showPreviewStatus('Génération Template E-Mail en cours (découpe image)...', false);
@@ -2784,7 +2940,7 @@
                         // Afficher la popup dans l'éditeur avec les infos du template email (priorité)
                         const finalUrl      = lastTemplateEmailPublicUrl  || htmlResult.url      || '';
                         const finalFilename = lastTemplateEmailFilename   || htmlResult.filename || '';
-                        const finalDoc      = lastTemplateEmailHtmlDocument || previewData.htmlDocument;
+                        const finalDoc      = lastTemplateEmailHtmlDocument || exportTemplateHtml;
                         showExportResultModal(finalUrl, finalFilename, finalDoc);
                     }, 400);
 

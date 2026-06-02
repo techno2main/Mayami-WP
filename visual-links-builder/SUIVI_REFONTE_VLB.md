@@ -1,19 +1,19 @@
 # SUIVI REFONTE VLB — TEMPS RÉEL
 **Date création** : 2 juin 2026  
-**Statut projet** : EN COURS — PHASE 1 (correction bugs)  
+**Statut projet** : EN COURS — PHASE 2  
 **Version** : 1.0
 
 ---
 
 ## État actuel
-- **Phase en cours** : Phase 1 - Migration EPK → VLB
-- **Sous-étape en cours** : Phase 1.4 - Correction bugs TERMINÉE
-- **Statut** : Phase 1 COMPLÈTE - En attente validation client
-- **Date/heure mise à jour** : 2 juin 2026 - 16h50 - Correction complète fonctions EPK → VLB
+- **Phase en cours** : Phase 2 - Moteur image-map
+- **Sous-étape en cours** : Phase 2.1 - Correction export HTML TERMINÉE
+- **Statut** : Export Template HTML corrigé - En attente test client
+- **Date/heure mise à jour** : 2 juin 2026 - 17h10 - Export HTML avec PDF header implémenté
 
 ## Objectif sous-étape
-- **Description** : Corriger TOUTES les occurrences EPK restantes dans functions.php (fonctions, hooks, nonces, options DB)
-- **Résultat** : Migration EPK→VLB 100% complète - 1 seule occurrence "epk" restante (commentaire legacy)
+- **Description** : Corriger export "Template HTML" pour inclure le lien PDF cliquable
+- **Résultat** : Fonction `buildExportTemplateHtml()` créée - Export Template HTML génère maintenant le bon template avec PDF header
 
 ## Fichiers identifiés pour migration (11 fichiers)
 1. `inc/visual-links.php` - Fonctions PHP principales (~30 fonctions)
@@ -117,7 +117,25 @@
   - **Compatibilité legacy** : Redirects EPK→VLB maintenus (lignes 462-464, 546-576)
   - **Résultat** : 1 seule occurrence "epk" restante (commentaire legacy line 449)
   - **État VSC Problems** : 0 erreurs
-- ⏳ **EN ATTENTE** — Validation client Phase 1 COMPLÈTE
+- ✅ **PHASE 1 VALIDÉE** — Validation client Phase 1 COMPLÈTE (2 juin 2026 17h00)
+  - Migration EPK→VLB 100% terminée et validée par client
+  - Prêt pour démarrage Phase 2
+- 🟢 **Début** — Phase 2 - Moteur image-map (2 juin 2026 17h00)
+- ✅ **OK** — Phase 2.1 - CORRECTION EXPORT HTML (2 juin 2026 17h10)
+  - **Problème détecté** : Export "Template HTML" ne contenait PAS le lien PDF
+  - **Cause** : `handlePreviewExport()` exportait `previewData.htmlDocument` (template simple sans PDF header)
+  - **Solution** : Création fonction `buildExportTemplateHtml(previewData)` (ligne ~2510)
+    - Génère HTML propre AVEC PDF header (.pdf-cta-preview)
+    - Conserve responsive image map avec rescaling JavaScript
+    - Supprime topbar/boutons d'édition (template clean pour export)
+  - **Modifications** : visual-links-builder.html (3 changements)
+    - Ligne ~2510 : Nouvelle fonction `buildExportTemplateHtml()` (150 lignes)
+    - Ligne ~2882 : Déclaration `exportTemplateHtml` avant try block
+    - Ligne ~2910 : Export utilise `exportTemplateHtml` au lieu de `previewData.htmlDocument`
+    - Ligne ~2944 : Fallback modal utilise `exportTemplateHtml`
+  - **Résultat** : Export Template HTML inclut maintenant le PDF header avec lien cliquable
+  - **État VSC Problems** : 0 erreurs
+- ⏳ **EN ATTENTE** — Test export HTML par client
 - 🔴 **BLOQUÉ** — Phase 2 - Moteur image-map (bloqué jusqu'à validation Phase 1)
 
 ---
