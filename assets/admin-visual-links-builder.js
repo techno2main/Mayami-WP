@@ -13,7 +13,7 @@
 
     function defaultPayload() {
         return {
-            kicker: 'EPK',
+            kicker: 'VISUAL LINKS',
             title: 'Electronic Press Kit',
             description: '',
             imageUrl: '',
@@ -157,7 +157,7 @@
                 elements.nativeMediaHost.appendChild(nativeMediaRow);
             }
 
-            nativeMediaRow.classList.add('mayami-epk-native-media-row');
+            nativeMediaRow.classList.add('mayami-vlb-native-media-row');
 
             const uploadButton = getNativeMediaUploadButton();
             if (uploadButton) {
@@ -179,7 +179,7 @@
                 elements.validationHost.appendChild(validationRow);
             }
 
-            validationRow.classList.add('mayami-epk-validation-row');
+            validationRow.classList.add('mayami-vlb-validation-row');
         }
 
         function syncHiddenValue(markUpdated) {
@@ -272,12 +272,12 @@
                 elements.canvasImage.setAttribute('src', state.imageUrl);
             }
 
-            elements.canvasImage.setAttribute('alt', state.imageAlt || 'Visuel EPK');
+            elements.canvasImage.setAttribute('alt', state.imageAlt || 'Visuel Visual Links');
 
             state.zones.forEach(function (zone) {
                 const box = document.createElement('button');
                 box.type = 'button';
-                box.className = 'mayami-epk-zone-box' + (activeZoneId === zone.id ? ' is-active' : '');
+                box.className = 'mayami-vlb-zone-box' + (activeZoneId === zone.id ? ' is-active' : '');
                 box.style.left = zone.x + '%';
                 box.style.top = zone.y + '%';
                 box.style.width = zone.width + '%';
@@ -295,7 +295,7 @@
 
         function renderZones() {
             if (!state.zones.length) {
-                elements.zonesList.innerHTML = '<p class="mayami-epk-zone-empty">Aucune zone créée.<br>Dessinez sur l\'image pour commencer.</p>';
+                elements.zonesList.innerHTML = '<p class="mayami-vlb-zone-empty">Aucune zone créée.<br>Dessinez sur l\'image pour commencer.</p>';
                 updateStats();
                 return;
             }
@@ -303,13 +303,13 @@
             elements.zonesList.innerHTML = state.zones.map(function (zone, index) {
                 const pixels = zoneToPixels(zone);
                 return '' +
-                    '<div class="mayami-epk-zone-item' + (activeZoneId === zone.id ? ' is-active' : '') + '" data-zone-id="' + escapeHtml(zone.id) + '">' +
-                        '<div class="mayami-epk-zone-header">' +
-                            '<span class="mayami-epk-zone-title">Zone ' + (index + 1) + '</span>' +
-                            '<button type="button" class="mayami-epk-zone-delete" data-zone-action="delete">X</button>' +
+                    '<div class="mayami-vlb-zone-item' + (activeZoneId === zone.id ? ' is-active' : '') + '" data-zone-id="' + escapeHtml(zone.id) + '">' +
+                        '<div class="mayami-vlb-zone-header">' +
+                            '<span class="mayami-vlb-zone-title">Zone ' + (index + 1) + '</span>' +
+                            '<button type="button" class="mayami-vlb-zone-delete" data-zone-action="delete">X</button>' +
                         '</div>' +
-                        '<div class="mayami-epk-zone-coords">x:' + pixels.x + ', y:' + pixels.y + ', w:' + pixels.width + ', h:' + pixels.height + '</div>' +
-                        '<div class="mayami-epk-zone-controls">' +
+                        '<div class="mayami-vlb-zone-coords">x:' + pixels.x + ', y:' + pixels.y + ', w:' + pixels.width + ', h:' + pixels.height + '</div>' +
+                        '<div class="mayami-vlb-zone-controls">' +
                             '<select data-zone-field="hrefType">' +
                                 '<option value="url"' + (zone.hrefType === 'url' ? ' selected' : '') + '>Lien</option>' +
                                 '<option value="anchor"' + (zone.hrefType === 'anchor' ? ' selected' : '') + '>Ancre</option>' +
@@ -428,7 +428,7 @@
                 return;
             }
 
-            if (nativeMediaRow && event.target.closest('.cmb2-id-epk-draft-image-source .cmb2-upload-button, .cmb2-id-epk-draft-image-source .cmb2-remove-file-button')) {
+            if (nativeMediaRow && event.target.closest('.cmb2-id-visual-links-draft-image-source .cmb2-upload-button, .cmb2-id-visual-links-draft-image-source .cmb2-remove-file-button')) {
                 window.setTimeout(syncFromNativeMediaField, 300);
             }
         });
@@ -517,12 +517,12 @@
         if (elements.publishButton) {
             elements.publishButton.addEventListener('click', function () {
                 if (hasUnsavedChanges()) {
-                    window.alert('Enregistrez d’abord la page Mayami Landing pour publier le dernier brouillon EPK.');
+                    window.alert('Enregistrez d’abord la page Mayami Landing pour publier le dernier brouillon Visual Links.');
                     return;
                 }
 
                 if (!validationInput.checked) {
-                    window.alert('Cochez d’abord la validation finale EPK puis enregistrez la page.');
+                    window.alert('Cochez d’abord la validation finale Visual Links puis enregistrez la page.');
                     return;
                 }
 
@@ -555,7 +555,7 @@
             isDrawing = true;
 
             currentBox = document.createElement('span');
-            currentBox.className = 'mayami-epk-zone-box';
+            currentBox.className = 'mayami-vlb-zone-box';
             currentBox.style.left = startX + 'px';
             currentBox.style.top = startY + 'px';
             currentBox.style.width = '0px';
