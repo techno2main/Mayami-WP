@@ -1141,7 +1141,7 @@
   }
 
   function hideLandingEpkSection() {
-    const epkTitle = document.querySelector('.cmb2-id-section-epk-title');
+    const epkTitle = document.querySelector('.cmb2-id-section-visual-links-title');
     if (!epkTitle) {
       return;
     }
