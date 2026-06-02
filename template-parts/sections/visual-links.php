@@ -5,45 +5,45 @@
  * @package Mayami
  */
 
-$epk_payload = mayami_get_epk_front_payload();
+$visual_links_payload = mayami_get_visual_links_front_payload();
 
-if (!mayami_has_epk_payload_data($epk_payload)) {
+if (!mayami_has_visual_links_payload_data($visual_links_payload)) {
     return;
 }
 
-$epk_zones = array_values(array_filter($epk_payload['zones'], static function ($zone) {
-    return mayami_get_epk_zone_href($zone) !== '';
+$visual_links_zones = array_values(array_filter($visual_links_payload['zones'], static function ($zone) {
+    return mayami_get_visual_links_zone_href($zone) !== '';
 }));
 
-$is_preview = mayami_is_epk_preview_request();
+$is_preview = mayami_is_visual_links_preview_request();
 ?>
-<section id="visual-links" class="mayami-epk-section"<?php echo $is_preview ? ' data-epk-preview="1"' : ''; ?>>
-    <div class="mayami-epk-shell">
-        <div class="mayami-epk-header">
+<section id="visual-links" class="mayami-vlb-section"<?php echo $is_preview ? ' data-vlb-preview="1"' : ''; ?>>
+    <div class="mayami-vlb-shell">
+        <div class="mayami-vlb-header">
             <div>
-                <?php if (!empty($epk_payload['kicker'])): ?>
-                    <p class="mayami-epk-kicker"><?php echo esc_html($epk_payload['kicker']); ?></p>
+                <?php if (!empty($visual_links_payload['kicker'])): ?>
+                    <p class="mayami-vlb-kicker"><?php echo esc_html($visual_links_payload['kicker']); ?></p>
                 <?php endif; ?>
-                <?php if (!empty($epk_payload['title'])): ?>
-                    <h2 class="mayami-epk-title"><?php echo esc_html($epk_payload['title']); ?></h2>
+                <?php if (!empty($visual_links_payload['title'])): ?>
+                    <h2 class="mayami-vlb-title"><?php echo esc_html($visual_links_payload['title']); ?></h2>
                 <?php endif; ?>
             </div>
 
             <?php if ($is_preview): ?>
-                <span class="mayami-epk-preview-pill">Brouillon admin</span>
+                <span class="mayami-vlb-preview-pill">Brouillon admin</span>
             <?php endif; ?>
         </div>
 
-        <?php if (!empty($epk_payload['description'])): ?>
-            <p class="mayami-epk-description"><?php echo esc_html($epk_payload['description']); ?></p>
+        <?php if (!empty($visual_links_payload['description'])): ?>
+            <p class="mayami-vlb-description"><?php echo esc_html($visual_links_payload['description']); ?></p>
         <?php endif; ?>
 
-        <div class="mayami-epk-visual">
-            <img src="<?php echo esc_url($epk_payload['imageUrl']); ?>" alt="<?php echo esc_attr($epk_payload['imageAlt']); ?>">
+        <div class="mayami-vlb-visual">
+            <img src="<?php echo esc_url($visual_links_payload['imageUrl']); ?>" alt="<?php echo esc_attr($visual_links_payload['imageAlt']); ?>">
 
-            <?php foreach ($epk_zones as $index => $zone): ?>
+            <?php foreach ($visual_links_zones as $index => $zone): ?>
                 <?php
-                $href = mayami_get_epk_zone_href($zone);
+                $href = mayami_get_visual_links_zone_href($zone);
                 $label = !empty($zone['label']) ? $zone['label'] : sprintf('Zone Visual Links %d', $index + 1);
                 $style = sprintf(
                     'left:%1$.4F%%;top:%2$.4F%%;width:%3$.4F%%;height:%4$.4F%%;',
@@ -53,10 +53,10 @@ $is_preview = mayami_is_epk_preview_request();
                     (float) $zone['height']
                 );
                 ?>
-                <a href="<?php echo esc_url($href); ?>" class="mayami-epk-hotspot" style="<?php echo esc_attr($style); ?>" aria-label="<?php echo esc_attr($label); ?>">
+                <a href="<?php echo esc_url($href); ?>" class="mayami-vlb-hotspot" style="<?php echo esc_attr($style); ?>" aria-label="<?php echo esc_attr($label); ?>">
                     <span class="screen-reader-text"><?php echo esc_html($label); ?></span>
                     <?php if ($is_preview): ?>
-                        <span class="mayami-epk-hotspot-label"><?php echo esc_html($label); ?></span>
+                        <span class="mayami-vlb-hotspot-label"><?php echo esc_html($label); ?></span>
                     <?php endif; ?>
                 </a>
             <?php endforeach; ?>
