@@ -1,12 +1,12 @@
-.mayami-epk-storage-row {
+.mayami-vlb-storage-row {
     display: none !important;
 }
 
-.mayami-epk-builder {
+.mayami-vlb-builder {
     margin-top: 12px;
 }
 
-.mayami-epk-proto-shell {
+.mayami-vlb-proto-shell {
     max-width: 1400px;
     background: #ffffff;
     border-radius: 12px;
@@ -14,7 +14,7 @@
     overflow: hidden;
 }
 
-.mayami-epk-proto-header {
+.mayami-vlb-proto-header {
     display: flex;
     justify-content: space-between;
     gap: 20px;
@@ -23,20 +23,20 @@
     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
 }
 
-.mayami-epk-proto-header-copy h3 {
+.mayami-vlb-proto-header-copy h3 {
     margin: 0 0 10px;
     color: #ffffff;
     font-size: 28px;
     line-height: 1.15;
 }
 
-.mayami-epk-proto-header-copy p {
+.mayami-vlb-proto-header-copy p {
     margin: 0;
     opacity: 0.92;
     font-size: 14px;
 }
 
-.mayami-epk-builder__badges {
+.mayami-vlb-builder__badges {
     display: flex;
     flex-wrap: wrap;
     align-content: flex-start;
@@ -45,7 +45,7 @@
     min-width: 240px;
 }
 
-.mayami-epk-badge {
+.mayami-vlb-badge {
     display: inline-flex;
     align-items: center;
     border-radius: 999px;
@@ -57,19 +57,19 @@
     text-transform: uppercase;
 }
 
-.mayami-epk-proto-main {
+.mayami-vlb-proto-main {
     display: grid;
     grid-template-columns: 1fr 400px;
     min-height: 760px;
 }
 
-.mayami-epk-canvas-area {
+.mayami-vlb-canvas-area {
     padding: 30px;
     background: #fafafa;
     overflow: auto;
 }
 
-.mayami-epk-upload-panel {
+.mayami-vlb-upload-panel {
     display: flex;
     align-items: center;
     gap: 12px;
@@ -77,51 +77,51 @@
     flex-wrap: wrap;
 }
 
-.mayami-epk-native-media-host {
+.mayami-vlb-native-media-host {
     flex: 1 1 420px;
 }
 
-.mayami-epk-media-row {
+.mayami-vlb-media-row {
     margin: 0;
 }
 
-.mayami-epk-native-media-row {
+.mayami-vlb-native-media-row {
     margin: 0;
     padding: 0;
     border: 0;
     background: transparent;
 }
 
-.mayami-epk-native-media-row .cmb-th {
+.mayami-vlb-native-media-row .cmb-th {
     display: none !important;
 }
 
-.mayami-epk-native-media-row .cmb-td {
+.mayami-vlb-native-media-row .cmb-td {
     margin: 0;
     padding: 0;
 }
 
-.mayami-epk-native-media-row .cmb2-media-status {
+.mayami-vlb-native-media-row .cmb2-media-status {
     margin: 0 0 12px;
 }
 
-.mayami-epk-native-media-row .cmb2-upload-file {
+.mayami-vlb-native-media-row .cmb2-upload-file {
     display: flex;
     gap: 10px;
     align-items: center;
     flex-wrap: wrap;
 }
 
-.mayami-epk-native-media-row .cmb2-media-url {
+.mayami-vlb-native-media-row .cmb2-media-url {
     min-width: 280px;
 }
 
-.mayami-epk-native-media-row .cmb2-upload-button,
-.mayami-epk-native-media-row .cmb2-remove-file-button {
+.mayami-vlb-native-media-row .cmb2-upload-button,
+.mayami-vlb-native-media-row .cmb2-remove-file-button {
     margin: 0 !important;
 }
 
-.mayami-epk-btn {
+.mayami-vlb-btn {
     width: 100%;
     padding: 14px 20px;
     border: none;
@@ -140,41 +140,41 @@
     box-sizing: border-box;
 }
 
-.mayami-epk-btn:focus {
+.mayami-vlb-btn:focus {
     outline: none;
     box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.18);
 }
 
-.mayami-epk-btn-primary {
+.mayami-vlb-btn-primary {
     color: #ffffff;
     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
 }
 
-.mayami-epk-btn-primary:hover {
+.mayami-vlb-btn-primary:hover {
     transform: translateY(-2px);
     box-shadow: 0 4px 12px rgba(102, 126, 234, 0.35);
 }
 
-.mayami-epk-btn-secondary {
+.mayami-vlb-btn-secondary {
     color: #333333;
     background: #f8f9fa;
     border: 2px solid #e0e0e0;
 }
 
-.mayami-epk-btn-secondary:hover {
+.mayami-vlb-btn-secondary:hover {
     background: #e9ecef;
     border-color: #667eea;
 }
 
-.mayami-epk-btn[disabled],
-.mayami-epk-btn.is-disabled {
+.mayami-vlb-btn[disabled],
+.mayami-vlb-btn.is-disabled {
     cursor: not-allowed;
     opacity: 0.55;
     transform: none;
     box-shadow: none;
 }
 
-.mayami-epk-canvas-empty {
+.mayami-vlb-canvas-empty {
     min-height: 180px;
     padding: 30px;
     text-align: center;
@@ -188,14 +188,14 @@
     justify-content: center;
 }
 
-.mayami-epk-canvas-wrapper {
+.mayami-vlb-canvas-wrapper {
     position: relative;
     display: inline-block;
     margin: 0 auto 20px;
     max-width: 100%;
 }
 
-.mayami-epk-canvas-image {
+.mayami-vlb-canvas-image {
     display: block;
     max-width: 100%;
     height: auto;
@@ -204,13 +204,13 @@
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }
 
-.mayami-epk-canvas-overlay {
+.mayami-vlb-canvas-overlay {
     position: absolute;
     inset: 0;
     cursor: crosshair;
 }
 
-.mayami-epk-zone-box {
+.mayami-vlb-zone-box {
     position: absolute;
     border: 3px solid #667eea;
     background: rgba(102, 126, 234, 0.2);
@@ -219,17 +219,17 @@
     transition: border-color 0.2s ease, background 0.2s ease;
 }
 
-.mayami-epk-zone-box:hover {
+.mayami-vlb-zone-box:hover {
     border-color: #764ba2;
     background: rgba(118, 75, 162, 0.3);
 }
 
-.mayami-epk-zone-box.is-active {
+.mayami-vlb-zone-box.is-active {
     border-color: #ff4757;
     background: rgba(255, 71, 87, 0.2);
 }
 
-.mayami-epk-info-box {
+.mayami-vlb-info-box {
     margin-bottom: 20px;
     padding: 15px;
     color: #1565c0;
@@ -240,45 +240,45 @@
     border-radius: 6px;
 }
 
-.mayami-epk-info-box strong {
+.mayami-vlb-info-box strong {
     display: block;
     margin-bottom: 5px;
 }
 
-.mayami-epk-form-grid {
+.mayami-vlb-form-grid {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 14px;
 }
 
-.mayami-epk-form-grid label {
+.mayami-vlb-form-grid label {
     display: flex;
     flex-direction: column;
     gap: 6px;
 }
 
-.mayami-epk-form-grid span {
+.mayami-vlb-form-grid span {
     font-weight: 600;
 }
 
-.mayami-epk-form-grid__full {
+.mayami-vlb-form-grid__full {
     grid-column: 1 / -1;
 }
 
-.mayami-epk-sidebar {
+.mayami-vlb-sidebar {
     padding: 30px;
     overflow-y: auto;
     background: #ffffff;
     border-left: 1px solid #e0e0e0;
 }
 
-.mayami-epk-stats {
+.mayami-vlb-stats {
     display: flex;
     gap: 15px;
     margin-bottom: 20px;
 }
 
-.mayami-epk-stat-box {
+.mayami-vlb-stat-box {
     flex: 1 1 0;
     padding: 12px;
     text-align: center;
@@ -287,20 +287,20 @@
     border-radius: 6px;
 }
 
-.mayami-epk-stat-number {
+.mayami-vlb-stat-number {
     color: #667eea;
     font-size: 24px;
     font-weight: 700;
 }
 
-.mayami-epk-stat-label {
+.mayami-vlb-stat-label {
     margin-top: 4px;
     color: #666666;
     font-size: 11px;
     text-transform: uppercase;
 }
 
-.mayami-epk-sidebar h2 {
+.mayami-vlb-sidebar h2 {
     margin: 0 0 20px;
     padding-bottom: 10px;
     color: #333333;
@@ -308,18 +308,18 @@
     border-bottom: 2px solid #667eea;
 }
 
-.mayami-epk-zones-list {
+.mayami-vlb-zones-list {
     min-height: 140px;
 }
 
-.mayami-epk-zone-empty {
+.mayami-vlb-zone-empty {
     padding: 20px;
     color: #999999;
     text-align: center;
     font-size: 13px;
 }
 
-.mayami-epk-zone-item {
+.mayami-vlb-zone-item {
     position: relative;
     margin-bottom: 15px;
     padding: 15px;
@@ -329,30 +329,30 @@
     transition: all 0.2s ease;
 }
 
-.mayami-epk-zone-item:hover {
+.mayami-vlb-zone-item:hover {
     border-color: #667eea;
     box-shadow: 0 2px 8px rgba(102, 126, 234, 0.15);
 }
 
-.mayami-epk-zone-item.is-active {
+.mayami-vlb-zone-item.is-active {
     border-color: #667eea;
     background: #f0f3ff;
 }
 
-.mayami-epk-zone-header {
+.mayami-vlb-zone-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
     margin-bottom: 10px;
 }
 
-.mayami-epk-zone-title {
+.mayami-vlb-zone-title {
     color: #667eea;
     font-size: 13px;
     font-weight: 600;
 }
 
-.mayami-epk-zone-delete {
+.mayami-vlb-zone-delete {
     padding: 4px 10px;
     color: #ffffff;
     font-size: 11px;
@@ -363,26 +363,26 @@
     transition: all 0.2s ease;
 }
 
-.mayami-epk-zone-delete:hover {
+.mayami-vlb-zone-delete:hover {
     background: #ee5a6f;
     transform: scale(1.05);
 }
 
-.mayami-epk-zone-coords {
+.mayami-vlb-zone-coords {
     margin-bottom: 8px;
     color: #666666;
     font-size: 11px;
     font-family: "Courier New", monospace;
 }
 
-.mayami-epk-zone-controls {
+.mayami-vlb-zone-controls {
     display: grid;
     grid-template-columns: 110px 1fr;
     gap: 8px;
 }
 
-.mayami-epk-zone-controls input,
-.mayami-epk-zone-controls select {
+.mayami-vlb-zone-controls input,
+.mayami-vlb-zone-controls select {
     width: 100%;
     padding: 8px 12px;
     font-size: 13px;
@@ -391,24 +391,24 @@
     transition: border-color 0.2s ease;
 }
 
-.mayami-epk-zone-controls input:focus,
-.mayami-epk-zone-controls select:focus {
+.mayami-vlb-zone-controls input:focus,
+.mayami-vlb-zone-controls select:focus {
     outline: none;
     border-color: #667eea;
     box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
 }
 
-.mayami-epk-actions {
+.mayami-vlb-actions {
     margin-top: 30px;
     padding-top: 20px;
     border-top: 2px solid #e0e0e0;
 }
 
-.mayami-epk-actions .mayami-epk-btn {
+.mayami-vlb-actions .mayami-vlb-btn {
     margin-bottom: 12px;
 }
 
-.mayami-epk-workflow-box {
+.mayami-vlb-workflow-box {
     margin-top: 20px;
     padding: 16px;
     color: #334155;
@@ -418,65 +418,65 @@
     border-radius: 8px;
 }
 
-.mayami-epk-workflow-box p {
+.mayami-vlb-workflow-box p {
     margin: 0 0 10px;
 }
 
-.mayami-epk-workflow-box p:last-child {
+.mayami-vlb-workflow-box p:last-child {
     margin-bottom: 0;
 }
 
-.mayami-epk-validation-host {
+.mayami-vlb-validation-host {
     margin: 14px 0;
 }
 
-.mayami-epk-validation-row {
+.mayami-vlb-validation-row {
     margin: 0;
     padding: 0;
     border: 0;
     background: transparent;
 }
 
-.mayami-epk-validation-row .cmb-th {
+.mayami-vlb-validation-row .cmb-th {
     display: none !important;
 }
 
-.mayami-epk-validation-row .cmb-td {
+.mayami-vlb-validation-row .cmb-td {
     margin: 0;
     padding: 0;
 }
 
-.mayami-epk-validation-row label {
+.mayami-vlb-validation-row label {
     display: inline-flex;
     align-items: flex-start;
     gap: 8px;
     font-weight: 600;
 }
 
-.mayami-epk-validation-row .cmb2-metabox-description {
+.mayami-vlb-validation-row .cmb2-metabox-description {
     display: block;
     margin: 6px 0 0 26px;
     color: #64748b;
 }
 
 @media (max-width: 1100px) {
-    .mayami-epk-proto-header,
-    .mayami-epk-proto-main,
-    .mayami-epk-form-grid,
-    .mayami-epk-zone-controls {
+    .mayami-vlb-proto-header,
+    .mayami-vlb-proto-main,
+    .mayami-vlb-form-grid,
+    .mayami-vlb-zone-controls {
         grid-template-columns: 1fr;
     }
 
-    .mayami-epk-proto-header {
+    .mayami-vlb-proto-header {
         flex-direction: column;
     }
 
-    .mayami-epk-builder__badges {
+    .mayami-vlb-builder__badges {
         justify-content: flex-start;
         min-width: 0;
     }
 
-    .mayami-epk-stats {
+    .mayami-vlb-stats {
         flex-direction: column;
     }
 }
