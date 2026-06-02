@@ -9,7 +9,7 @@
 ## 📋 PRÉREQUIS
 
 ### Accès OVH nécessaires
-- [ ] URL du nouveau site WordPress OVH
+- [x] **URL du nouveau site WordPress OVH : `http://ubocrhy.cluster100.hosting.ovh.net/wp/wp-admin/`**
 - [ ] Accès admin WordPress (login/mot de passe)
 - [ ] Accès FTP (FileZilla ou similaire)
   - Host : `ftp.votredomaine.com`

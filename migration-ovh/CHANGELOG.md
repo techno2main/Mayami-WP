@@ -11,9 +11,10 @@
 - [x] Branche Git `feature/migration-ovh` créée
 - [x] Dossier `migration-ovh/` créé
 - [x] Guide de migration rédigé
+- [x] **URL OVH identifiée : `http://ubocrhy.cluster100.hosting.ovh.net/wp/wp-admin/`**
 - [ ] Inventaire fichiers thème
 - [ ] Archive ZIP créée
-- [ ] Accès OVH configurés
+- [ ] Export base SQL XAMPP
 
 ### 🚀 Migration
 - [ ] Upload FTP thème
