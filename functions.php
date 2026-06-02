@@ -518,7 +518,7 @@ add_action('admin_post_mayami_delete_epk_draft', 'mayami_handle_delete_epk_draft
 add_action('admin_post_mayami_delete_visual_links_draft', 'mayami_handle_delete_epk_draft');
 
 /**
- * Return the full EPK drafts store from options.
+ * Return the full Visual Links drafts store from options.
  *
  * @return array<string, array<string, mixed>>
  */
@@ -528,7 +528,7 @@ function mayami_get_epk_drafts_store() {
 }
 
 /**
- * Persist the EPK drafts store in options.
+ * Persist the Visual Links drafts store in options.
  *
  * @param array<string, array<string, mixed>> $store Draft store.
  * @return bool
@@ -1181,7 +1181,7 @@ function mayami_render_epk_html_builder_page() {
         }
     }
     ?>
-    <div class="wrap mayami-epk-html-page">
+    <div class="wrap mayami-vlb-html-page">
         <h1>Visual Links Builder</h1>
         <p>Utilisez ce builder pour ajouter des zones cliquables sur n'importe quel visuel.</p>
         <?php if ($selected_name !== '') : ?>
@@ -1211,7 +1211,7 @@ function mayami_render_epk_drafts_page() {
         return strcmp((string) ($b['updated_at'] ?? ''), (string) ($a['updated_at'] ?? ''));
     });
     ?>
-    <div class="wrap mayami-epk-drafts-page">
+    <div class="wrap mayami-vlb-drafts-page">
         <style>
             .mayami-delete-modal-backdrop {
                 position: fixed;
