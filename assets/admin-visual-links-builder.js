@@ -118,26 +118,26 @@
         let currentBox = null;
 
         const elements = {
-            draftStatus: root.querySelector('.mayami-epk-draft-status'),
-            publishedStatus: root.querySelector('.mayami-epk-published-status'),
-            zoneCount: root.querySelector('.mayami-epk-zone-count'),
-            linkedCount: root.querySelector('.mayami-epk-linked-count'),
-            kicker: root.querySelector('[data-epk-field="kicker"]'),
-            title: root.querySelector('[data-epk-field="title"]'),
-            description: root.querySelector('[data-epk-field="description"]'),
-            imageAlt: root.querySelector('[data-epk-field="imageAlt"]'),
-            nativeMediaHost: root.querySelector('.mayami-epk-native-media-host'),
-            validationHost: root.querySelector('.mayami-epk-validation-host'),
-            clearImage: root.querySelector('.mayami-epk-clear-image'),
-            canvasEmpty: root.querySelector('.mayami-epk-canvas-empty'),
-            canvasWrapper: root.querySelector('.mayami-epk-canvas-wrapper'),
-            canvasImage: root.querySelector('.mayami-epk-canvas-image'),
-            canvasOverlay: root.querySelector('.mayami-epk-canvas-overlay'),
-            zonesList: root.querySelector('.mayami-epk-zones-list'),
-            resetZones: root.querySelector('.mayami-epk-reset-zones'),
-            previewLink: root.querySelector('.mayami-epk-preview-link'),
-            publishButton: root.querySelector('.mayami-epk-publish-button'),
-            unpublishButton: root.querySelector('.mayami-epk-unpublish-button')
+            draftStatus: root.querySelector('.mayami-vlb-draft-status'),
+            publishedStatus: root.querySelector('.mayami-vlb-published-status'),
+            zoneCount: root.querySelector('.mayami-vlb-zone-count'),
+            linkedCount: root.querySelector('.mayami-vlb-linked-count'),
+            kicker: root.querySelector('[data-vlb-field="kicker"]'),
+            title: root.querySelector('[data-vlb-field="title"]'),
+            description: root.querySelector('[data-vlb-field="description"]'),
+            imageAlt: root.querySelector('[data-vlb-field="imageAlt"]'),
+            nativeMediaHost: root.querySelector('.mayami-vlb-native-media-host'),
+            validationHost: root.querySelector('.mayami-vlb-validation-host'),
+            clearImage: root.querySelector('.mayami-vlb-clear-image'),
+            canvasEmpty: root.querySelector('.mayami-vlb-canvas-empty'),
+            canvasWrapper: root.querySelector('.mayami-vlb-canvas-wrapper'),
+            canvasImage: root.querySelector('.mayami-vlb-canvas-image'),
+            canvasOverlay: root.querySelector('.mayami-vlb-canvas-overlay'),
+            zonesList: root.querySelector('.mayami-vlb-zones-list'),
+            resetZones: root.querySelector('.mayami-vlb-reset-zones'),
+            previewLink: root.querySelector('.mayami-vlb-preview-link'),
+            publishButton: root.querySelector('.mayami-vlb-publish-button'),
+            unpublishButton: root.querySelector('.mayami-vlb-unpublish-button')
         };
 
         function getNativeMediaUploadButton() {
@@ -545,7 +545,7 @@
                 return;
             }
 
-            if (event.target.closest('.mayami-epk-zone-box')) {
+            if (event.target.closest('.mayami-vlb-zone-box')) {
                 return;
             }
 
@@ -625,6 +625,6 @@
     }
 
     document.addEventListener('DOMContentLoaded', function () {
-        document.querySelectorAll('.mayami-epk-builder').forEach(initBuilder);
+        document.querySelectorAll('.mayami-vlb-builder').forEach(initBuilder);
     });
 })();
