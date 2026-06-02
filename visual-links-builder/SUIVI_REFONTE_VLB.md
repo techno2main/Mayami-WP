@@ -7,17 +7,31 @@
 
 ## État actuel
 - **Phase en cours** : Phase 1 - Migration EPK → VLB
-- **Sous-étape en cours** : Initialisation projet
+- **Sous-étape en cours** : Analyse périmètre migration (Phase 1.1)
 - **Statut** : En cours
-- **Date/heure mise à jour** : 2 juin 2026 - Début Phase 1
+- **Date/heure mise à jour** : 2 juin 2026 - Analyse périmètre complétée
 
 ## Objectif sous-étape
-- **Description** : Créer infrastructure projet (document suivi, branche Git)
-- **Périmètre traité** : Setup initial avant migration code
+- **Description** : Analyse complète du périmètre de migration EPK→VLB
+- **Périmètre traité** : Scan complet des occurrences "epk" dans le thème
 
-## Fichiers modifiés
-- `SUIVI_REFONTE_VLB.md` (création)
-- Branche Git à créer
+## Fichiers identifiés pour migration (11 fichiers)
+1. `inc/visual-links.php` - Fonctions PHP principales (~30 fonctions)
+2. `inc/cmb2-config.php` - Configuration CMB2 et classes CSS row
+3. `functions.php` - Fonctions helper et redirects
+4. `front-page.php` - Appel fonction preview
+5. `template-parts/sections/visual-links.php` - Template section front
+6. `assets/visual-links.css` - Classes CSS front (~15 classes)
+7. `assets/admin-nav.js` - Sélecteur JavaScript
+8. `assets/admin-nav.css` - Sélecteurs CSS (~4 règles)
+9. `assets/admin-visual-links-builder.css` - Classes CSS builder (~80 règles)
+10. `assets/admin-visual-links-builder.js` - Code JavaScript builder
+11. `visual-links-builder/visual-links-builder.html` - Builder HTML (paramètre URL + alias)
+
+## Occurrences détectées
+- **Total** : 200+ occurrences (grep limité à 200 résultats)
+- **Répartition** : Options WP, fonctions PHP, hooks, nonces, classes CSS, attributs data, variables JS
+- **Estimation finale** : ~300 occurrences sur 11 fichiers (confirmé périmètre PA)
 
 ## Impacts et risques
 - **Impacts potentiels** : Aucun (setup initial)
@@ -34,9 +48,9 @@
 - **Justification** : Setup initial
 
 ## Décision
-- **GO / NO-GO pour suite** : En attente création branche Git
-- **Rollback possible** : N/A (rien modifié encore)
-- **Reste à faire** : Créer branche, analyser périmètre migration
+- **GO / NO-GO pour suite** : GO pour création script migration
+- **Rollback possible** : OUI (commit 41daa92)
+- **Reste à faire** : Créer script migration ONE-TIME + exécuter migration + tests
 
 ## État Git
 - **Branche active** : feature/vlb-refonte-v2
@@ -51,7 +65,17 @@
 ### 2 juin 2026
 - **[Début]** Création document suivi SUIVI_REFONTE_VLB.md
 - **[OK]** Création branche feature/vlb-refonte-v2 (point rollback: 35302b9)
-- **[En cours]** Phase 1.1 - Analyse périmètre migration EPK→VLB
+- **[OK]** Commit initial documentation (hash: 41daa92)
+- **[OK]** Phase 1.1 - Analyse périmètre migration EPK→VLB
+  - Détection 200+ occurrences "epk" via grep
+  - Identification 11 fichiers à migrer
+  - Confirmation estimation ~300 occurrences
+- **[OK]** Phase 1.2 - Création script migration ONE-TIME (commit: avec hash du prochain commit)
+  - Script `inc/visual-links-migration.php` créé
+  - Migration sécurisée options WordPress
+  - Fallback lecture temporaire (1 mois)
+  - Page admin pour exécution manuelle
+- **[En cours]** Phase 1.3 - Migration code PHP/JS/CSS
 
 ---
 
