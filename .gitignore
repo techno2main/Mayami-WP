@@ -27,3 +27,6 @@ coverage/
 # Local-only files
 php.ini
 assets/mayami-logo_old.png
+
+# Migration OVH - contient données sensibles (ZIP, SQL, credentials)
+migration-ovh/
