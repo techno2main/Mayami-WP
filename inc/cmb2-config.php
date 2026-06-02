@@ -1076,7 +1076,7 @@ function mayami_register_options() {
         'name' => 'Source du visuel',
         'id'   => 'epk_draft_image_source',
         'type' => 'file',
-        'row_classes' => 'mayami-epk-media-row',
+        'row_classes' => 'mayami-vlb-media-row',
         'text' => array(
             'add_upload_file_text' => 'Choisir le visuel',
         ),
@@ -1085,7 +1085,7 @@ function mayami_register_options() {
     $cmb->add_field(array(
         'name' => 'Builder Visual Links',
         'id'   => 'epk_builder',
-        'type' => 'mayami_epk_builder',
+        'type' => 'mayami_visual_links_builder',
     ));
 
     $cmb->add_field(array(
@@ -1099,15 +1099,15 @@ function mayami_register_options() {
         'name' => 'Stockage brouillon Visual Links',
         'id'   => 'epk_draft_payload',
         'type' => 'textarea_code',
-        'row_classes' => 'mayami-epk-storage-row',
-        'sanitization_cb' => 'mayami_sanitize_epk_payload',
+        'row_classes' => 'mayami-vlb-storage-row',
+        'sanitization_cb' => 'mayami_sanitize_visual_links_payload',
     ));
 
     $cmb->add_field(array(
         'name' => 'Stockage publication Visual Links',
         'id'   => 'epk_published_payload',
         'type' => 'textarea_code',
-        'row_classes' => 'mayami-epk-storage-row',
-        'sanitization_cb' => 'mayami_sanitize_epk_payload',
+        'row_classes' => 'mayami-vlb-storage-row',
+        'sanitization_cb' => 'mayami_sanitize_visual_links_payload',
     ));
 }
