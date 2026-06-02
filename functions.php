@@ -434,6 +434,16 @@ function mayami_register_visual_links_html_menu() {
         'mayami_visual_links_drafts',
         'mayami_render_visual_links_drafts_page'
     );
+
+    // Hidden preview page (not shown in menu)
+    add_submenu_page(
+        null,
+        'Preview Visual Links',
+        'Preview Visual Links',
+        'manage_options',
+        'mayami_visual_links_preview',
+        'mayami_render_visual_links_preview_page'
+    );
 }
 add_action('admin_menu', 'mayami_register_visual_links_html_menu', 20);
 
@@ -1190,6 +1200,47 @@ function mayami_render_visual_links_html_builder_page() {
                 style="width:100%;height:calc(100vh - 210px);min-height:760px;border:0;display:block;"
             ></iframe>
         </div>
+    </div>
+    <?php
+}
+
+/**
+ * Render the Visual Links preview page (displays preview HTML from sessionStorage).
+ */
+function mayami_render_visual_links_preview_page() {
+    if (!current_user_can('manage_options')) {
+        wp_die(esc_html__('You are not allowed to access this page.', 'mayami'), 403);
+    }
+
+    $draft_id = isset($_GET['draft_id']) ? sanitize_text_field(wp_unslash($_GET['draft_id'])) : '';
+    $builder_url = admin_url('admin.php?page=mayami_visual_links_builder' . ($draft_id ? '&draft_id=' . urlencode($draft_id) : ''));
+    ?>
+    <div class="wrap mayami-vlb-preview-page" style="padding:0;margin:0;">
+        <div id="previewContainer" style="position:relative;width:100%;height:100vh;overflow:auto;"></div>
+        <script>
+        (function() {
+            const previewHtml = sessionStorage.getItem('mayami_vlb_preview_html');
+            const container = document.getElementById('previewContainer');
+            
+            if (!previewHtml) {
+                container.innerHTML = '<div style="padding:40px;text-align:center;"><h2>Aucune preview disponible</h2><p><a href="<?php echo esc_url($builder_url); ?>" class="button button-primary">Retour au builder</a></p></div>';
+                return;
+            }
+
+            // Clear sessionStorage after reading
+            sessionStorage.removeItem('mayami_vlb_preview_html');
+
+            // Create iframe to display preview HTML
+            const iframe = document.createElement('iframe');
+            iframe.style.cssText = 'width:100%;height:100%;border:0;display:block;';
+            container.appendChild(iframe);
+
+            // Write preview HTML to iframe
+            iframe.contentWindow.document.open();
+            iframe.contentWindow.document.write(previewHtml);
+            iframe.contentWindow.document.close();
+        })();
+        </script>
     </div>
     <?php
 }

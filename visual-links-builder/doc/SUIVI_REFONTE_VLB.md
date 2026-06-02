@@ -7,13 +7,13 @@
 
 ## État actuel
 - **Phase en cours** : Phase 2 - Moteur image-map
-- **Sous-étape en cours** : Phase 2.1 - Correction export HTML TERMINÉE
-- **Statut** : Export Template HTML corrigé - En attente test client
-- **Date/heure mise à jour** : 2 juin 2026 - 17h10 - Export HTML avec PDF header implémenté
+- **Sous-étape en cours** : Phase 2.2 - Refonte navigation preview TERMINÉE
+- **Statut** : Preview s'ouvre dans admin (plus de popup) - En attente test client
+- **Date/heure mise à jour** : 2 juin 2026 - 17h25 - Preview intégrée dans interface admin
 
 ## Objectif sous-étape
-- **Description** : Corriger export "Template HTML" pour inclure le lien PDF cliquable
-- **Résultat** : Fonction `buildExportTemplateHtml()` créée - Export Template HTML génère maintenant le bon template avec PDF header
+- **Description** : Refondre navigation preview pour s'ouvrir dans l'interface admin au lieu d'une popup "about:blank"
+- **Résultat** : Preview s'ouvre à la place du builder dans l'admin - Bouton "Modifier" pour revenir au builder
 
 ## Fichiers identifiés pour migration (11 fichiers)
 1. `inc/visual-links.php` - Fonctions PHP principales (~30 fonctions)
@@ -135,7 +135,31 @@
     - Ligne ~2944 : Fallback modal utilise `exportTemplateHtml`
   - **Résultat** : Export Template HTML inclut maintenant le PDF header avec lien cliquable
   - **État VSC Problems** : 0 erreurs
-- ⏳ **EN ATTENTE** — Test export HTML par client
+- ✅ **OK** — Phase 2.2 - REFONTE NAVIGATION PREVIEW (2 juin 2026 17h25)
+  - **Problème détecté** : Preview s'ouvrait dans popup "about:blank" - Navigation confuse
+  - **Demande client** : "La page preview s'ouvre sur un about:blank ! Il faut que la page s'ouvre dans l'interface d'admin, à la place de la page Visual Links Builder"
+  - **Solution** : Navigation dans l'interface admin avec sessionStorage
+    - Nouvelle page admin WordPress : `mayami_visual_links_preview` (hidden submenu)
+    - Preview stockée dans sessionStorage puis navigation vers page preview
+    - Bouton "✏️ Modifier" avec `target="_top"` pour revenir au builder
+    - Script inline dans preview HTML (rescaling responsive automatique)
+  - **Modifications** :
+    - functions.php (2 changements)
+      - Ligne ~430 : Ajout submenu caché `mayami_visual_links_preview`
+      - Ligne ~1197 : Nouvelle fonction `mayami_render_visual_links_preview_page()`
+    - visual-links-builder.html (3 changements)
+      - Ligne ~2507 : Ajout `draftName` dans objet retourné par `buildMapPreviewData()`
+      - Ligne ~2811 : Bouton "Modifier" avec `target="_top"` et émoji ✏️
+      - Ligne ~2827 : Script inline complet (rescaling + export placeholder)
+      - Ligne ~2899 : Refonte `openExternalPreview()` - Navigation sessionStorage au lieu de popup
+  - **Flow utilisateur** :
+    1. Clic sur "Preview" dans builder
+    2. Navigation vers page admin preview (remplace builder)
+    3. Affichage preview avec rescaling responsive
+    4. Clic sur "Modifier" → Retour au builder
+  - **Résultat** : Preview intégrée dans interface admin - Plus de popup about:blank
+  - **État VSC Problems** : 0 erreurs
+- ⏳ **EN ATTENTE** — Test preview navigation par client
 - 🔴 **BLOQUÉ** — Phase 2 - Moteur image-map (bloqué jusqu'à validation Phase 1)
 
 ---
