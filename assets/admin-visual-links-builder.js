@@ -532,7 +532,7 @@
 
         if (elements.unpublishButton) {
             elements.unpublishButton.addEventListener('click', function () {
-                if (!window.confirm('Retirer l’EPK du front public ?')) {
+                if (!window.confirm('Retirer Visual Links du front public ?')) {
                     return;
                 }
 
