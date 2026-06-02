@@ -20,7 +20,7 @@ if (!defined('ABSPATH')) {
 <body id="page-top" <?php body_class(); ?>>
 <?php wp_body_open(); ?>
 
-<?php if (mayami_is_epk_preview_request()): ?>
+<?php if (mayami_is_visual_links_preview_request()): ?>
     <div class="mayami-preview-banner">
         Prévisualisation privée Visual Links active. Seul votre compte admin voit ce brouillon.
     </div>
