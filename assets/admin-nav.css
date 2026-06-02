@@ -68,7 +68,6 @@
 .cmb2-id-section-release-title .cmb-th,
 .cmb2-id-section-cta-title .cmb-th,
 .cmb2-id-section-footer-title .cmb-th,
-.cmb2-id-section-visual-links-title .cmb-th,
 .cmb2-id-section-links-title .cmb-th,
 .cmb2-id-section-marquee-title .cmb-th {
   background: #f2f2f3;
@@ -133,7 +132,6 @@
 .cmb2-id-section-release-title.mayami-section-toggle .cmb-th,
 .cmb2-id-section-cta-title.mayami-section-toggle .cmb-th,
 .cmb2-id-section-footer-title.mayami-section-toggle .cmb-th,
-.cmb2-id-section-visual-links-title.mayami-section-toggle .cmb-th,
 .cmb2-id-section-links-title.mayami-section-toggle .cmb-th,
 .cmb2-id-section-marquee-title.mayami-section-toggle .cmb-th {
   position: relative;
@@ -177,7 +175,6 @@
 .cmb2-id-section-release-title.mayami-section-toggle .cmb-th:hover,
 .cmb2-id-section-cta-title.mayami-section-toggle .cmb-th:hover,
 .cmb2-id-section-footer-title.mayami-section-toggle .cmb-th:hover,
-.cmb2-id-section-visual-links-title.mayami-section-toggle .cmb-th:hover,
 .cmb2-id-section-links-title.mayami-section-toggle .cmb-th:hover,
 .cmb2-id-section-marquee-title.mayami-section-toggle .cmb-th:hover {
   filter: brightness(1.08);

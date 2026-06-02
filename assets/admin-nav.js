@@ -46,7 +46,6 @@
     setTimeout(removeNativePageHeading, 1200);
     createStickyNav();
     reorderSectionsInDom();
-    hideLandingEpkSection();
     bindSaveSectionPersistence();
     bindDeleteConfirmationGuard();
     setupAccordion();
@@ -1138,37 +1137,6 @@
 
     // Observer le scroll pour mettre à jour le bouton actif
     observeSections(sections);
-  }
-
-  function hideLandingEpkSection() {
-    const epkTitle = document.querySelector('.cmb2-id-section-visual-links-title');
-    if (!epkTitle) {
-      return;
-    }
-
-    const rowsToHide = [epkTitle];
-    let current = epkTitle.nextElementSibling;
-
-    while (current) {
-      const classNames = current.classList ? Array.from(current.classList) : [];
-      const isNextSectionTitle = classNames.some(function(className) {
-        return className.indexOf('cmb2-id-section-') === 0 && className.indexOf('-title') !== -1;
-      });
-
-      if (isNextSectionTitle) {
-        break;
-      }
-
-      if (current.classList && current.classList.contains('cmb-row')) {
-        rowsToHide.push(current);
-      }
-
-      current = current.nextElementSibling;
-    }
-
-    rowsToHide.forEach(function(row) {
-      row.style.display = 'none';
-    });
   }
 
   function setupAccordion() {
